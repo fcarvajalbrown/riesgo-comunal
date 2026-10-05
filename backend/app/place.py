@@ -1,3 +1,4 @@
+import re
 from datetime import UTC, datetime
 from typing import Any
 
@@ -8,6 +9,13 @@ from app.db import row, rows, scalar
 
 WILDFIRE_CLASS = {1: "Muy baja", 2: "Baja", 3: "Media", 4: "Alta", 5: "Muy alta"}
 MAX_DISTANCE_M = 5000
+CODE_LIKE = re.compile(r"[0-9]{3,}[A-Z]{1,4}[0-9]*")
+
+
+def meeting_label(name: str | None) -> str:
+    if not name or CODE_LIKE.fullmatch(name):
+        return f"código {name}" if name else "sin nombre"
+    return name
 
 
 class OutsideComuna(ValueError):
@@ -54,7 +62,7 @@ def place_report(conn: Connection, municipality_id: int, lon: float, lat: float)
     if tsunami:
         text = "Este lugar está dentro del área que se debe evacuar ante un tsunami."
         if meeting:
-            text += f" El punto de encuentro más cercano es {meeting['name'] or 'sin nombre'}, a unos {round(meeting['meters'] / 50) * 50:.0f} m en línea recta."
+            text += f" El punto de encuentro más cercano ({meeting_label(meeting['name'])}) está a unos {round(meeting['meters'] / 50) * 50:.0f} m en línea recta; está marcado en el mapa."
         items.append(
             {
                 "hazard": "tsunami",

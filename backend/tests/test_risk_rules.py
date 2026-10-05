@@ -168,3 +168,11 @@ def test_unrecognised_senapred_level_is_informative_only():
 
     assert classify_senapred_alerts(["Alerta"]).level == "INFORMATIVO"
     assert classify_senapred_alerts(["Alerta", "Alerta Amarilla"]).level == "ALTO"
+
+
+def test_meeting_point_codes_are_not_presented_as_names():
+    from app.place import meeting_label
+
+    assert meeting_label("08106PE007") == "código 08106PE007"
+    assert meeting_label("Plaza de Armas") == "Plaza de Armas"
+    assert meeting_label(None) == "sin nombre"
