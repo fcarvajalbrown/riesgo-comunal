@@ -152,3 +152,19 @@ def test_upcoming_dmc_warning_is_informative_only():
 
     assert classify_dmc_warnings([("Alarma", False)]).level == "INFORMATIVO"
     assert classify_dmc_warnings([("Alarma", False), ("Aviso", True)]).level == "MODERADO"
+
+
+def test_senapred_alert_levels_follow_the_official_alert():
+    from app.hazards.rules import classify_senapred_alerts
+
+    assert classify_senapred_alerts([]).level == "BAJO"
+    assert classify_senapred_alerts(["Alerta Temprana Preventiva"]).level == "MODERADO"
+    assert classify_senapred_alerts(["Alerta Temprana Preventiva", "Alerta Amarilla"]).level == "ALTO"
+    assert classify_senapred_alerts(["Alerta Roja", "Alerta Temprana Preventiva"]).level == "CRITICO"
+
+
+def test_unrecognised_senapred_level_is_informative_only():
+    from app.hazards.rules import classify_senapred_alerts
+
+    assert classify_senapred_alerts(["Alerta"]).level == "INFORMATIVO"
+    assert classify_senapred_alerts(["Alerta", "Alerta Amarilla"]).level == "ALTO"

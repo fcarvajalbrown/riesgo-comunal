@@ -85,3 +85,17 @@ def classify_dmc_warnings(warnings: list[tuple[str, bool]]) -> RuleResult:
     if upcoming:
         return RuleResult("INFORMATIVO", f"{len(upcoming)} boletín(es) de la Dirección Meteorológica de Chile con inicio próximo para la comuna.")
     return RuleResult("BAJO", "No hay avisos, alertas ni alarmas meteorológicas de la Dirección Meteorológica de Chile vigentes para la comuna.")
+
+
+SENAPRED_ALERT_LEVEL = {"Alerta Temprana Preventiva": "MODERADO", "Alerta Amarilla": "ALTO", "Alerta Roja": "CRITICO"}
+
+
+def classify_senapred_alerts(levels: list[str]) -> RuleResult:
+    known = [level for level in levels if level in SENAPRED_ALERT_LEVEL]
+    if not known:
+        if levels:
+            return RuleResult("INFORMATIVO", "Hay alertas de SENAPRED para la comuna con un nivel no reconocido; revise el detalle oficial.")
+        return RuleResult("BAJO", "No hay alertas de SENAPRED vigentes para la comuna registradas en la plataforma.")
+    order = list(SENAPRED_ALERT_LEVEL)
+    top = max(known, key=order.index)
+    return RuleResult(SENAPRED_ALERT_LEVEL[top], f"{top} de SENAPRED vigente para la comuna.")

@@ -86,6 +86,12 @@ Thresholds in `default_thresholds` can be changed per comuna by a municipal admi
 - **Observed rain** (when the DMC credential is configured): rain in the last 24 h at the nearest station above `rain_24h_moderado` / `rain_24h_alto` (defaults 30 / 60 mm). These defaults are **placeholders chosen for the MVP, not official thresholds**, and the UI says so until a municipality sets its own.
 - The module level is the higher of the two.
 
+### Alertas de SENAPRED (module `senapred_alert`)
+
+- **Input**: SENAPRED alerts in force whose coverage overlaps the comuna's interior: those read automatically from senapred.cl/alertas (`senapred_alertas`), plus alerts a municipality enters by hand with SENAPRED as issuer. Alerts whose start is still in the future are not counted.
+- **Rule** (`classify_senapred_alerts`): Alerta Temprana Preventiva = MODERADO, Alerta Amarilla = ALTO, Alerta Roja = CRITICO; the highest alert in force wins. An alert whose level the platform cannot recognise gives INFORMATIVO, and no alert gives BAJO. As with the DMC equivalence, this is a platform rule for ordering the summary; the official status is SENAPRED's declaration, linked from each evidence row.
+- The explanation always says that the absence of a registered alert does not mean there is no danger, and that SENAPRED's site is the place to confirm.
+
 ## Comuna context (not a level)
 
 SENAPRED's ICFSR (Índice Comunal de Factores Subyacentes del Riesgo) is shown as an official contextual index with its four components and the year of application. It is not merged into hazard levels.
