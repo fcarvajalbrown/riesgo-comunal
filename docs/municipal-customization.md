@@ -33,6 +33,9 @@ Uploaded under "Datos municipales":
 | Historical incidents | CSV, GeoJSON, KML, KMZ, zipped Shapefile, GeoPackage | `fecha`, `amenaza`; optional `sector`, `descripcion`, `afectados`, coordinates |
 | Sectors | GeoJSON, KML, KMZ, zipped Shapefile, GeoPackage polygons | `nombre`; replaces the analysis cells |
 | Raster layers | GeoTIFF with a declared CRS | optional title; stored as uploaded, previewed on the map warped to WGS84 (RGB for 3+ bands, colour ramp with value range for one band, no-data transparent) |
+| Emergency contacts and personnel | CSV | `nombre`; optional `cargo`, `institucion`, `telefono`, `email`, `tipo` (`contacto` or `personal`) |
+| Inspection records | CSV | `fecha`, `activo` (matched to an uploaded asset by name); optional `estado`, `observaciones`, `inspector` |
+| Photos | JPEG, PNG, WebP (checked by file signature) | optional description and linked asset |
 | Documents | PDF with text, TXT, MD | optional title |
 
 Recognised categories include `albergue`, `punto critico inundacion` (feeds the flood module), `generador`, `estanque de agua`, `puente`, `sumidero`, `grifo`, `maquinaria`, `vehiculo municipal`, `ruta de evacuacion`; other values are stored as given. Shapefiles (zipped with their `.prj`) and GeoPackages are read with pyogrio (GDAL) and reprojected to WGS84 from any declared CRS, so UTM files work as exported; a file without a CRS is rejected with that reason.

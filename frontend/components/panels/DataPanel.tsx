@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { DemoBadge } from "@/components/Badges";
-import { apiGet, apiSend } from "@/lib/api";
+import { apiGet, apiObjectUrl, apiSend } from "@/lib/api";
 import { formatShortTime } from "@/lib/format";
 
 interface UploadRow {
@@ -25,11 +25,28 @@ const KINDS = [
   { key: "incidents", label: "Incidentes históricos", hint: "Columnas fecha (AAAA-MM-DD), amenaza, sector, descripcion, afectados y coordenadas opcionales. También shapefile en .zip o GeoPackage.", accept: ".csv,.geojson,.json,.kml,.kmz,.zip,.gpkg" },
   { key: "sectors", label: "Sectores del municipio", hint: "Polígonos en GeoJSON, KML, shapefile en .zip o GeoPackage, con la propiedad nombre. Reemplazan las celdas de análisis.", accept: ".geojson,.json,.kml,.kmz,.zip,.gpkg" },
   { key: "raster", label: "Capas raster (GeoTIFF)", hint: "GeoTIFF con su proyección (por ejemplo un mapa de amenaza municipal o un modelo de elevación). Se muestra como capa en el mapa.", accept: ".tif,.tiff" },
+  { key: "contacts", label: "Contactos y personal", hint: "CSV con columnas nombre, cargo, institucion, telefono, email y tipo (contacto o personal).", accept: ".csv" },
+  { key: "inspections", label: "Inspecciones", hint: "CSV con columnas fecha, activo (nombre igual al de la infraestructura cargada), estado, observaciones, inspector.", accept: ".csv" },
+  { key: "photo", label: "Fotografías", hint: "JPEG, PNG o WebP. Puede asociarla a un activo municipal.", accept: ".jpg,.jpeg,.png,.webp" },
   { key: "document", label: "Documentos", hint: "PDF con texto (planes, protocolos). El asistente podrá citarlos.", accept: ".pdf,.txt,.md" },
 ] as const;
 
 const CATEGORIES = ["albergue", "punto critico inundacion", "generador", "estanque de agua", "puente", "sumidero", "grifo", "maquinaria", "vehiculo municipal", "ruta de evacuacion"];
-const KIND_LABEL: Record<string, string> = { assets: "Infraestructura", incidents: "Incidentes", sectors: "Sectores", document: "Documento" };
+const KIND_LABEL: Record<string, string> = {
+  assets: "Infraestructura",
+  incidents: "Incidentes",
+  sectors: "Sectores",
+  document: "Documento",
+  raster: "Capa raster",
+  contacts: "Contactos",
+  inspections: "Inspecciones",
+  photo: "Fotografía",
+};
+
+interface AssetFeature {
+  id: number;
+  properties: { name: string; category: string };
+}
 
 export function DataPanel({ canUpload }: { canUpload: boolean }) {
   const queryClient = useQueryClient();
@@ -37,6 +54,12 @@ export function DataPanel({ canUpload }: { canUpload: boolean }) {
   const [kind, setKind] = useState<(typeof KINDS)[number]["key"]>("assets");
   const [category, setCategory] = useState("");
   const [title, setTitle] = useState("");
+  const [assetId, setAssetId] = useState("");
+  const assets = useQuery({
+    queryKey: ["layer", "municipal_asset"],
+    queryFn: () => apiGet<{ features: AssetFeature[] }>("/layers/municipal_asset"),
+    enabled: kind === "photo",
+  });
   const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -46,6 +69,7 @@ export function DataPanel({ canUpload }: { canUpload: boolean }) {
       form.set("kind", kind);
       if (category) form.set("category", category);
       if (title) form.set("title", title);
+      if (kind === "photo" && assetId) form.set("asset_id", assetId);
       form.set("file", file as File);
       return apiSend<{ status: string; records?: number; error?: string }>("/uploads", "POST", form);
     },
@@ -101,10 +125,32 @@ export function DataPanel({ canUpload }: { canUpload: boolean }) {
                 </select>
               </label>
             )}
-            {kind === "document" && (
+            {kind === "contacts" && (
               <label className="block text-sm">
-                Título
-                <input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 w-full rounded-lg border border-border px-3 py-2" placeholder="Plan comunal de emergencia" />
+                Tipo por defecto (si el archivo no trae columna tipo)
+                <select value={category} onChange={(e) => setCategory(e.target.value)} className="mt-1 w-full rounded-lg border border-border px-3 py-2">
+                  <option value="">Contacto de emergencia</option>
+                  <option value="personal">Personal municipal de emergencia</option>
+                </select>
+              </label>
+            )}
+            {kind === "photo" && (
+              <label className="block text-sm">
+                Activo asociado (opcional)
+                <select value={assetId} onChange={(e) => setAssetId(e.target.value)} className="mt-1 w-full rounded-lg border border-border px-3 py-2">
+                  <option value="">Sin activo</option>
+                  {assets.data?.features.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.properties.name} ({f.properties.category})
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {(kind === "document" || kind === "photo" || kind === "raster") && (
+              <label className="block text-sm">
+                {kind === "photo" ? "Descripción" : "Título"}
+                <input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 w-full rounded-lg border border-border px-3 py-2" placeholder={kind === "photo" ? "Estado del puente tras el temporal" : "Plan comunal de emergencia"} />
               </label>
             )}
             <input type="file" accept={current.accept} onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="block w-full text-sm" />
@@ -139,6 +185,110 @@ export function DataPanel({ canUpload }: { canUpload: boolean }) {
           ))}
         </ul>
       </section>
+
+      <MunicipalRecords />
     </div>
+  );
+}
+
+interface ContactRow {
+  id: number;
+  kind: string;
+  name: string;
+  role: string | null;
+  organization: string | null;
+  phone: string | null;
+  email: string | null;
+  is_demo: boolean;
+}
+
+interface InspectionRow {
+  id: number;
+  asset_name: string;
+  asset_id: number | null;
+  inspected_on: string;
+  status: string | null;
+  notes: string | null;
+  inspector: string | null;
+  is_demo: boolean;
+}
+
+interface PhotoRow {
+  id: number;
+  asset_name: string | null;
+  caption: string | null;
+  created_at: string;
+  is_demo: boolean;
+}
+
+function PhotoThumb({ photo }: { photo: PhotoRow }) {
+  const image = useQuery({ queryKey: ["photo", photo.id], queryFn: () => apiObjectUrl(`/photos/${photo.id}/file`), staleTime: Infinity });
+  return (
+    <figure className="overflow-hidden rounded-lg border border-border">
+      {image.data ? <img src={image.data} alt={photo.caption ?? "Fotografía municipal"} className="h-28 w-full object-cover" /> : <div className="h-28 bg-slate-100" />}
+      <figcaption className="p-1.5 text-[11px]">
+        {photo.caption ?? "Sin descripción"}
+        {photo.asset_name && <span className="block text-muted">{photo.asset_name}</span>}
+      </figcaption>
+    </figure>
+  );
+}
+
+function MunicipalRecords() {
+  const contacts = useQuery({ queryKey: ["contacts"], queryFn: () => apiGet<ContactRow[]>("/contacts") });
+  const inspections = useQuery({ queryKey: ["inspections"], queryFn: () => apiGet<InspectionRow[]>("/inspections") });
+  const photos = useQuery({ queryKey: ["photos"], queryFn: () => apiGet<PhotoRow[]>("/photos") });
+  return (
+    <>
+      <section className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
+        <h3 className="text-base font-semibold">Contactos y personal de emergencia</h3>
+        {contacts.data?.length === 0 && <p className="mt-1 text-sm text-muted">Sin contactos cargados.</p>}
+        <ul className="mt-2 divide-y divide-border text-sm">
+          {contacts.data?.map((c) => (
+            <li key={c.id} className="flex flex-wrap gap-x-2 py-2">
+              <span className="font-medium">{c.name}</span>
+              {c.is_demo && <DemoBadge />}
+              <span className="text-muted">
+                {[c.kind === "personal" ? "Personal municipal" : "Contacto", c.role, c.organization].filter(Boolean).join(" · ")}
+              </span>
+              <span className="ml-auto">
+                {c.phone && (
+                  <a href={`tel:${c.phone.replace(/\s/g, "")}`} className="text-brand underline">
+                    {c.phone}
+                  </a>
+                )}
+                {c.email && <span className="ml-2 text-muted">{c.email}</span>}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
+        <h3 className="text-base font-semibold">Inspecciones recientes</h3>
+        {inspections.data?.length === 0 && <p className="mt-1 text-sm text-muted">Sin inspecciones cargadas.</p>}
+        <ul className="mt-2 divide-y divide-border text-sm">
+          {inspections.data?.slice(0, 30).map((i) => (
+            <li key={i.id} className="py-2">
+              <span className="font-medium">{i.asset_name}</span> {i.is_demo && <DemoBadge />}
+              <span className="ml-2 text-muted">
+                {i.inspected_on} · {i.status ?? "sin estado"}
+                {i.inspector ? ` · ${i.inspector}` : ""}
+                {i.asset_id === null ? " · activo no encontrado en la infraestructura cargada" : ""}
+              </span>
+              {i.notes && <span className="block text-xs">{i.notes}</span>}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
+        <h3 className="text-base font-semibold">Fotografías</h3>
+        {photos.data?.length === 0 && <p className="mt-1 text-sm text-muted">Sin fotografías cargadas.</p>}
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {photos.data?.map((p) => <PhotoThumb key={p.id} photo={p} />)}
+        </div>
+      </section>
+    </>
   );
 }

@@ -262,3 +262,40 @@ def test_geotiff_upload_is_previewed_and_isolated(env):
         files = [scalar(conn, "select stored_path from upload where id = :id", id=upload_id), scalar(conn, "select preview_path from municipal_raster where id = :id", id=raster["id"])]
     assert client.delete(f"/api/uploads/{upload_id}", headers=tokens["lota_admin"]).status_code == 200
     assert not any(Path(f).exists() for f in files)
+
+
+def test_contacts_inspections_and_photos(env):
+    client, tokens, lota, _ = env
+    admin = tokens["lota_admin"]
+    with transaction() as conn:
+        asset = conn.execute(text("select id, name from municipal_asset where municipality_id = :m order by id limit 1"), {"m": lota}).mappings().first()
+    if asset is None:
+        pytest.skip("requiere activos municipales cargados")
+    uploads = []
+    contacts_csv = "nombre;cargo;telefono;tipo\nPytest Encargada;Directora de Emergencia;+56 9 1111 1111;personal\nPytest Bomberos;Cuerpo de Bomberos;132;contacto\n"
+    response = client.post("/api/uploads", headers=admin, data={"kind": "contacts"}, files={"file": ("contactos.csv", contacts_csv.encode(), "text/csv")})
+    assert response.json()["status"] == "done" and response.json()["records"] == 2, response.text
+    uploads.append(response.json()["upload_id"])
+    names = {c["name"]: c["kind"] for c in client.get("/api/contacts", headers=admin).json()}
+    assert names["Pytest Encargada"] == "personal" and names["Pytest Bomberos"] == "contacto"
+
+    inspection_csv = f"fecha,activo,estado,observaciones\n2026-09-30,{asset['name'].removeprefix('DEMO ')},operativo,pytest\n"
+    response = client.post("/api/uploads", headers=admin, data={"kind": "inspections"}, files={"file": ("inspecciones.csv", inspection_csv.encode(), "text/csv")})
+    assert response.json()["status"] == "done", response.text
+    uploads.append(response.json()["upload_id"])
+    found = [i for i in client.get(f"/api/inspections?asset_id={asset['id']}", headers=admin).json() if i["notes"] == "pytest"]
+    assert found and found[0]["asset_id"] == asset["id"]
+
+    png = bytes.fromhex("89504e470d0a1a0a") + b"pytest"
+    response = client.post("/api/uploads", headers=admin, data={"kind": "photo", "title": "pytest foto", "asset_id": str(asset["id"])}, files={"file": ("foto.png", png, "image/png")})
+    assert response.json()["status"] == "done", response.text
+    uploads.append(response.json()["upload_id"])
+    photo = next(p for p in client.get(f"/api/photos?asset_id={asset['id']}", headers=admin).json() if p["caption"] == "pytest foto")
+    assert client.get(f"/api/photos/{photo['id']}/file", headers=admin).content == png
+    assert client.get(f"/api/photos/{photo['id']}/file", headers=tokens["other_admin"]).status_code == 404
+
+    fake = client.post("/api/uploads", headers=admin, data={"kind": "photo"}, files={"file": ("foto.png", b"not an image", "image/png")})
+    assert fake.json()["status"] == "failed"
+    uploads.append(fake.json()["upload_id"])
+    for upload_id in uploads:
+        client.delete(f"/api/uploads/{upload_id}", headers=admin)

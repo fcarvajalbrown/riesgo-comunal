@@ -47,9 +47,13 @@ Every assessment carries `level`, `level_label`, `data_class`, `headline`, `reas
 
 | Method | Path | Permission | Purpose |
 |---|---|---|---|
-| POST | `/uploads` | `upload`, 30/min | multipart: `kind` (`assets`, `incidents`, `sectors`, `document`, `raster`), `file`, optional `category`, `title` |
+| POST | `/uploads` | `upload`, 30/min | multipart: `kind` (`assets`, `incidents`, `sectors`, `document`, `raster`, `contacts`, `inspections`, `photo`), `file`, optional `category`, `title`, `asset_id` (photos) |
 | GET | `/uploads` | any | uploads with status and counts |
 | DELETE | `/uploads/{id}` | `upload` | remove an upload, its records and its stored files |
+| GET | `/contacts` | any | emergency contacts and municipal emergency personnel |
+| GET | `/inspections?asset_id=` | any | inspection records, newest first, linked to assets by name |
+| GET | `/photos?asset_id=` | any | photo list |
+| GET | `/photos/{id}/file` | any | photo file (tenant-checked) |
 | GET | `/rasters` | any | GeoTIFF layers of the tenant with WGS84 bounds and metadata |
 | GET | `/rasters/{id}/preview.png` | any | transparent WGS84 preview of one GeoTIFF (tenant-checked) |
 | GET | `/documents` | any | documents with page and chunk counts |

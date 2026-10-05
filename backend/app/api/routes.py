@@ -272,16 +272,19 @@ def end_alert(alert_id: int, principal: Principal = Depends(require("alert:creat
 
 @router.post("/uploads", dependencies=[Depends(rate_limit("upload", 30, 60))])
 async def upload(
-    kind: Literal["assets", "incidents", "sectors", "document", "raster"] = Form(...),
+    kind: Literal["assets", "incidents", "sectors", "document", "raster", "contacts", "inspections", "photo"] = Form(...),
     file: UploadFile = File(...),
     category: str | None = Form(default=None),
     title: str | None = Form(default=None),
+    asset_id: int | None = Form(default=None),
     principal: Principal = Depends(require("upload")),
     conn: Connection = Depends(get_conn),
 ) -> dict[str, Any]:
     data = await file.read()
     try:
-        result = handle_upload(conn, principal.municipality_id, principal.user_id, kind, file.filename or "archivo", file.content_type, data, category, title)
+        result = handle_upload(
+            conn, principal.municipality_id, principal.user_id, kind, file.filename or "archivo", file.content_type, data, category, title, asset_id=asset_id
+        )
     except UploadError as exc:
         raise HTTPException(422, str(exc))
     if kind == "sectors" and result["status"] == "done":
@@ -326,6 +329,57 @@ def delete_upload(upload_id: int, principal: Principal = Depends(require("upload
         Path(path).unlink(missing_ok=True)
     audit(conn, principal, "upload_delete", str(upload_id))
     return {"deleted": upload_id}
+
+
+@router.get("/contacts")
+def contacts(principal: Principal = Depends(current_principal), conn: Connection = Depends(get_conn)) -> list[dict[str, Any]]:
+    return rows(
+        conn,
+        """
+        select id, kind, name, role, organization, phone, email, notes, is_demo, provenance_id
+        from emergency_contact where municipality_id = :m order by kind, name
+        """,
+        m=principal.municipality_id,
+    )
+
+
+@router.get("/inspections")
+def inspections(asset_id: int | None = None, principal: Principal = Depends(current_principal), conn: Connection = Depends(get_conn)) -> list[dict[str, Any]]:
+    return rows(
+        conn,
+        """
+        select i.id, i.asset_id, i.asset_name, i.inspected_on, i.status, i.notes, i.inspector, i.is_demo, i.provenance_id,
+               a.category as asset_category
+        from inspection i left join municipal_asset a on a.id = i.asset_id
+        where i.municipality_id = :m and (cast(:a as bigint) is null or i.asset_id = :a)
+        order by i.inspected_on desc limit 500
+        """,
+        m=principal.municipality_id,
+        a=asset_id,
+    )
+
+
+@router.get("/photos")
+def photos(asset_id: int | None = None, principal: Principal = Depends(current_principal), conn: Connection = Depends(get_conn)) -> list[dict[str, Any]]:
+    return rows(
+        conn,
+        """
+        select p.id, p.asset_id, a.name as asset_name, p.caption, p.content_type, p.is_demo, p.provenance_id, p.created_at
+        from photo p left join municipal_asset a on a.id = p.asset_id
+        where p.municipality_id = :m and (cast(:a as bigint) is null or p.asset_id = :a)
+        order by p.created_at desc limit 200
+        """,
+        m=principal.municipality_id,
+        a=asset_id,
+    )
+
+
+@router.get("/photos/{photo_id}/file")
+def photo_file(photo_id: int, principal: Principal = Depends(current_principal), conn: Connection = Depends(get_conn)) -> Response:
+    found = row(conn, "select stored_path, content_type from photo where id = :id and municipality_id = :m", id=photo_id, m=principal.municipality_id)
+    if not found or not Path(found["stored_path"]).exists():
+        raise HTTPException(404, "Foto no encontrada")
+    return Response(Path(found["stored_path"]).read_bytes(), media_type=found["content_type"], headers={"Cache-Control": "private, max-age=3600"})
 
 
 @router.get("/rasters")

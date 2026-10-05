@@ -136,6 +136,40 @@ def build_report(conn: Connection, municipality_id: int, role: str) -> dict[str,
                 or [_item("No hay recursos municipales cargados.", None, None)],
             }
         )
+        contacts = rows(
+            conn,
+            "select kind, name, role, organization, phone from emergency_contact where municipality_id = :m order by kind desc, name",
+            m=municipality_id,
+        )
+        sections.append(
+            {
+                "title": "Contactos y personal de emergencia",
+                "items": [
+                    _item(
+                        " · ".join(v for v in (c["name"], c["role"], c["organization"], c["phone"]) if v),
+                        "municipal",
+                        "Registro municipal",
+                    )
+                    for c in contacts
+                ]
+                or [_item("No hay contactos de emergencia cargados.", None, None)],
+            }
+        )
+        inspections = rows(
+            conn,
+            """
+            select distinct on (asset_name) asset_name, inspected_on, status from inspection
+            where municipality_id = :m order by asset_name, inspected_on desc
+            """,
+            m=municipality_id,
+        )
+        if inspections:
+            sections.append(
+                {
+                    "title": "Última inspección por activo",
+                    "items": [_item(f"{i['asset_name']}: {i['status'] or 'sin estado'} ({i['inspected_on']:%d-%m-%Y})", "municipal", "Registro municipal") for i in inspections],
+                }
+            )
     elif role == "secplan":
         icfsr = icfsr_context(conn, municipality["cut_code"])
         if icfsr:

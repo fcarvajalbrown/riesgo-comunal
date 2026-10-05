@@ -9,7 +9,7 @@ from sqlalchemy import Connection, text
 
 from app.config import get_settings
 from app.db import scalar
-from app.uploads.parsers import ParsedFeature, ParseError, extract_text, normalize_value, parse_features
+from app.uploads.parsers import ParsedFeature, ParseError, extract_text, normalize_value, parse_csv, parse_features
 from app.uploads.raster import RasterError, render_preview
 
 ASSET_CATEGORIES = {
@@ -53,7 +53,11 @@ EXTENSIONS = {
     "sectors": (".geojson", ".json", ".kml", ".kmz", ".zip", ".gpkg"),
     "document": (".pdf", ".txt", ".md"),
     "raster": (".tif", ".tiff"),
+    "contacts": (".csv",),
+    "inspections": (".csv",),
+    "photo": (".jpg", ".jpeg", ".png", ".webp"),
 }
+IMAGE_SIGNATURES = {bytes.fromhex("ffd8ff"): "image/jpeg", bytes.fromhex("89504e470d0a1a0a"): "image/png", b"RIFF": "image/webp"}
 
 
 class UploadError(ValueError):
@@ -108,6 +112,7 @@ def handle_upload(
     category: str | None = None,
     title: str | None = None,
     is_demo: bool = False,
+    asset_id: int | None = None,
 ) -> dict[str, Any]:
     settings = get_settings()
     if kind not in EXTENSIONS:
@@ -154,6 +159,12 @@ def handle_upload(
         with conn.begin_nested():
             if kind == "document":
                 count = _store_document(conn, municipality_id, upload_id, safe_name, data, title, is_demo)
+            elif kind == "contacts":
+                count = _store_contacts(conn, municipality_id, upload_id, provenance_id, parse_csv(data), category, is_demo)
+            elif kind == "inspections":
+                count = _store_inspections(conn, municipality_id, upload_id, provenance_id, parse_csv(data), is_demo)
+            elif kind == "photo":
+                count = _store_photo(conn, municipality_id, upload_id, provenance_id, path, data, title, asset_id, is_demo)
             elif kind == "raster":
                 count = _store_raster(conn, municipality_id, upload_id, provenance_id, path, safe_name, data, title, is_demo)
             else:
@@ -255,6 +266,107 @@ def _store_features(conn, kind, municipality_id, upload_id, provenance_id, featu
             )
         count += 1
     return count
+
+
+def _first(props: dict[str, Any], *keys: str) -> str | None:
+    for key in keys:
+        value = props.get(key)
+        if value not in (None, ""):
+            return str(value).strip()
+    return None
+
+
+def _store_contacts(conn, municipality_id, upload_id, provenance_id, rows_: list[ParsedFeature], category, is_demo) -> int:
+    default_kind = "personal" if normalize_value(category or "") == "personal" else "contacto"
+    count = 0
+    for line, item in enumerate(rows_, start=2):
+        p = item.properties
+        name = _first(p, "nombre", "name")
+        if not name:
+            raise UploadError(f"La línea {line} no tiene nombre")
+        kind = normalize_value(_first(p, "tipo", "kind") or default_kind)
+        if is_demo and not name.upper().startswith("DEMO"):
+            name = f"DEMO {name}"
+        conn.execute(
+            text(
+                """
+                insert into emergency_contact (municipality_id, kind, name, role, organization, phone, email, notes, is_demo, upload_id, provenance_id)
+                values (:m, :k, :n, :r, :o, :ph, :e, :nt, :demo, :u, :pid)
+                """
+            ),
+            {
+                "m": municipality_id,
+                "k": "personal" if kind == "personal" else "contacto",
+                "n": name,
+                "r": _first(p, "cargo", "rol", "funcion"),
+                "o": _first(p, "institucion", "organizacion", "unidad"),
+                "ph": _first(p, "telefono", "fono", "celular"),
+                "e": _first(p, "email", "correo"),
+                "nt": _first(p, "notas", "observaciones", "turno"),
+                "demo": is_demo,
+                "u": upload_id,
+                "pid": provenance_id,
+            },
+        )
+        count += 1
+    return count
+
+
+def _store_inspections(conn, municipality_id, upload_id, provenance_id, rows_: list[ParsedFeature], is_demo) -> int:
+    count = 0
+    for line, item in enumerate(rows_, start=2):
+        p = item.properties
+        asset_name = _first(p, "activo", "nombre", "asset")
+        if not asset_name:
+            raise UploadError(f"La línea {line} no indica el activo inspeccionado (columna 'activo')")
+        asset_id = scalar(
+            conn,
+            "select id from municipal_asset where municipality_id = :m and lower(name) in (lower(:n), lower('DEMO ' || :n)) limit 1",
+            m=municipality_id,
+            n=asset_name,
+        )
+        conn.execute(
+            text(
+                """
+                insert into inspection (municipality_id, asset_id, asset_name, inspected_on, status, notes, inspector, is_demo, upload_id, provenance_id)
+                values (:m, :a, :an, :d, :s, :n, :i, :demo, :u, :pid)
+                """
+            ),
+            {
+                "m": municipality_id,
+                "a": asset_id,
+                "an": asset_name,
+                "d": parse_date(_first(p, "fecha", "date")),
+                "s": _first(p, "estado", "status"),
+                "n": _first(p, "observaciones", "notas", "descripcion"),
+                "i": _first(p, "inspector", "responsable"),
+                "demo": is_demo,
+                "u": upload_id,
+                "pid": provenance_id,
+            },
+        )
+        count += 1
+    return count
+
+
+def _store_photo(conn, municipality_id, upload_id, provenance_id, path, data, caption, asset_id, is_demo) -> int:
+    content_type = next((ct for signature, ct in IMAGE_SIGNATURES.items() if data.startswith(signature)), None)
+    if content_type == "image/webp" and data[8:12] != b"WEBP":
+        content_type = None
+    if not content_type:
+        raise UploadError("El archivo no es una imagen JPEG, PNG o WebP válida")
+    if asset_id is not None and not scalar(conn, "select 1 from municipal_asset where id = :a and municipality_id = :m", a=asset_id, m=municipality_id):
+        raise UploadError("El activo indicado no existe en esta comuna")
+    conn.execute(
+        text(
+            """
+            insert into photo (municipality_id, asset_id, caption, content_type, stored_path, is_demo, upload_id, provenance_id)
+            values (:m, :a, :c, :ct, :p, :demo, :u, :pid)
+            """
+        ),
+        {"m": municipality_id, "a": asset_id, "c": caption, "ct": content_type, "p": path, "demo": is_demo, "u": upload_id, "pid": provenance_id},
+    )
+    return 1
 
 
 def _store_raster(conn, municipality_id, upload_id, provenance_id, path, filename, data, title, is_demo) -> int:
