@@ -3,7 +3,7 @@ from typing import Any
 
 from sqlalchemy import Connection
 
-from app.ai.tools import active_alerts
+from app.alerts import active_alerts
 from app.db import row, rows, scalar
 
 WILDFIRE_CLASS = {1: "Muy baja", 2: "Baja", 3: "Media", 4: "Alta", 5: "Muy alta"}

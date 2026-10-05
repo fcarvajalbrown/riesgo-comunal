@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field, HttpUrl
 from sqlalchemy import Connection, text
 
 from app.ai.assistant import answer
-from app.ai.tools import ALERT_FEED_NOTE, active_alerts
+from app.alerts import ALERT_FEED_NOTE, active_alerts
 from app.api.layers import LAYERS, layer_catalog, layer_geojson, provenance_detail, search_places
 from app.auth import Principal, audit, current_principal, issue_token, require, verify_password
 from app.db import get_conn, row, rows, scalar

@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy import Connection
 
-from app.ai.tools import ALERT_FEED_NOTE, active_alerts
+from app.alerts import ALERT_FEED_NOTE, active_alerts
 from app.db import rows
 from app.hazards.base import DATA_CLASS_LABEL, DERIVED_NOTICE, LEVEL_LABEL, LEVEL_RANK
 from app.risk import assess_comuna, assess_sectors
