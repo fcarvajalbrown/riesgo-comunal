@@ -10,6 +10,7 @@ import { DATA_CLASS_STYLE, LEVEL_STYLE, formatShortTime } from "@/lib/format";
 import type { LayerInfo, Me } from "@/lib/types";
 
 const BASEMAP = "https://tiles.openfreemap.org/styles/positron";
+maplibregl.setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
 const POINT_COLORS: Record<string, string> = {
   school: "#2563eb",
