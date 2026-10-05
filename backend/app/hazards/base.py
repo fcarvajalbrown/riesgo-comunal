@@ -23,6 +23,8 @@ DATA_CLASS_LABEL = {
     "historical": "Histórico",
     "municipal": "Municipal",
     "derived": "Cálculo de la plataforma",
+    "estimated": "Estimado",
+    "modelled": "Modelado",
 }
 DERIVED_NOTICE = (
     "Nivel calculado por esta plataforma con reglas publicadas y configurables. "

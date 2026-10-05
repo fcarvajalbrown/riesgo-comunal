@@ -18,4 +18,4 @@
 
 ## Tests
 
-Backend 70 passed (pytest), frontend 5 passed (`node --test`), typecheck clean.
+Backend 71 passed (pytest), frontend 5 passed (`node --test`), typecheck clean.

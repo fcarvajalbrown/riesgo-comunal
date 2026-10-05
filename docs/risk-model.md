@@ -30,6 +30,10 @@ Colour is never the only carrier: each level also has its text label.
 | `historical` | Histórico | USGS earthquakes, municipal past incidents |
 | `municipal` | Municipal | uploaded assets, flood points |
 | `derived` | Cálculo de la plataforma | every level produced by this engine |
+| `estimated` | Estimado | a value inferred from incomplete data (for example interpolated between stations); no source in the MVP is classified this way |
+| `modelled` | Modelado | numerical model output that is not a forecast issued by the authority (for example raw WRF fields); no source in the MVP is classified this way |
+
+An adapter only assigns `estimated` or `modelled` when the source's own documentation says the data is an estimate or model output. Official hazard maps keep `official` even when the authority built them from models, because the authority publishes them as its official product.
 
 ## Hazard rules in the MVP
 

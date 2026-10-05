@@ -26,6 +26,8 @@ export const DATA_CLASS_STYLE: Record<DataClass, { label: string; className: str
   historical: { label: "Histórico", className: "bg-amber-50 text-amber-800 border-amber-200" },
   municipal: { label: "Municipal", className: "bg-teal-50 text-teal-800 border-teal-200" },
   derived: { label: "Cálculo de la plataforma", className: "bg-slate-100 text-slate-700 border-slate-300" },
+  estimated: { label: "Estimado", className: "bg-orange-50 text-orange-800 border-orange-200" },
+  modelled: { label: "Modelado", className: "bg-indigo-50 text-indigo-800 border-indigo-200" },
 };
 
 const chile = new Intl.DateTimeFormat("es-CL", {

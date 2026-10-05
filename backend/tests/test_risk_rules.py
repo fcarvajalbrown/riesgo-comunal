@@ -122,3 +122,17 @@ def test_threshold_overrides_only_known_keys_and_coerce_types():
     merged = module.thresholds({"high_share_alto": "0.25", "unknown": 1})
     assert merged["high_share_alto"] == 0.25
     assert "unknown" not in merged
+
+
+def test_every_data_class_has_a_spanish_label():
+    import importlib.util
+    from pathlib import Path
+
+    from app.hazards.base import DATA_CLASS_LABEL
+
+    path = Path(__file__).parents[1] / "alembic" / "versions" / "0002_estimated_modelled_classes.py"
+    spec = importlib.util.spec_from_file_location("m0002", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    classes = {c.strip("'") for c in module.EXTENDED.split(",")}
+    assert classes == set(DATA_CLASS_LABEL)

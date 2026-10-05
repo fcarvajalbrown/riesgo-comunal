@@ -1,5 +1,5 @@
 export type Level = "SIN_DATOS" | "INFORMATIVO" | "BAJO" | "MODERADO" | "ALTO" | "CRITICO";
-export type DataClass = "official" | "observed" | "forecast" | "official_warning" | "historical" | "municipal" | "derived";
+export type DataClass = "official" | "observed" | "forecast" | "official_warning" | "historical" | "municipal" | "derived" | "estimated" | "modelled";
 
 export interface Evidence {
   label: string;
