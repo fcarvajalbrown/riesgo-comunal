@@ -184,7 +184,7 @@ export function MapView({
       style: BASEMAP,
       center: [me.municipality.lon, me.municipality.lat],
       zoom: 11.5,
-      attributionControl: { compact: true, customAttribution: "OpenFreeMap © OpenMapTiles Data from OpenStreetMap" },
+      attributionControl: { compact: true },
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
@@ -271,7 +271,7 @@ export function MapView({
 
   return (
     <div className="relative h-full min-h-[420px] w-full overflow-hidden rounded-2xl border border-border bg-slate-100">
-      <div ref={container} className="absolute inset-0" />
+      <div ref={container} style={{ position: "absolute", inset: 0 }} />
       {mapError && <div className="absolute inset-x-3 top-3 rounded-lg bg-amber-50 p-2 text-sm text-amber-900 shadow">{mapError}</div>}
       <div className="absolute left-3 top-3 w-64 max-w-[calc(100%-5rem)]">
         <input
