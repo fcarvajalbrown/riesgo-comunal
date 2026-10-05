@@ -305,6 +305,10 @@ def post_process(conn: Connection, source_key: str, dataset: str) -> None:
     )
 
 
+def mark_all_sources_due(conn: Connection) -> None:
+    conn.execute(text("update source set last_attempt_at = null"))
+
+
 def due_sources(now: datetime | None = None) -> list[str]:
     now = now or datetime.now(UTC)
     with transaction() as conn:

@@ -6,7 +6,7 @@ import sys
 
 from app.auth import ROLES, hash_password
 from app.db import scalar, transaction
-from app.ingest.runner import run_source
+from app.ingest.runner import mark_all_sources_due, run_source
 from app.sources.registry import ADAPTERS
 from app.sources.senapred import LAYERS, SenapredAdapter
 from app.tenants import create_municipality, refresh_analysis_cells
@@ -38,6 +38,7 @@ def cmd_create_tenant(args) -> None:
     with transaction() as conn:
         municipality_id = create_municipality(conn, args.cut, args.slug, args.name)
         cells = refresh_analysis_cells(conn, municipality_id)
+        mark_all_sources_due(conn)
     print(json.dumps({"municipality_id": municipality_id, "analysis_cells": cells}))
 
 

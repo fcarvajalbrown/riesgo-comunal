@@ -178,3 +178,21 @@ def test_manual_alert_requires_source_url(env):
         json={"issuer": "SENAPRED", "hazard": "tsunami", "level": "Roja", "title": "Prueba", "source_url": "no-es-url", "starts_at": "2026-10-05T10:00:00Z"},
     )
     assert response.status_code == 422
+
+
+def test_new_tenant_makes_every_source_due(env):
+    from app.ingest.runner import due_sources, mark_all_sources_due
+
+    with transaction() as conn:
+        saved = conn.execute(text("select key, last_attempt_at from source")).all()
+        conn.execute(text("update source set last_attempt_at = now()"))
+    try:
+        assert due_sources() == []
+        with transaction() as conn:
+            mark_all_sources_due(conn)
+            enabled = {r[0] for r in conn.execute(text("select key from source where enabled"))}
+        assert set(due_sources()) == enabled
+    finally:
+        with transaction() as conn:
+            for key, last in saved:
+                conn.execute(text("update source set last_attempt_at = :t where key = :k"), {"t": last, "k": key})
