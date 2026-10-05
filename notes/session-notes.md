@@ -8,5 +8,5 @@ MVP complete (ROADMAP Phase 1 Done). Runs natively (dev DB on port 5440 via `too
 
 - Blocked on external parties: DMC credential, SENAPRED alert feed, licence confirmations, CSN approval (see ROADMAP open items).
 - Ubuntu-22.04 WSL VHDX holds about 6.6 GB of freed space; left as is by choice. Docker Engine stays installed there for future compose checks.
-- No git remote configured; commits are local only.
+- Remote: private GitHub repo fcarvajalbrown/riesgo-comunal, branch main.
 - No ADRs written yet; stack decisions live in `docs/architecture.md`.
