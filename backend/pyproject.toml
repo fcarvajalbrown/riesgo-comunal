@@ -13,8 +13,10 @@ dependencies = [
     "psycopg[binary]>=3.3.6",
     "pydantic-settings>=2.15.0",
     "pyjwt>=2.15.1",
+    "pyogrio>=0.13.0",
     "pypdf>=6.19.0",
     "python-multipart>=0.0.32",
+    "rasterio>=1.5.2",
     "sqlalchemy>=2",
     "uvicorn[standard]>=0.54.0",
 ]
