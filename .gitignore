@@ -9,3 +9,5 @@ out/
 data/uploads/
 *.log
 backend/data/
+
+.claude/settings.local.json
