@@ -11,6 +11,33 @@ Phase-based. Scope and the reasoning behind the stack are in `docs/mvp.md` and `
 | Licence confirmation for SENAPRED, IDE Chile (MINEDUC, MINSAL), SINCA (MMA), DGA layers | Blocked | Written answer from each data owner, then review by a qualified lawyer (`docs/data-licensing.md`) |
 | CSN earthquake catalogue | Blocked | Written approval from CSN for non-academic use; USGS is used meanwhile |
 
+## Full-spec gap list
+
+The MVP list of the original specification is complete. These items from the rest of that specification are not built yet. Each one moves to Done here when it is built, tested and documented.
+
+| # | Area | Gap | Status | Blocker |
+|---|---|---|---|---|
+| G1 | Research | Sources not yet researched: CONAF, MINVU, Dirección de Obras Hidráulicas, Ministerio de Transportes, datos.gob.cl, regional government datasets, municipal open-data portals, NOAA | Not Started | |
+| G2 | Research | Per-source fields missing from `docs/data-sources.md`: WMS/WFS/WMTS availability, rate limits, geographic resolution, reliability, known limitations as separate columns | Not Started | |
+| G3 | Exposure | Population exposed per hazard zone and sector (INE census) | Not Started | |
+| G4 | Exposure | Roads and bridges exposed (OpenStreetMap) | Not Started | |
+| G5 | Hazards | Volcanic module (SENAPRED layer, SERNAGEOMIN alert levels) | Not Started | |
+| G6 | Hazards | Landslide / remoción en masa module | Not Started | Official source to be found |
+| G7 | Hazards | Coastal surge / marejadas module | Not Started | Official machine-readable source to be found |
+| G8 | Hazards | Drought module (DGA water-scarcity decrees) | Not Started | |
+| G9 | Hazards | Rain, wind, heat, frost, snow, hail from DMC observations, forecasts and warnings | Blocked | DMC credential |
+| G10 | Hazards | Wildfire activity and smoke (NASA FIRMS hotspots, CONAF if available) | Blocked | FIRMS MAP_KEY (free registration) |
+| G11 | Hazards | River conditions (DGA levels and flows) | Not Started | Only web pages verified so far |
+| G12 | Statistics | Incidents by sector, seasonality, recurrence, affected area | Not Started | |
+| G13 | Reports | Maps inside PDF reports; historical comparisons | Not Started | |
+| G14 | Residents | Public portal page: what is happening, am I near an affected area, official links | Not Started | |
+| G15 | Map | Address search, comparing two hazards side by side | Not Started | |
+| G16 | Municipal data | Shapefile, GeoPackage, GeoTIFF, photos; emergency contacts, personnel, inspection records | Not Started | Needs a GDAL-based dependency (approval) |
+| G17 | Customisation | Logo, terminology overrides, emergency contacts in the UI | Not Started | |
+| G18 | Assistant | Report generation on request; hazard and housing overlap question | Not Started | G3 for housing |
+| G19 | Security | Row-level security, encrypted secrets at rest, structured logging, monitoring of ingestion failures | Not Started | |
+| G20 | Testing | Frontend unit tests (Vitest) and end-to-end tests (Playwright) | Not Started | New dependencies (approval) |
+
 ## Phase 1: MVP (pilot comuna Lota, CUT 08106)
 
 Status: **Done**
