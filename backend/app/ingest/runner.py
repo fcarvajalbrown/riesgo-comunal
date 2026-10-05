@@ -9,6 +9,7 @@ from sqlalchemy import Connection, text
 from app.config import get_settings
 from app.db import rows, scalar, transaction
 from app.sources.base import (
+    AlertRecord,
     Batch,
     EventRecord,
     FeatureRecord,
@@ -239,6 +240,58 @@ def store_record(conn: Connection, source_key: str, dataset: str, record, proven
                 "pid": provenance_id,
             },
         )
+
+    elif isinstance(record, AlertRecord):
+        store_alert(conn, source_key, record, provenance_id)
+
+
+def store_alert(conn: Connection, source_key: str, record: AlertRecord, provenance_id: int) -> None:
+    sent = record.properties.get("sent") or record.starts_at
+    if record.supersedes:
+        conn.execute(
+            text(
+                """
+                update alert set ends_at = least(coalesce(ends_at, cast(:sent as timestamptz)), cast(:sent as timestamptz))
+                where source_key = :s and external_id = any(:refs)
+                """
+            ),
+            {"s": source_key, "refs": list(record.supersedes), "sent": sent},
+        )
+    conn.execute(
+        text(
+            """
+            insert into alert (source_key, external_id, issuer, hazard, level, title, description, source_url,
+                               starts_at, ends_at, area, data_class, properties, provenance_id)
+            values (:s, :e, :i, :h, :l, :t, :d, :u, :st,
+                    case when :cancelled then cast(:sent as timestamptz) else cast(:en as timestamptz) end,
+                    case when cast(:g as text) is null then null
+                         else st_multi(st_collectionextract(st_makevalid(st_setsrid(st_geomfromgeojson(:g), 4326)), 3)) end,
+                    'official_warning', cast(:p as jsonb), :pid)
+            on conflict (source_key, external_id) where external_id is not null do update set
+                hazard = excluded.hazard, level = excluded.level, title = excluded.title, description = excluded.description,
+                source_url = excluded.source_url, starts_at = excluded.starts_at,
+                ends_at = case when alert.ends_at is not null and alert.ends_at < excluded.ends_at then alert.ends_at else excluded.ends_at end,
+                area = excluded.area, properties = excluded.properties, provenance_id = excluded.provenance_id
+            """
+        ),
+        {
+            "s": source_key,
+            "e": record.external_id,
+            "i": record.issuer,
+            "h": record.hazard,
+            "l": record.level,
+            "t": record.title,
+            "d": record.description,
+            "u": record.source_url,
+            "st": record.starts_at,
+            "en": record.ends_at,
+            "cancelled": record.cancelled,
+            "sent": sent,
+            "g": json.dumps(record.area) if record.area else None,
+            "p": json.dumps(record.properties, ensure_ascii=False, default=str),
+            "pid": provenance_id,
+        },
+    )
 
 
 def remove_stale_features(conn: Connection, source_key: str, batch: Batch, provenance_id: int, scope: IngestScope) -> None:

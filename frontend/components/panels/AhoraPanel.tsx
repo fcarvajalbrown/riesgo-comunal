@@ -2,11 +2,19 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { AssessmentCard } from "@/components/AssessmentCard";
-import { LevelBadge } from "@/components/Badges";
+import { DataClassBadge, LevelBadge } from "@/components/Badges";
 import type { MapFocus } from "@/components/MapView";
+import { ProvenanceButton } from "@/components/Provenance";
 import { apiGet } from "@/lib/api";
 import { formatTime } from "@/lib/format";
 import type { AhoraResponse } from "@/lib/types";
+
+const WARNING_TONE: Record<string, string> = {
+  Alarma: "border-red-300 bg-red-50 text-red-950",
+  Alerta: "border-orange-300 bg-orange-50 text-orange-950",
+  Aviso: "border-yellow-300 bg-yellow-50 text-yellow-950",
+  default: "border-red-200 bg-red-50 text-red-950",
+};
 
 export function AhoraPanel({ onFocus, compact }: { onFocus: (f: MapFocus) => void; compact?: boolean }) {
   const { data, isLoading, error } = useQuery({ queryKey: ["ahora"], queryFn: () => apiGet<AhoraResponse>("/ahora"), refetchInterval: 300_000 });
@@ -24,33 +32,46 @@ export function AhoraPanel({ onFocus, compact }: { onFocus: (f: MapFocus) => voi
       </section>
 
       <section className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
-        <h3 className="text-base font-semibold">Alertas oficiales</h3>
+        <h3 className="text-base font-semibold">Avisos y alertas oficiales</h3>
         {data.alerts.length === 0 ? (
-          <p className="mt-1 text-sm">
-            No hay alertas oficiales ingresadas.{" "}
-            <span className="text-muted">
-              {data.alert_feed_note} Que no haya alerta registrada no significa que no haya peligro.
-            </span>{" "}
-            <a className="font-medium text-brand underline" href="https://senapred.cl/alertas" target="_blank" rel="noreferrer">
-              Ver alertas en senapred.cl
-            </a>
-          </p>
+          <p className="mt-1 text-sm">No hay avisos ni alertas oficiales vigentes para la comuna en la plataforma.</p>
         ) : (
           <ul className="mt-2 space-y-2">
-            {data.alerts.map((a) => (
-              <li key={a.id} className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm">
-                <p className="font-semibold text-red-900">{a.title}</p>
-                <p className="text-red-900">
-                  {a.issuer} · {a.level} · desde {formatTime(a.starts_at)}
-                </p>
-                {a.description && <p className="mt-1">{a.description}</p>}
-                <a href={a.source_url} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs font-medium text-brand underline">
-                  Fuente oficial
-                </a>
-              </li>
-            ))}
+            {data.alerts.map((a) => {
+              const started = new Date(a.starts_at).getTime() <= Date.now();
+              const tone = WARNING_TONE[a.level] ?? WARNING_TONE.default;
+              return (
+                <li key={a.id} className={`rounded-xl border p-3 text-sm ${tone}`}>
+                  <p className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full border border-current px-2 py-0.5 text-xs font-semibold">{a.level}</span>
+                    <span className="text-xs font-medium">{started ? "Vigente" : "Próximo"}</span>
+                    <DataClassBadge dataClass="official_warning" />
+                  </p>
+                  <p className="mt-1 font-semibold">{a.title}</p>
+                  <p className="text-xs">
+                    {a.issuer} · {started ? "desde" : "comienza"} {formatTime(a.starts_at)}
+                    {a.ends_at ? ` · hasta ${formatTime(a.ends_at)}` : ""}
+                  </p>
+                  <p className="text-xs text-muted">
+                    {a.automatic ? "Recibido automáticamente desde el canal oficial CAP del emisor." : "Ingresado por el municipio con su enlace oficial."}
+                  </p>
+                  <span className="mt-1 flex flex-wrap gap-3 text-xs">
+                    <a href={a.source_url} target="_blank" rel="noreferrer" className="font-medium text-brand underline">
+                      Boletín oficial
+                    </a>
+                    {a.provenance_id ? <ProvenanceButton id={a.provenance_id} /> : null}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         )}
+        <p className="mt-2 text-xs text-muted">
+          {data.alert_feed_note} Que no haya alerta registrada no significa que no haya peligro.{" "}
+          <a className="font-medium text-brand underline" href="https://senapred.cl/alertas" target="_blank" rel="noreferrer">
+            Ver alertas en senapred.cl
+          </a>
+        </p>
       </section>
 
       {data.exposure_summary.length > 0 && (

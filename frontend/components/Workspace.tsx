@@ -38,7 +38,7 @@ const ROLE_TABS: Record<string, Tab[]> = {
 };
 
 const MAP_LAYERS: Partial<Record<Tab, string[]>> = {
-  ahora: ["comuna", "aq_station", "earthquake", "school", "health_facility"],
+  ahora: ["comuna", "dmc_warning", "aq_station", "earthquake", "school", "health_facility"],
   riesgo: ["comuna", "sectors", "school", "health_facility"],
   planificar: ["comuna", "wildfire_hazard", "tsunami_evacuation_area", "municipal_incident"],
 };

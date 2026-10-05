@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy import Connection
 
-from app.ai.tools import active_alerts
+from app.ai.tools import ALERT_FEED_NOTE, active_alerts
 from app.db import rows
 from app.hazards.base import DATA_CLASS_LABEL, DERIVED_NOTICE, LEVEL_LABEL, LEVEL_RANK
 from app.risk import assess_comuna, assess_sectors
@@ -69,12 +69,12 @@ def _alert_items(alerts: list[dict]) -> list[dict]:
     if not alerts:
         return [
             _item(
-                "No hay alertas oficiales ingresadas en la plataforma. La plataforma no recibe automáticamente las alertas de SENAPRED; consulte senapred.cl/alertas. Que no haya alerta registrada no significa que no haya peligro.",
+                "No hay alertas oficiales vigentes para la comuna en la plataforma. " + ALERT_FEED_NOTE + " Que no haya alerta registrada no significa que no haya peligro.",
                 None,
                 None,
             )
         ]
-    return [_item(f"{a['title']} ({a['issuer']}, nivel {a['level']}). Enlace oficial: {a['source_url']}", "official_warning", a["issuer"], a["starts_at"]) for a in alerts]
+    return [_item(f"{a['title']} ({a['issuer']}, {a['level']}, hasta {_local(a['ends_at']) if a['ends_at'] else 'sin término indicado'}). Enlace oficial: {a['source_url']}", "official_warning", a["issuer"], a["starts_at"]) for a in alerts]
 
 
 def _top_sectors(sectors: list[dict], limit: int) -> list[dict]:

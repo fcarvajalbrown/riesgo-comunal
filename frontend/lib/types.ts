@@ -63,6 +63,10 @@ export interface Alert {
   ends_at: string | null;
   created_at: string;
   entered_by_name?: string;
+  automatic?: boolean;
+  source_key?: string | null;
+  provenance_id?: number | null;
+  properties?: { event?: string; zones?: string[]; severity?: string } | null;
 }
 
 export interface ComunaAssessment {

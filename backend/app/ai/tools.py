@@ -26,15 +26,27 @@ def _sources_from_assessments(assessments: list[dict]) -> list[dict]:
     return result
 
 
+ALERT_FEED_NOTE = (
+    "Los avisos, alertas y alarmas meteorológicas de la Dirección Meteorológica de Chile se reciben automáticamente desde su canal oficial CAP. "
+    "Las alertas de SENAPRED (temprana preventiva, amarilla, roja) no cuentan con un servicio público oficial: se muestran las ingresadas por el municipio con su enlace oficial. "
+    "Revise senapred.cl/alertas."
+)
+
+
 def active_alerts(conn: Connection, municipality_id: int, now: datetime | None = None) -> list[dict[str, Any]]:
     now = now or datetime.now(UTC)
     return rows(
         conn,
         """
-        select id, issuer, hazard, level, title, description, source_url, starts_at, ends_at, data_class, created_at
-        from alert
-        where (municipality_id = :m or municipality_id is null) and starts_at <= :now and (ends_at is null or ends_at > :now)
-        order by starts_at desc
+        select a.id, a.issuer, a.hazard, a.level, a.title, a.description, a.source_url, a.starts_at, a.ends_at,
+               a.data_class, a.created_at, a.source_key, a.properties, a.provenance_id,
+               a.source_key is not null as automatic
+        from alert a, municipality m
+        where m.id = :m
+          and (a.municipality_id = m.id or (a.municipality_id is null and (a.area is null and a.source_key is null or st_intersects(a.area, m.boundary))))
+          and (a.ends_at is null or a.ends_at > :now)
+          and (a.source_key is null and a.starts_at <= :now or a.source_key is not null)
+        order by case a.level when 'Alarma' then 0 when 'Alerta' then 1 else 2 end, a.starts_at desc
         """,
         m=municipality_id,
         now=now,
@@ -46,12 +58,19 @@ def tool_situacion_actual(conn: Connection, municipality_id: int, **_) -> dict[s
     result = assess_comuna(conn, municipality_id, mode="ahora", now=now)
     alerts = active_alerts(conn, municipality_id, now)
     sources = _sources_from_assessments(result["assessments"])
-    sources += [_source(f"{a['issuer']} (alerta ingresada con enlace {a['source_url']})", a["created_at"], "official_warning") for a in alerts]
+    sources += [
+        _source(
+            f"{a['issuer']} ({'canal oficial CAP' if a['automatic'] else 'alerta ingresada por el municipio'}, {a['source_url']})",
+            a["starts_at"],
+            "official_warning",
+        )
+        for a in alerts
+    ]
     return {
         "data": {
             "assessments": result["assessments"],
             "alerts": alerts,
-            "alert_feed_note": "La plataforma no recibe automáticamente las alertas de SENAPRED: no existe un servicio público autorizado. Sólo se muestran alertas ingresadas por el municipio con su enlace oficial.",
+            "alert_feed_note": ALERT_FEED_NOTE,
             "computed_at": now,
         },
         "sources": sources,

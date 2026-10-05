@@ -70,3 +70,18 @@ def classify_rain(rain_24h_mm: float | None, t: dict) -> RuleResult:
     if rain_24h_mm >= t["rain_24h_moderado"]:
         return RuleResult("MODERADO", f"{rain_24h_mm:.1f} mm en 24 h (umbral provisional {t['rain_24h_moderado']:.0f} mm).")
     return RuleResult("BAJO", f"{rain_24h_mm:.1f} mm en 24 h, bajo el umbral provisional de {t['rain_24h_moderado']:.0f} mm.")
+
+
+DMC_WARNING_LEVEL = {"Aviso": "MODERADO", "Alerta": "ALTO", "Alarma": "CRITICO"}
+
+
+def classify_dmc_warnings(warnings: list[tuple[str, bool]]) -> RuleResult:
+    in_force = [level for level, started in warnings if started and level in DMC_WARNING_LEVEL]
+    upcoming = [level for level, started in warnings if not started and level in DMC_WARNING_LEVEL]
+    if in_force:
+        rank = ("Aviso", "Alerta", "Alarma")
+        top = max(in_force, key=rank.index)
+        return RuleResult(DMC_WARNING_LEVEL[top], f"{top} meteorológica de la Dirección Meteorológica de Chile vigente para la comuna.")
+    if upcoming:
+        return RuleResult("INFORMATIVO", f"{len(upcoming)} boletín(es) de la Dirección Meteorológica de Chile con inicio próximo para la comuna.")
+    return RuleResult("BAJO", "No hay avisos, alertas ni alarmas meteorológicas de la Dirección Meteorológica de Chile vigentes para la comuna.")

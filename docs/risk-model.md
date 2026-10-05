@@ -80,9 +80,11 @@ Thresholds in `default_thresholds` can be changed per comuna by a municipal admi
   - no municipal flood data uploaded → `SIN_DATOS` with the message "No hay registros municipales de inundación cargados".
 - Labelled `historical` + `municipal` evidence, `derived` level.
 
-### Lluvia intensa y viento (rain, wind) (module `meteo`)
+### Condiciones meteorológicas (module `meteo`)
 
-- Requires DMC observations and forecasts. Until the DMC credential is configured, the module reports `SIN_DATOS` with the reason. Once configured: rain in the last 24 h at the nearest station above `rain_24h_moderado` / `rain_24h_alto` (defaults 30 / 60 mm) drives the level. These defaults are **placeholders chosen for the MVP, not official thresholds**, and the UI says so until a municipality sets its own.
+- **Official warnings**: DMC avisos, alertas and alarmas from the CAP feed whose geometry intersects the comuna. A bulletin in force sets the platform level by a fixed equivalence: Aviso = MODERADO, Alerta = ALTO, Alarma = CRITICO (`classify_dmc_warnings`). This equivalence is a platform rule for ordering the summary; the official status is the DMC bulletin itself, shown with its link. A bulletin whose onset is still in the future gives INFORMATIVO and is listed as "Próximo".
+- **Observed rain** (when the DMC credential is configured): rain in the last 24 h at the nearest station above `rain_24h_moderado` / `rain_24h_alto` (defaults 30 / 60 mm). These defaults are **placeholders chosen for the MVP, not official thresholds**, and the UI says so until a municipality sets its own.
+- The module level is the higher of the two.
 
 ## Comuna context (not a level)
 

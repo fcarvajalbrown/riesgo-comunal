@@ -25,6 +25,7 @@ const POINT_COLORS: Record<string, string> = {
 type FeatureCollectionLike = { type: "FeatureCollection"; features: unknown[] };
 
 const WILDFIRE_COLORS = ["#fde68a", "#fdba74", "#fb923c", "#ea580c", "#9a3412"];
+const WARNING_COLORS: Record<string, string> = { Alarma: "#b91c1c", Alerta: "#ea580c", Aviso: "#eab308" };
 
 export interface MapFocus {
   lon: number;
@@ -63,6 +64,22 @@ function addLayerStyle(map: MlMap, key: string) {
       },
       before,
     );
+    return;
+  }
+  if (key === "dmc_warning") {
+    map.addLayer(
+      {
+        id: "lyr-dmc_warning-fill",
+        type: "fill",
+        source,
+        paint: {
+          "fill-color": ["match", ["get", "level"], "Alarma", WARNING_COLORS.Alarma, "Alerta", WARNING_COLORS.Alerta, WARNING_COLORS.Aviso],
+          "fill-opacity": 0.22,
+        },
+      },
+      before,
+    );
+    map.addLayer({ id: "lyr-dmc_warning-line", type: "line", source, paint: { "line-color": "#a16207", "line-width": 1.5, "line-dasharray": [3, 2] } }, before);
     return;
   }
   if (key === "tsunami_evacuation_area") {
@@ -320,6 +337,16 @@ export function MapView({
                             {layer.legend.map((l) => (
                               <span key={l.value} className="inline-flex items-center gap-1 text-[11px]">
                                 <span className="h-2.5 w-2.5 rounded-sm" style={{ background: WILDFIRE_COLORS[Number(l.value) - 1] }} />
+                                {l.label}
+                              </span>
+                            ))}
+                          </span>
+                        )}
+                        {on && layer.key === "dmc_warning" && (
+                          <span className="mt-1 flex flex-wrap gap-1">
+                            {layer.legend.map((l) => (
+                              <span key={l.value} className="inline-flex items-center gap-1 text-[11px]">
+                                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: WARNING_COLORS[l.value] }} />
                                 {l.label}
                               </span>
                             ))}

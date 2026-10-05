@@ -69,7 +69,24 @@ class IndexRecord:
     components: dict[str, Any] = field(default_factory=dict)
 
 
-Record = FeatureRecord | ObservationRecord | EventRecord | IndexRecord
+@dataclass
+class AlertRecord:
+    external_id: str
+    issuer: str
+    hazard: str
+    level: str
+    title: str
+    source_url: str
+    starts_at: datetime
+    ends_at: datetime | None
+    area: dict[str, Any] | None
+    description: str | None = None
+    properties: dict[str, Any] = field(default_factory=dict)
+    supersedes: tuple[str, ...] = ()
+    cancelled: bool = False
+
+
+Record = FeatureRecord | ObservationRecord | EventRecord | IndexRecord | AlertRecord
 
 
 @dataclass

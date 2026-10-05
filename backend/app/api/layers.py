@@ -51,6 +51,16 @@ LAYERS: dict[str, LayerDef] = {
         LayerDef("tsunami_meeting_point", "Puntos de encuentro (tsunami)", "Puntos de encuentro ante tsunami (SENAPRED).", "official", "senapred", "tsunami_meeting_point", "point"),
         LayerDef("school", "Establecimientos educacionales", "Directorio MINEDUC vía IDE Chile.", "official", "ide_geoportal", "school", "point", default_on=True),
         LayerDef("health_facility", "Establecimientos de salud", "Establecimientos MINSAL vía IDE Chile.", "official", "ide_geoportal", "health_facility", "point", default_on=True),
+        LayerDef(
+            "dmc_warning",
+            "Avisos, alertas y alarmas DMC",
+            "Boletines meteorológicos oficiales vigentes o próximos que cubren la comuna (Dirección Meteorológica de Chile).",
+            "official_warning",
+            "dmc_cap",
+            "dmc_warning",
+            "polygon",
+            (("Alarma", "Alarma"), ("Alerta", "Alerta"), ("Aviso", "Aviso")),
+        ),
         LayerDef("aq_station", "Estaciones de calidad del aire", "Estaciones SINCA con último MP2,5 (no validado).", "observed", "sinca", "aq_station", "point"),
         LayerDef("dga_station", "Estaciones hidrométricas DGA", "Catálogo de la Red Hidrométrica Nacional.", "official", "dga_red_hidrometrica", "dga_station", "point"),
         LayerDef("earthquake", "Sismos últimos 30 días", "Sismos M2,5+ a menos de 300 km (USGS, complementario).", "observed", "usgs", "earthquake", "point"),
@@ -131,6 +141,21 @@ def layer_geojson(conn: Connection, municipality_id: int, key: str) -> dict[str,
                 where m.id = :mid and f.dataset = :d and st_intersects(f.geom, m.boundary)
                 """,
                 d=key,
+                **m,
+            )
+        )
+    if key == "dmc_warning":
+        return _collection(
+            rows(
+                conn,
+                """
+                select a.id as fid, a.level, a.title, a.properties->>'event' as event, a.starts_at, a.ends_at,
+                       a.source_url, a.provenance_id, st_asgeojson(st_intersection(a.area, m.boundary), 6) as geojson
+                from alert a, municipality m
+                where m.id = :mid and a.source_key = 'dmc_cap' and (a.ends_at is null or a.ends_at > now())
+                  and st_intersects(a.area, m.boundary)
+                order by case a.level when 'Aviso' then 0 when 'Alerta' then 1 else 2 end
+                """,
                 **m,
             )
         )

@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, HttpUrl
 from sqlalchemy import Connection, text
 
 from app.ai.assistant import answer
-from app.ai.tools import active_alerts
+from app.ai.tools import ALERT_FEED_NOTE, active_alerts
 from app.api.layers import LAYERS, layer_catalog, layer_geojson, provenance_detail, search_places
 from app.auth import Principal, audit, current_principal, issue_token, require, verify_password
 from app.db import get_conn, row, rows, scalar
@@ -80,10 +80,7 @@ def me(principal: Principal = Depends(current_principal), conn: Connection = Dep
 def ahora(principal: Principal = Depends(current_principal), conn: Connection = Depends(get_conn)) -> dict[str, Any]:
     result = assess_comuna(conn, principal.municipality_id, mode="ahora")
     result["alerts"] = active_alerts(conn, principal.municipality_id)
-    result["alert_feed_note"] = (
-        "La plataforma no recibe automáticamente las alertas de SENAPRED porque no existe un servicio público autorizado. "
-        "Se muestran sólo alertas ingresadas por el municipio con su enlace oficial. Revise senapred.cl/alertas."
-    )
+    result["alert_feed_note"] = ALERT_FEED_NOTE
     result["exposure_summary"] = _exposure_summary(conn, principal.municipality_id)
     return result
 

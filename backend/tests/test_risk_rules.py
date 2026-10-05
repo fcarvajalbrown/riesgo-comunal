@@ -136,3 +136,19 @@ def test_every_data_class_has_a_spanish_label():
     spec.loader.exec_module(module)
     classes = {c.strip("'") for c in module.EXTENDED.split(",")}
     assert classes == set(DATA_CLASS_LABEL)
+
+
+def test_dmc_warning_levels_follow_the_official_bulletin():
+    from app.hazards.rules import classify_dmc_warnings
+
+    assert classify_dmc_warnings([]).level == "BAJO"
+    assert classify_dmc_warnings([("Aviso", True)]).level == "MODERADO"
+    assert classify_dmc_warnings([("Aviso", True), ("Alerta", True)]).level == "ALTO"
+    assert classify_dmc_warnings([("Alarma", True), ("Aviso", True)]).level == "CRITICO"
+
+
+def test_upcoming_dmc_warning_is_informative_only():
+    from app.hazards.rules import classify_dmc_warnings
+
+    assert classify_dmc_warnings([("Alarma", False)]).level == "INFORMATIVO"
+    assert classify_dmc_warnings([("Alarma", False), ("Aviso", True)]).level == "MODERADO"

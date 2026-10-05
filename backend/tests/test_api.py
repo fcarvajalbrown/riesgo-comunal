@@ -1,3 +1,4 @@
+import json
 import secrets
 
 import pytest
@@ -143,10 +144,11 @@ def test_risk_levels_are_labelled_derived(env):
     assert "No es una evaluación ni una alerta oficial" in body["notice"]
 
 
-def test_ahora_states_missing_alert_feed(env):
+def test_ahora_states_which_alert_feeds_exist(env):
     client, tokens, *_ = env
-    body = client.get("/api/ahora", headers=tokens["lota_alcalde"]).json()
-    assert "no recibe automáticamente las alertas de SENAPRED" in body["alert_feed_note"]
+    note = client.get("/api/ahora", headers=tokens["lota_alcalde"]).json()["alert_feed_note"]
+    assert "Dirección Meteorológica de Chile se reciben automáticamente" in note
+    assert "SENAPRED" in note and "no cuentan con un servicio público oficial" in note
 
 
 def test_assistant_answers_with_sources_and_disclaimer(env):
@@ -196,3 +198,32 @@ def test_new_tenant_makes_every_source_due(env):
         with transaction() as conn:
             for key, last in saved:
                 conn.execute(text("update source set last_attempt_at = :t where key = :k"), {"t": last, "k": key})
+
+
+def test_automatic_warning_applies_only_where_its_polygon_reaches(env):
+    from app.ai.tools import active_alerts
+
+    def square(lon, lat):
+        return json.dumps({"type": "MultiPolygon", "coordinates": [[[[lon - 0.3, lat - 0.3], [lon + 0.3, lat - 0.3], [lon + 0.3, lat + 0.3], [lon - 0.3, lat + 0.3], [lon - 0.3, lat - 0.3]]]]})
+
+    _, _, lota, _ = env
+    with transaction() as conn:
+        for external_id, geometry in (("pytest-near", square(-73.15, -37.1)), ("pytest-far", square(-109.35, -27.11)), ("pytest-none", None)):
+            conn.execute(
+                text(
+                    """
+                    insert into alert (source_key, external_id, issuer, hazard, level, title, source_url, starts_at, ends_at, area)
+                    values ('dmc_cap', :e, 'DMC', 'wind', 'Aviso', :e, 'https://example.invalid', now() - interval '1 hour',
+                            now() + interval '1 day', case when cast(:g as text) is null then null else st_setsrid(st_geomfromgeojson(:g), 4326) end)
+                    """
+                ),
+                {"e": external_id, "g": geometry},
+            )
+    try:
+        with transaction() as conn:
+            titles = {a["title"] for a in active_alerts(conn, lota)}
+        assert "pytest-near" in titles
+        assert "pytest-far" not in titles and "pytest-none" not in titles
+    finally:
+        with transaction() as conn:
+            conn.execute(text("delete from alert where external_id like 'pytest-%'"))

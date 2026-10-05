@@ -102,3 +102,60 @@ def test_mann_kendall_no_trend_on_constant_series():
 
 def test_mann_kendall_no_trend_on_alternating_series():
     assert mann_kendall([1.0, 5.0] * 6).conclusion == "no_trend"
+
+
+CAP_ITEM = {"title": "Alerta AA1/2026: Viento fuerte", "link": "https://example.invalid/cap.xml", "category": "Alerta", "guid": "", "pub_date": ""}
+
+
+def _cap(msg_type="Alert", area="<polygon>-37.0,-73.2 -37.0,-73.0 -37.2,-73.0 -37.2,-73.2</polygon>", references=""):
+    return f"""<alert xmlns="urn:oasis:names:tc:emergency:cap:1.2">
+      <identifier>urn:oid:2.49.0.0.152.0.2026.1</identifier><sender>x</sender><sent>2026-10-05T12:00:00-03:00</sent>
+      <status>Actual</status><msgType>{msg_type}</msgType><scope>Public</scope>{references}
+      <info><category>Met</category><event>Viento Fuerte</event><urgency>Expected</urgency><severity>Moderate</severity>
+      <certainty>Likely</certainty><onset>2026-10-05T15:00:00-03:00</onset><expires>2026-10-06T23:59:59-03:00</expires>
+      <web>https://example.invalid/evento</web><area><areaDesc>Biobío: Litoral</areaDesc>{area}</area></info></alert>"""
+
+
+def test_cap_polygon_is_converted_to_lon_lat():
+    from app.sources.dmc_cap import parse_cap
+
+    record = parse_cap(_cap(), CAP_ITEM)
+    ring = record.area["coordinates"][0][0]
+    assert ring[0] == [-73.2, -37.0] and ring[0] == ring[-1]
+    assert record.level == "Alerta" and record.hazard == "wind"
+    assert record.source_url == "https://example.invalid/evento"
+    assert record.ends_at.isoformat() == "2026-10-06T23:59:59-03:00"
+
+
+def test_cap_circle_becomes_polygon_around_center():
+    from app.sources.dmc_cap import parse_cap
+
+    record = parse_cap(_cap(area="<circle>-27.11,-109.35 250</circle>"), CAP_ITEM)
+    ring = record.area["coordinates"][0][0]
+    lons = [p[0] for p in ring]
+    lats = [p[1] for p in ring]
+    assert min(lats) < -27.11 - 2.2 and max(lats) > -27.11 + 2.2
+    assert min(lons) < -109.35 and max(lons) > -109.35
+
+
+def test_cap_update_and_cancel_reference_earlier_messages():
+    from app.sources.dmc_cap import parse_cap
+
+    refs = "<references>x,urn:oid:old.1,2026-10-05T07:00:00-03:00 x,urn:oid:old.2,2026-10-05T08:00:00-03:00</references>"
+    update = parse_cap(_cap("Update", references=refs), CAP_ITEM)
+    assert update.supersedes == ("urn:oid:old.1", "urn:oid:old.2") and not update.cancelled
+    assert parse_cap(_cap("Cancel", references=refs), CAP_ITEM).cancelled
+
+
+def test_cap_exercise_messages_are_ignored():
+    from app.sources.dmc_cap import parse_cap
+
+    assert parse_cap(_cap().replace("<status>Actual</status>", "<status>Exercise</status>"), CAP_ITEM) is None
+
+
+def test_dmc_feed_items_are_read():
+    from app.sources.dmc_cap import parse_feed
+
+    feed = """<rss version="2.0"><channel><item><title>Aviso A1/2026: Viento</title>
+      <link>https://example.invalid/a.xml</link><category>Aviso</category></item></channel></rss>"""
+    assert parse_feed(feed) == [{"title": "Aviso A1/2026: Viento", "link": "https://example.invalid/a.xml", "category": "Aviso", "guid": "", "pub_date": ""}]

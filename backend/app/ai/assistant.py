@@ -114,9 +114,9 @@ def compose_deterministic(question: str, results: list[tuple[str, dict]], audien
             if tool == "situacion_actual":
                 if data["alerts"]:
                     for alert in data["alerts"]:
-                        lines.append(f"**Alerta oficial ingresada:** {alert['title']} ({alert['issuer']}, {alert['level']}). Enlace: {alert['source_url']}")
+                        lines.append(f"**{alert['level']} vigente ({alert['issuer']}):** {alert['title']}. Enlace oficial: {alert['source_url']}")
                 else:
-                    lines.append("No hay alertas oficiales ingresadas en la plataforma. " + data["alert_feed_note"] + " Revise senapred.cl/alertas.")
+                    lines.append("No hay alertas oficiales vigentes para la comuna en la plataforma. " + data["alert_feed_note"])
         elif tool == "sectores_prioritarios":
             if not data["sectors"]:
                 lines.append("Ningún sector tiene nivel calculado moderado o superior con los datos disponibles.")
