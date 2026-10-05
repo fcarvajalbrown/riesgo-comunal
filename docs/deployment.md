@@ -7,7 +7,7 @@
 | `db` | built from `pgvector/pgvector:0.8.7-pg17-bookworm` + `postgresql-17-postgis-3` | PostgreSQL, PostGIS, pgvector |
 | `bootstrap` | `backend/` | one-shot: migrations, tenant creation (downloads comuna boundaries), first admin, optional DEMO data |
 | `api` | `backend/` | FastAPI on port 8000 (internal) |
-| `worker` | `backend/` | APScheduler loop running due source adapters every minute |
+| `worker` | `backend/` | APScheduler loop running due source adapters every minute; includes headless Chromium (Playwright) for the SENAPRED alerts page |
 | `web` | `frontend/` | Next.js standalone server on port 3000 (internal) |
 | `caddy` | `caddy:2-alpine` | HTTPS, `/api/*` to `api`, everything else to `web` |
 | `ollama` | `ollama/ollama` | optional, profile `local-llm` |

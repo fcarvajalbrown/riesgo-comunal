@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     jwt_ttl_minutes: int = 720
     upload_dir: str = "data/uploads"
     geocoder_url: str = "https://nominatim.openstreetmap.org/search"
+    senapred_alerts_enabled: bool = True
     max_upload_mb: int = 25
     cors_origins: str = "http://localhost:3000"
 

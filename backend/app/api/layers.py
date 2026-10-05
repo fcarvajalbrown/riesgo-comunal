@@ -153,7 +153,7 @@ def layer_geojson(conn: Connection, municipality_id: int, key: str) -> dict[str,
                        a.source_url, a.provenance_id, st_asgeojson(st_intersection(a.area, m.boundary), 6) as geojson
                 from alert a, municipality m
                 where m.id = :mid and a.source_key = 'dmc_cap' and (a.ends_at is null or a.ends_at > now())
-                  and st_intersects(a.area, m.boundary)
+                  and st_relate(a.area, m.boundary, 'T********')
                 order by case a.level when 'Aviso' then 0 when 'Alerta' then 1 else 2 end
                 """,
                 **m,

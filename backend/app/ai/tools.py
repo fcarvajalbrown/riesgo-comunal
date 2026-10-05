@@ -26,10 +26,14 @@ def _sources_from_assessments(assessments: list[dict]) -> list[dict]:
     return result
 
 
+ALERT_ORIGIN = {
+    "dmc_cap": "canal oficial CAP de la DMC",
+    "senapred_alertas": "leída de la página pública senapred.cl/alertas",
+}
 ALERT_FEED_NOTE = (
     "Los avisos, alertas y alarmas meteorológicas de la Dirección Meteorológica de Chile se reciben automáticamente desde su canal oficial CAP. "
-    "Las alertas de SENAPRED (temprana preventiva, amarilla, roja) no cuentan con un servicio público oficial: se muestran las ingresadas por el municipio con su enlace oficial. "
-    "Revise senapred.cl/alertas."
+    "Las alertas de SENAPRED (temprana preventiva, amarilla, roja) se leen automáticamente cada 10 minutos desde la página pública senapred.cl/alertas, "
+    "que no es un servicio oficial de datos: confirme siempre en senapred.cl. El municipio también puede ingresar alertas con su enlace oficial."
 )
 
 
@@ -43,7 +47,7 @@ def active_alerts(conn: Connection, municipality_id: int, now: datetime | None =
                a.source_key is not null as automatic
         from alert a, municipality m
         where m.id = :m
-          and (a.municipality_id = m.id or (a.municipality_id is null and (a.area is null and a.source_key is null or st_intersects(a.area, m.boundary))))
+          and (a.municipality_id = m.id or (a.municipality_id is null and (a.area is null and a.source_key is null or st_relate(a.area, m.boundary, 'T********'))))
           and (a.ends_at is null or a.ends_at > :now)
           and (a.source_key is null and a.starts_at <= :now or a.source_key is not null)
         order by case a.level when 'Alarma' then 0 when 'Alerta' then 1 else 2 end, a.starts_at desc
@@ -60,7 +64,7 @@ def tool_situacion_actual(conn: Connection, municipality_id: int, **_) -> dict[s
     sources = _sources_from_assessments(result["assessments"])
     sources += [
         _source(
-            f"{a['issuer']} ({'canal oficial CAP' if a['automatic'] else 'alerta ingresada por el municipio'}, {a['source_url']})",
+            f"{a['issuer']} ({ALERT_ORIGIN.get(a['source_key'], 'alerta ingresada por el municipio')}, {a['source_url']})",
             a["starts_at"],
             "official_warning",
         )

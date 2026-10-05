@@ -148,7 +148,7 @@ def test_ahora_states_which_alert_feeds_exist(env):
     client, tokens, *_ = env
     note = client.get("/api/ahora", headers=tokens["lota_alcalde"]).json()["alert_feed_note"]
     assert "Dirección Meteorológica de Chile se reciben automáticamente" in note
-    assert "SENAPRED" in note and "no cuentan con un servicio público oficial" in note
+    assert "SENAPRED" in note and "no es un servicio oficial de datos" in note
 
 
 def test_assistant_answers_with_sources_and_disclaimer(env):

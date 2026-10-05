@@ -9,10 +9,18 @@ import { apiGet } from "@/lib/api";
 import { formatTime } from "@/lib/format";
 import type { AhoraResponse } from "@/lib/types";
 
+const ALERT_ORIGIN: Record<string, string> = {
+  dmc_cap: "Recibido automáticamente desde el canal oficial CAP de la Dirección Meteorológica de Chile.",
+  senapred_alertas: "Leído automáticamente de la página pública senapred.cl/alertas. Confirme en senapred.cl.",
+};
+
 const WARNING_TONE: Record<string, string> = {
   Alarma: "border-red-300 bg-red-50 text-red-950",
   Alerta: "border-orange-300 bg-orange-50 text-orange-950",
   Aviso: "border-yellow-300 bg-yellow-50 text-yellow-950",
+  "Alerta Roja": "border-red-300 bg-red-50 text-red-950",
+  "Alerta Amarilla": "border-yellow-400 bg-yellow-50 text-yellow-950",
+  "Alerta Temprana Preventiva": "border-green-300 bg-green-50 text-green-950",
   default: "border-red-200 bg-red-50 text-red-950",
 };
 
@@ -53,7 +61,7 @@ export function AhoraPanel({ onFocus, compact }: { onFocus: (f: MapFocus) => voi
                     {a.ends_at ? ` · hasta ${formatTime(a.ends_at)}` : ""}
                   </p>
                   <p className="text-xs text-muted">
-                    {a.automatic ? "Recibido automáticamente desde el canal oficial CAP del emisor." : "Ingresado por el municipio con su enlace oficial."}
+                    {ALERT_ORIGIN[a.source_key ?? ""] ?? "Ingresado por el municipio con su enlace oficial."}
                   </p>
                   <span className="mt-1 flex flex-wrap gap-3 text-xs">
                     <a href={a.source_url} target="_blank" rel="noreferrer" className="font-medium text-brand underline">

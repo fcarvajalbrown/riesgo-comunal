@@ -84,6 +84,7 @@ class AlertRecord:
     properties: dict[str, Any] = field(default_factory=dict)
     supersedes: tuple[str, ...] = ()
     cancelled: bool = False
+    area_cut_codes: tuple[str, ...] = ()
 
 
 Record = FeatureRecord | ObservationRecord | EventRecord | IndexRecord | AlertRecord

@@ -264,8 +264,12 @@ def store_alert(conn: Connection, source_key: str, record: AlertRecord, provenan
                                starts_at, ends_at, area, data_class, properties, provenance_id)
             values (:s, :e, :i, :h, :l, :t, :d, :u, :st,
                     case when :cancelled then cast(:sent as timestamptz) else cast(:en as timestamptz) end,
-                    case when cast(:g as text) is null then null
-                         else st_multi(st_collectionextract(st_makevalid(st_setsrid(st_geomfromgeojson(:g), 4326)), 3)) end,
+                    case when cast(:g as text) is not null
+                         then st_multi(st_collectionextract(st_makevalid(st_setsrid(st_geomfromgeojson(:g), 4326)), 3))
+                         when cardinality(cast(:codes as text[])) > 0
+                         then (select st_multi(st_collectionextract(st_makevalid(st_union(geom)), 3)) from feature
+                               where dataset = 'comuna_boundary' and external_id = any(cast(:codes as text[])))
+                    end,
                     'official_warning', cast(:p as jsonb), :pid)
             on conflict (source_key, external_id) where external_id is not null do update set
                 hazard = excluded.hazard, level = excluded.level, title = excluded.title, description = excluded.description,
@@ -288,6 +292,7 @@ def store_alert(conn: Connection, source_key: str, record: AlertRecord, provenan
             "cancelled": record.cancelled,
             "sent": sent,
             "g": json.dumps(record.area) if record.area else None,
+            "codes": list(record.area_cut_codes),
             "p": json.dumps(record.properties, ensure_ascii=False, default=str),
             "pid": provenance_id,
         },

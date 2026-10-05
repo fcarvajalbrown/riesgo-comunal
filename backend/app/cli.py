@@ -99,6 +99,18 @@ def cmd_bootstrap(_args) -> None:
         cmd_seed_demo(argparse.Namespace(tenant=slug))
 
 
+def cmd_senapred_alerts(args) -> None:
+    from app.sources.senapred_alerts import probe
+
+    if args.probe:
+        result = probe()
+        print(f"tarjetas leídas: {result['cards']}")
+        for bulletin in result["parsed"]:
+            print(bulletin)
+        return
+    print(json.dumps(run_source("senapred_alertas"), ensure_ascii=False))
+
+
 def cmd_worker(_args) -> None:
     from app.worker import main
 
@@ -106,6 +118,7 @@ def cmd_worker(_args) -> None:
 
 
 def main(argv: list[str] | None = None) -> None:
+    sys.stdout.reconfigure(encoding="utf-8")
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     parser = argparse.ArgumentParser(prog="riesgo")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -138,6 +151,10 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("bootstrap").set_defaults(func=cmd_bootstrap)
 
     sub.add_parser("worker").set_defaults(func=cmd_worker)
+
+    p = sub.add_parser("senapred-alerts")
+    p.add_argument("--probe", action="store_true")
+    p.set_defaults(func=cmd_senapred_alerts)
 
     args = parser.parse_args(argv)
     args.func(args)

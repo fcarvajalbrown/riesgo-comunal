@@ -4,12 +4,13 @@ from app.sources.dmc import DmcAdapter
 from app.sources.dmc_cap import DmcCapAdapter
 from app.sources.geoportal import GeoportalAdapter
 from app.sources.senapred import SenapredAdapter
+from app.sources.senapred_alerts import SenapredAlertsAdapter
 from app.sources.sinca import SincaAdapter
 from app.sources.usgs import UsgsAdapter
 
 ADAPTERS: dict[str, type[SourceAdapter]] = {
     cls.meta.key: cls
-    for cls in (SenapredAdapter, GeoportalAdapter, SincaAdapter, DgaStationsAdapter, UsgsAdapter, DmcAdapter, DmcCapAdapter)
+    for cls in (SenapredAdapter, GeoportalAdapter, SincaAdapter, DgaStationsAdapter, UsgsAdapter, DmcAdapter, DmcCapAdapter, SenapredAlertsAdapter)
 }
 
 

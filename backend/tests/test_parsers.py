@@ -240,3 +240,66 @@ def test_geocoder_is_bounded_and_cached(monkeypatch):
     assert first == second and len(calls) == 1
     assert calls[0]["bounded"] == 1 and calls[0]["countrycodes"] == "cl" and "Lota" in calls[0]["q"]
     assert geocode.search_address("ab", (-73.2, -37.2, -73.0, -37.0), "Lota") == []
+
+
+SENAPRED_COMUNAS = [
+    {"cut": "08106", "name": "Lota", "region": "Biobío", "provincia": "Concepción"},
+    {"cut": "08201", "name": "Lebu", "region": "Biobío", "provincia": "Arauco"},
+    {"cut": "07101", "name": "Talca", "region": "Maule", "provincia": "Talca"},
+    {"cut": "09115", "name": "Pucón", "region": "La Araucanía", "provincia": "Cautín"},
+    {"cut": "14108", "name": "Panguipulli", "region": "Los Ríos", "provincia": "Valdivia"},
+    {"cut": "14101", "name": "Valdivia", "region": "Los Ríos", "provincia": "Valdivia"},
+]
+
+
+def test_senapred_scopes_are_parsed_from_real_titles():
+    from app.sources.senapred_alerts import parse_scope
+
+    assert parse_scope("la Región del Biobío") == [("region", ["biobio"])]
+    assert parse_scope("la Región de O´Higgins") == [("region", ["ohiggins"])]
+    assert parse_scope("las comunas de Pinto y Coihueco") == [("comuna", ["pinto", "coihueco"])]
+    assert parse_scope("la provincia de Arauco y las comunas de Florida, Lota, Penco, Talcahuano y Tomé") == [
+        ("provincia", ["arauco"]),
+        ("comuna", ["florida", "lota", "penco", "talcahuano", "tome"]),
+    ]
+    assert parse_scope(
+        "las comunas de Villarrica, Pucón y Curarrehue en la Región de La Araucanía y para la comuna de Panguipulli en la Región de Los Ríos"
+    ) == [("comuna", ["villarrica", "pucon", "curarrehue"]), ("comuna", ["panguipulli"])]
+
+
+def test_senapred_card_is_read_with_chile_time():
+    from app.sources.senapred_alerts import parse_card
+
+    card = parse_card(
+        "Monitoreo Alerta Temprana Preventiva para la Región del Biobío por evento meteorológico\n\n05-10-2026 07:41",
+        "https://senapred.cl/alerta/se-declara-alerta-temprana-preventiva-para-la-region-del-biobio-por-evento-meteorologico-2026-09-30-15-03-26",
+    )
+    assert card.action == "monitor" and card.level == "Alerta Temprana Preventiva" and card.hazard == "meteo"
+    assert card.published_at.isoformat() == "2026-10-05T07:41:00-03:00"
+    assert parse_card("sin fecha", "https://senapred.cl/alerta/x") is None
+
+
+def test_senapred_matching_does_not_spill_into_other_comunas():
+    from app.sources.senapred_alerts import match_cut_codes
+
+    assert match_cut_codes([("region", ["biobio"])], SENAPRED_COMUNAS) == ["08106", "08201"]
+    assert match_cut_codes([("provincia", ["arauco"])], SENAPRED_COMUNAS) == ["08201"]
+    assert match_cut_codes([("comuna", ["pucon"]), ("comuna", ["panguipulli"])], SENAPRED_COMUNAS) == ["09115", "14108"]
+    assert match_cut_codes([("region", ["los rios"])], SENAPRED_COMUNAS) == ["14108", "14101"]
+
+
+def test_senapred_thread_ends_when_cancelled():
+    from app.sources.senapred_alerts import parse_card, to_records
+
+    link = "https://senapred.cl/alerta/se-declara-alerta-roja-para-la-comuna-de-lota-por-desborde-2026-10-02-21-05-44"
+    cards = [
+        ("Se declara Alerta Roja para la comuna de Lota por desborde\n\n02-10-2026 21:05", link),
+        ("Se cancela Alerta Roja para la comuna de Lota por desborde\n\n05-10-2026 13:28", link),
+    ]
+    records, warnings = to_records([parse_card(t, l) for t, l in cards], SENAPRED_COMUNAS)
+    assert len(records) == 1 and not warnings
+    record = records[0]
+    assert record.level == "Alerta Roja" and record.hazard == "flood" and record.area_cut_codes == ("08106",)
+    assert record.starts_at.isoformat() == "2026-10-02T21:05:44-03:00"
+    assert record.ends_at.isoformat() == "2026-10-05T13:28:00-03:00"
+    assert record.source_url == link

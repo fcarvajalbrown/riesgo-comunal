@@ -38,7 +38,7 @@ class MeteoModule(HazardModule):
             select a.level, a.title, a.starts_at, a.ends_at, a.source_url, a.provenance_id, a.properties->>'event' as event
             from alert a, municipality m
             where m.id = :mid and a.source_key = 'dmc_cap' and (a.ends_at is null or a.ends_at > :now)
-              and st_intersects(a.area, m.boundary)
+              and st_relate(a.area, m.boundary, 'T********')
             order by a.starts_at
             """,
             mid=ctx.municipality_id,

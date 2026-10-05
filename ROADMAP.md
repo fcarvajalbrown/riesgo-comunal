@@ -7,7 +7,7 @@ Phase-based. Scope and the reasoning behind the stack are in `docs/mvp.md` and `
 | Item | Status | Blocker |
 |---|---|---|
 | DMC meteorology adapter live | Blocked | DMC API user and token (free registration at climatologia.meteochile.gob.cl) |
-| Automatic SENAPRED alerts | Blocked | No public, authorised SENAPRED alert service exists; alerts are entered by the municipality with the official link |
+| Official SENAPRED alert feed | Blocked | Alerts are read automatically from the public page senapred.cl/alertas (working); an official feed or written OK from SENAPRED is still pending |
 | Licence confirmation for SENAPRED, IDE Chile (MINEDUC, MINSAL), SINCA (MMA), DGA layers | Blocked | Written answer from each data owner, then review by a qualified lawyer (`docs/data-licensing.md`) |
 | CSN earthquake catalogue | Blocked | Written approval from CSN for non-academic use; USGS is used meanwhile |
 
