@@ -2,7 +2,7 @@
 
 ## Pilot comuna
 
-**Lota (Biobío), CUT 08106.** Chosen from evidence: it has the highest value of SENAPRED's Índice Comunal de Factores Subyacentes del Riesgo (ICFSR 0.8163, level ALTO, application year 2025) among the 345 comunas in the `Factor_IC_FSR` layer. It is coastal (tsunami evacuation layers exist), sits in a wildfire-recurrence area, and has SINCA stations nearby ("Lota urbana", "Lota rural"). The platform loads official data for all comunas, so any other comuna becomes a tenant by configuration.
+**Lota (Biobío), CUT 08106.** Chosen from evidence: it has the highest value of SENAPRED's Índice Comunal de Factores Subyacentes del Riesgo (ICFSR 0.8163, level ALTO, application year 2025) among the 345 comunas in the `Factor_IC_FSR` layer. The ICFSR comes from a municipal self-diagnosis of 41 variables in four dimensions (Ordenamiento Territorial; Cambio Climático y Recursos Naturales; Condiciones Socioeconómicas y Demográficas; Gobernanza), per SENAPRED's "Factores Subyacentes" page, so it measures underlying conditions, not hazard intensity. It is coastal (tsunami evacuation layers exist), sits in a wildfire-recurrence area, and has SINCA stations nearby ("Lota urbana", "Lota rural"). The platform loads official data for all comunas, so any other comuna becomes a tenant by configuration.
 
 ## In scope
 
