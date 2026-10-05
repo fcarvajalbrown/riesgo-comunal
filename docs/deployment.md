@@ -26,7 +26,7 @@ The first worker run downloads all sources and the USGS backfill since 2000 (abo
 
 ## Minimum resources
 
-Measured with `docker compose` on a clean install (one tenant, all sources ingested, DEMO data): database 121 MB; container memory db 627 MiB (mostly PostgreSQL cache), worker 190 MiB, api 87 MiB, web 36 MiB, caddy 14 MiB; images 2.0 GB plus 3.6 GB of build cache (`docker builder prune` reclaims it). The figures below are planning estimates for one to five tenants:
+Measured with `docker compose` on a clean clone (one tenant, all sources ingested, DEMO data, `tools/docker-check/`): image build 3 min 17 s; first ingestion pass of every source 99 s; database 137 MB; container memory at rest db 726 MiB (mostly PostgreSQL cache), worker 279 MiB, api 114 MiB, web 39 MiB, caddy 13 MiB, about 1.2 GiB in total. While the worker reads the SENAPRED alerts page with headless Chromium (every 10 minutes), the worker peaks at about 600 MiB. Images take 4.0 GB on disk (the backend image, 2.7 GB with Chromium and GDAL, is shared by `api`, `worker` and `bootstrap`), volumes 0.3 GB, and the build leaves 4.9 GB of cache (`docker builder prune` reclaims it). The figures below are planning estimates for one to five tenants:
 
 | Resource | Minimum | Recommended |
 |---|---|---|
