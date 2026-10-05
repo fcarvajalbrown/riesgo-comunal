@@ -12,7 +12,7 @@
 ## Component diagram
 
 ```text
- External sources (SENAPRED ArcGIS, SINCA, DGA, USGS, DMC*)      * needs credential
+ External sources (SENAPRED ArcGIS, IDE geoportal WFS, SINCA, DGA, USGS, DMC*)  * needs credential
             |
             v
  +----------------------+        +-----------------------------+
