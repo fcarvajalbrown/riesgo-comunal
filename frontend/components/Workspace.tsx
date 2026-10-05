@@ -117,6 +117,9 @@ export function Workspace() {
             </select>
           )}
           <div className="ml-auto flex items-center gap-3 text-sm">
+            <a href={`/c/${m.municipality.slug}`} target="_blank" rel="noreferrer" className="text-xs text-brand underline">
+              Portal público
+            </a>
             <span className="hidden text-right sm:block">
               <span className="block leading-tight">{m.user.name}</span>
               <span className="block text-xs leading-tight text-muted">{ROLE_LABEL[m.user.role] ?? m.user.role}</span>

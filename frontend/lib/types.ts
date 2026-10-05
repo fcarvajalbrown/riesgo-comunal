@@ -246,3 +246,67 @@ export interface RasterInfo {
   north: number;
   properties: { crs?: string; bands?: number; resolution?: number[]; min?: number; max?: number };
 }
+
+export interface PublicComuna {
+  name: string;
+  region: string;
+  lon: number;
+  lat: number;
+  bbox: [number, number, number, number];
+  display_name: string;
+  primary_color: string | null;
+  logo_url: string | null;
+}
+
+export interface PublicAlert {
+  title: string;
+  issuer: string;
+  level: string;
+  hazard: string;
+  source_url: string | null;
+  starts_at: string;
+  ends_at: string | null;
+  in_force: boolean;
+  origin: string;
+}
+
+export interface PublicSummary {
+  municipality: string;
+  computed_at: string;
+  overall_level: Level;
+  overall_level_label: string;
+  items: { hazard: string; level: Level; level_label: string; headline: string }[];
+  alerts: PublicAlert[];
+  alert_feed_note: string;
+  notice: string;
+  official_information: string;
+}
+
+export interface GeocodeResult {
+  name: string;
+  lon: number;
+  lat: number;
+  kind: string;
+  attribution: string;
+}
+
+export interface PlaceItem {
+  hazard: string;
+  status: string;
+  text: string;
+  action: string | null;
+  data_class: DataClass;
+  source: string;
+  provenance_id: number | null;
+  meeting_point: { name: string | null; lon: number; lat: number; meters: number } | null;
+}
+
+export interface PlaceReport {
+  lon: number;
+  lat: number;
+  items: PlaceItem[];
+  warnings: { level: string; title: string; starts_at: string; ends_at: string | null; source_url: string | null }[];
+  alerts: { title: string; issuer: string; level: string; source_url: string | null }[];
+  checked_at: string;
+  notice: string;
+}
