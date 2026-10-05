@@ -81,7 +81,7 @@ def classify_dmc_warnings(warnings: list[tuple[str, bool]]) -> RuleResult:
     if in_force:
         rank = ("Aviso", "Alerta", "Alarma")
         top = max(in_force, key=rank.index)
-        return RuleResult(DMC_WARNING_LEVEL[top], f"{top} meteorológica de la Dirección Meteorológica de Chile vigente para la comuna.")
+        return RuleResult(DMC_WARNING_LEVEL[top], f"{top} de la Dirección Meteorológica de Chile vigente para la comuna.")
     if upcoming:
         return RuleResult("INFORMATIVO", f"{len(upcoming)} boletín(es) de la Dirección Meteorológica de Chile con inicio próximo para la comuna.")
     return RuleResult("BAJO", "No hay avisos, alertas ni alarmas meteorológicas de la Dirección Meteorológica de Chile vigentes para la comuna.")
