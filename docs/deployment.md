@@ -26,7 +26,7 @@ The first worker run downloads all sources and the USGS backfill since 2000 (abo
 
 ## Minimum resources
 
-Measured on the development install (one tenant, all sources): database 122 MB after ingestion. Process memory has not been measured yet; the figures below are planning estimates for one to five tenants:
+Measured with `docker compose` on a clean install (one tenant, all sources ingested, DEMO data): database 121 MB; container memory db 627 MiB (mostly PostgreSQL cache), worker 190 MiB, api 87 MiB, web 36 MiB, caddy 14 MiB; images 2.0 GB plus 3.6 GB of build cache (`docker builder prune` reclaims it). The figures below are planning estimates for one to five tenants:
 
 | Resource | Minimum | Recommended |
 |---|---|---|
