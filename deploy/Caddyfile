@@ -1,0 +1,17 @@
+{$SITE_ADDRESS:localhost} {
+	encode gzip
+	request_body {
+		max_size 30MB
+	}
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy same-origin
+	}
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+	handle {
+		reverse_proxy web:3000
+	}
+}
