@@ -35,7 +35,7 @@ if [ ! -f "$PG_DATA/PG_VERSION" ]; then
 fi
 
 if ! "$PG_HOME/bin/pg_ctl.exe" -D "$PG_DATA" status >/dev/null 2>&1; then
-  "$PG_HOME/bin/pg_ctl.exe" -D "$PG_DATA" -o "-p $PORT -c listen_addresses=127.0.0.1" -l "$ROOT/postgres.log" -w start >/dev/null
+  "$PG_HOME/bin/pg_ctl.exe" -D "$PG_DATA" -o "-p $PORT -c listen_addresses=127.0.0.1" -l "$ROOT/postgres.log" -w start </dev/null >/dev/null 2>&1
 fi
 
 PSQL=("$PG_HOME/bin/psql.exe" -h 127.0.0.1 -p "$PORT" -U postgres -v ON_ERROR_STOP=1 -qtA)
