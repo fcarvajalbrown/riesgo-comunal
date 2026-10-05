@@ -15,11 +15,13 @@ The boundary comes from SENAPRED's DPA layer; the worker then pulls hazard and f
 
 | Key | Content |
 |---|---|
-| `branding.display_name`, `branding.primary_color`, `branding.logo_url` | header name and colour |
+| `branding.display_name`, `branding.primary_color` | header name and brand colour used across the interface (colour must be `#RRGGBB`) |
+| `branding.logo_url` | set by uploading a PNG or JPEG logo (up to 1 MB) in "Configuración"; served publicly at `/api/public/<slug>/logo` |
 | `hazards.<module>.enabled` | turn a hazard module on or off |
 | `hazards.<module>.thresholds` | override any default threshold of that module (unknown keys are rejected) |
-| `terminology` | reserved for label overrides |
-| `contacts` | reserved for emergency contacts |
+| `terminology` | the comuna's own words for the tab names (`tab_ahora` ... `tab_config`) and for `sector` / `sectores` (for example "Unidad vecinal"); unknown keys are rejected, 40 characters each |
+
+Emergency contacts and municipal emergency personnel are uploaded as CSV under "Datos municipales" (see below) and appear in that screen and in the Emergencias report.
 
 Hazard modules and their thresholds are listed in `risk-model.md`. Every change is audited.
 

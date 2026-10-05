@@ -178,6 +178,7 @@ export interface Me {
     config: {
       branding: { display_name: string | null; primary_color: string; logo_url: string | null };
       hazards: Record<string, { enabled: boolean; thresholds: Record<string, number | string> }>;
+      terminology?: Record<string, string>;
     };
   };
   municipalities: { id: number; name: string; slug: string }[];

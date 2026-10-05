@@ -299,3 +299,29 @@ def test_contacts_inspections_and_photos(env):
     uploads.append(fake.json()["upload_id"])
     for upload_id in uploads:
         client.delete(f"/api/uploads/{upload_id}", headers=admin)
+
+
+def test_terminology_and_branding_are_validated(env):
+    client, tokens, *_ = env
+    admin = tokens["lota_admin"]
+    assert client.put("/api/municipality/config", headers=admin, json={"terminology": {"inventado": "x"}}).status_code == 422
+    assert client.put("/api/municipality/config", headers=admin, json={"branding": {"primary_color": "rojo"}}).status_code == 422
+    try:
+        config = client.put("/api/municipality/config", headers=admin, json={"terminology": {"sector": "Unidad vecinal"}}).json()
+        assert config["terminology"] == {"sector": "Unidad vecinal"}
+    finally:
+        client.put("/api/municipality/config", headers=admin, json={"terminology": {}})
+
+
+def test_logo_upload_is_public_and_hides_server_path(env):
+    client, tokens, *_ = env
+    admin = tokens["lota_admin"]
+    png = bytes.fromhex("89504e470d0a1a0a") + b"pytest-logo"
+    assert client.put("/api/municipality/logo", headers=admin, files={"file": ("logo.gif", b"GIF89a", "image/gif")}).status_code == 422
+    try:
+        config = client.put("/api/municipality/logo", headers=admin, files={"file": ("logo.png", png, "image/png")}).json()
+        assert "logo_path" not in config["branding"] and config["branding"]["logo_url"].startswith("/api/public/")
+        assert client.get(config["branding"]["logo_url"]).content == png
+        assert "logo_path" not in client.get("/api/me", headers=admin).json()["municipality"]["config"]["branding"]
+    finally:
+        assert client.delete("/api/municipality/logo", headers=admin).json()["branding"]["logo_url"] is None

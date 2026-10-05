@@ -8,8 +8,10 @@ import type { MapFocus } from "@/components/MapView";
 import { apiGet } from "@/lib/api";
 import { formatTime } from "@/lib/format";
 import type { Assessment, Level, RiesgoResponse } from "@/lib/types";
+import { useTerms } from "@/lib/terms";
 
 export function RiesgoPanel({ onFocus, selectedSector, onSelectSector }: { onFocus: (f: MapFocus) => void; selectedSector: number | null; onSelectSector: (id: number | null) => void }) {
+  const term = useTerms();
   const { data, isLoading, error } = useQuery({ queryKey: ["riesgo"], queryFn: () => apiGet<RiesgoResponse>("/riesgo") });
   const sector = useQuery({
     queryKey: ["sector", selectedSector],
@@ -28,7 +30,7 @@ export function RiesgoPanel({ onFocus, selectedSector, onSelectSector }: { onFoc
       {selectedSector !== null && (
         <section className="rounded-2xl border-2 border-brand/40 bg-surface p-4 shadow-sm">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="text-base font-semibold">{sector.data?.sector.name ?? "Sector"}</h3>
+            <h3 className="text-base font-semibold">{sector.data?.sector.name ?? term("sector", "Sector")}</h3>
             <button onClick={() => onSelectSector(null)} className="text-xs text-muted hover:underline">
               Volver a la comuna
             </button>
@@ -57,7 +59,7 @@ export function RiesgoPanel({ onFocus, selectedSector, onSelectSector }: { onFoc
       </section>
 
       <section className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
-        <h3 className="text-base font-semibold">{data.sector_kind === "municipal" ? "Sectores" : "Celdas de análisis"} que requieren atención</h3>
+        <h3 className="text-base font-semibold">{data.sector_kind === "municipal" ? term("sectores", "Sectores") : "Celdas de análisis"} que requieren atención</h3>
         <p className="mt-0.5 text-xs text-muted">
           {ranked.length} de {data.sectors.length} con nivel moderado o superior. Toque uno para ver el detalle o selecciónelo en el mapa.
         </p>

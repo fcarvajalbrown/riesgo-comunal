@@ -41,6 +41,8 @@ Every assessment carries `level`, `level_label`, `data_class`, `headline`, `reas
 | GET | `/alerts` | any | alerts entered by the municipality |
 | POST | `/alerts` | `alert:create` | enter an official alert; `source_url` is required |
 | POST | `/alerts/{id}/end` | `alert:create` | mark an alert as ended |
+| PUT | `/municipality/logo` | `configure` | upload a PNG or JPEG logo (1 MB) |
+| DELETE | `/municipality/logo` | `configure` | remove the logo |
 | GET | `/audit` | `audit:read` | last 200 audit entries |
 
 ## Municipal data and assistant
@@ -72,3 +74,4 @@ Every assessment carries `level`, `level_label`, `data_class`, `headline`, `reas
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/public/{slug}/resumen` | minimal citizen summary: levels, headlines, alerts with official links, notice |
+| GET | `/public/{slug}/logo` | the comuna's logo |

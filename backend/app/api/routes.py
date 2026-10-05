@@ -1,3 +1,4 @@
+import hashlib
 import json
 import time
 from collections import defaultdict, deque
@@ -21,6 +22,7 @@ from app.reports.builder import ROLES, build_report
 from app.reports.pdf import render_pdf
 from app.risk import assess_area, assess_comuna, assess_sectors, module_catalog
 from app.stats.history import earthquake_statistics, icfsr_context, incident_statistics
+from app.config import get_settings
 from app.tenants import get_municipality, merge_config, refresh_analysis_cells
 from app.uploads.service import UploadError, handle_upload
 
@@ -71,7 +73,10 @@ def me(principal: Principal = Depends(current_principal), conn: Connection = Dep
     return {
         "user": {"id": principal.user_id, "email": principal.email, "name": principal.name, "role": principal.role},
         "permissions": permissions,
-        "municipality": {k: municipality[k] for k in ("id", "name", "cut_code", "region", "slug", "config", "lon", "lat", "bbox_geojson")},
+        "municipality": {
+            **{k: municipality[k] for k in ("id", "name", "cut_code", "region", "slug", "lon", "lat", "bbox_geojson")},
+            "config": public_config(municipality["config"]),
+        },
         "municipalities": municipalities,
         "labels": {"levels": LEVEL_LABEL, "data_classes": DATA_CLASS_LABEL},
     }
@@ -192,17 +197,44 @@ def hazards(principal: Principal = Depends(current_principal), conn: Connection 
     return catalog
 
 
+TERMINOLOGY_KEYS = (
+    "tab_ahora",
+    "tab_riesgo",
+    "tab_planificar",
+    "tab_asistente",
+    "tab_informes",
+    "tab_datos",
+    "tab_fuentes",
+    "tab_config",
+    "sector",
+    "sectores",
+)
+LOGO_TYPES = {bytes.fromhex("89504e470d0a1a0a"): ("image/png", ".png"), bytes.fromhex("ffd8ff"): ("image/jpeg", ".jpg")}
+MAX_LOGO_BYTES = 1024 * 1024
+
+
+class Branding(BaseModel):
+    display_name: str | None = Field(default=None, max_length=120)
+    primary_color: str | None = Field(default=None, pattern=r"^#[0-9a-fA-F]{6}$")
+
+
 class ConfigUpdate(BaseModel):
-    branding: dict[str, Any] | None = None
+    branding: Branding | None = None
     hazards: dict[str, dict[str, Any]] | None = None
     terminology: dict[str, str] | None = None
-    contacts: list[dict[str, str]] | None = None
 
 
 @router.put("/municipality/config")
 def update_config(body: ConfigUpdate, principal: Principal = Depends(require("configure")), conn: Connection = Depends(get_conn)) -> dict[str, Any]:
     current = row(conn, "select config from municipality where id = :m", m=principal.municipality_id)["config"] or {}
     patch = body.model_dump(exclude_none=True)
+    unknown_terms = set(patch.get("terminology") or {}) - set(TERMINOLOGY_KEYS)
+    if unknown_terms:
+        raise HTTPException(422, f"Términos desconocidos: {', '.join(sorted(unknown_terms))}")
+    if any(len(v) > 40 for v in (patch.get("terminology") or {}).values()):
+        raise HTTPException(422, "Cada término admite hasta 40 caracteres")
+    if "terminology" in patch:
+        patch["terminology"] = {k: v.strip() for k, v in patch["terminology"].items() if v.strip()}
     for key, value in (patch.get("hazards") or {}).items():
         if key not in MODULES:
             raise HTTPException(422, f"Amenaza desconocida: {key}")
@@ -210,9 +242,63 @@ def update_config(body: ConfigUpdate, principal: Principal = Depends(require("co
         if unknown:
             raise HTTPException(422, f"Umbrales desconocidos para {key}: {', '.join(sorted(unknown))}")
     updated = merge_config(current, patch)
+    if "terminology" in patch:
+        updated["terminology"] = patch["terminology"]
     conn.execute(text("update municipality set config = cast(:c as jsonb) where id = :m"), {"c": json.dumps(updated, ensure_ascii=False), "m": principal.municipality_id})
     audit(conn, principal, "config_update", "municipality", patch)
-    return get_municipality(conn, principal.municipality_id)["config"]
+    return public_config(get_municipality(conn, principal.municipality_id)["config"])
+
+
+def public_config(config: dict[str, Any]) -> dict[str, Any]:
+    branding = {k: v for k, v in (config.get("branding") or {}).items() if k != "logo_path"}
+    return {**config, "branding": branding}
+
+
+def _set_logo(conn: Connection, municipality_id: int, logo_path: str | None, logo_url: str | None) -> None:
+    config = row(conn, "select config from municipality where id = :m", m=municipality_id)["config"] or {}
+    config["branding"] = {**(config.get("branding") or {}), "logo_path": logo_path, "logo_url": logo_url}
+    conn.execute(text("update municipality set config = cast(:c as jsonb) where id = :m"), {"c": json.dumps(config, ensure_ascii=False), "m": municipality_id})
+
+
+@router.put("/municipality/logo")
+async def upload_logo(file: UploadFile = File(...), principal: Principal = Depends(require("configure")), conn: Connection = Depends(get_conn)) -> dict[str, Any]:
+    data = await file.read(MAX_LOGO_BYTES + 1)
+    if len(data) > MAX_LOGO_BYTES:
+        raise HTTPException(422, "El logo no puede superar 1 MB")
+    kind = next((v for signature, v in LOGO_TYPES.items() if data.startswith(signature)), None)
+    if not kind:
+        raise HTTPException(422, "El logo debe ser una imagen PNG o JPEG")
+    municipality = get_municipality(conn, principal.municipality_id)
+    old = (municipality["config"].get("branding") or {}).get("logo_path")
+    folder = Path(get_settings().upload_dir) / str(principal.municipality_id)
+    folder.mkdir(parents=True, exist_ok=True)
+    digest = hashlib.sha256(data).hexdigest()[:12]
+    path = folder / f"logo-{digest}{kind[1]}"
+    path.write_bytes(data)
+    _set_logo(conn, principal.municipality_id, str(path), f"/api/public/{municipality['slug']}/logo?v={digest}")
+    if old and old != str(path):
+        Path(old).unlink(missing_ok=True)
+    audit(conn, principal, "logo_update", "municipality", {"sha256": digest})
+    return public_config(get_municipality(conn, principal.municipality_id)["config"])
+
+
+@router.delete("/municipality/logo")
+def delete_logo(principal: Principal = Depends(require("configure")), conn: Connection = Depends(get_conn)) -> dict[str, Any]:
+    old = (get_municipality(conn, principal.municipality_id)["config"].get("branding") or {}).get("logo_path")
+    _set_logo(conn, principal.municipality_id, None, None)
+    if old:
+        Path(old).unlink(missing_ok=True)
+    audit(conn, principal, "logo_delete", "municipality")
+    return public_config(get_municipality(conn, principal.municipality_id)["config"])
+
+
+@router.get("/public/{slug}/logo")
+def public_logo(slug: str, conn: Connection = Depends(get_conn)) -> Response:
+    path = scalar(conn, "select config->'branding'->>'logo_path' from municipality where slug = :s", s=slug)
+    if not path or not Path(path).exists():
+        raise HTTPException(404, "Logo no encontrado")
+    media = "image/png" if path.endswith(".png") else "image/jpeg"
+    return Response(Path(path).read_bytes(), media_type=media, headers={"Cache-Control": "public, max-age=86400"})
 
 
 class AlertCreate(BaseModel):

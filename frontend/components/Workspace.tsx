@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
+import { type CSSProperties, useCallback, useState } from "react";
 import { MapView, type MapFocus } from "@/components/MapView";
 import { AhoraPanel } from "@/components/panels/AhoraPanel";
 import { AssistantPanel } from "@/components/panels/AssistantPanel";
@@ -28,6 +28,17 @@ const TABS: { key: Tab; label: string; hint: string }[] = [
   { key: "fuentes", label: "Fuentes", hint: "Origen de los datos" },
   { key: "config", label: "Configuración", hint: "Umbrales y alertas" },
 ];
+
+const TAB_TERM: Record<Tab, string> = {
+  ahora: "tab_ahora",
+  riesgo: "tab_riesgo",
+  planificar: "tab_planificar",
+  asistente: "tab_asistente",
+  informes: "tab_informes",
+  datos: "tab_datos",
+  fuentes: "tab_fuentes",
+  config: "tab_config",
+};
 
 const ROLE_TABS: Record<string, Tab[]> = {
   ALCALDE: ["ahora", "riesgo", "planificar", "asistente", "informes", "fuentes"],
@@ -73,13 +84,17 @@ export function Workspace() {
   const can = (p: string) => m.permissions.includes(p);
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col" style={{ "--brand": m.municipality.config.branding.primary_color } as CSSProperties}>
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-bold text-white" style={{ background: m.municipality.config.branding.primary_color }}>
-              RC
-            </div>
+            {m.municipality.config.branding.logo_url ? (
+              <img src={m.municipality.config.branding.logo_url} alt="" className="h-9 w-9 rounded-xl object-contain" />
+            ) : (
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-bold text-white" style={{ background: m.municipality.config.branding.primary_color }}>
+                {m.municipality.name.slice(0, 2).toUpperCase()}
+              </div>
+            )}
             <div>
               <p className="text-sm font-semibold leading-tight">{m.municipality.config.branding.display_name ?? `Municipalidad de ${m.municipality.name}`}</p>
               <p className="text-xs leading-tight text-muted">{m.municipality.region ? `Región del ${m.municipality.region}` : ""}</p>
@@ -125,7 +140,7 @@ export function Workspace() {
               className={`whitespace-nowrap border-b-2 px-3 py-2.5 text-sm ${current === t.key ? "border-brand font-semibold text-brand" : "border-transparent text-muted hover:text-foreground"}`}
               title={t.hint}
             >
-              {t.label}
+              {m.municipality.config.terminology?.[TAB_TERM[t.key]] || t.label}
             </button>
           ))}
         </nav>

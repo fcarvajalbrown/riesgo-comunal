@@ -18,7 +18,6 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "meteo": {"enabled": True, "thresholds": {}},
     },
     "terminology": {},
-    "contacts": [],
 }
 
 
