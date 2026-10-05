@@ -109,4 +109,5 @@ class FloodModule(HazardModule):
             actions=actions,
             thresholds=t,
             area_name=area.name,
+            uses_demo_data=bool(has_data["demo"]),
         )

@@ -54,7 +54,7 @@ def exposure_within(ctx: HazardContext, area: Area, hazard_sql: str, params: dic
         result.append(
             Exposure(
                 f"municipal:{category}",
-                f"{category} (registro municipal{', DEMO' if demo else ''})",
+                f"{category.replace('_', ' ').capitalize()} (registro municipal{', DEMO' if demo else ''})",
                 len(items),
                 "municipal",
                 "Registro municipal",

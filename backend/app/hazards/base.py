@@ -64,6 +64,7 @@ class Assessment:
     actions: list[str] = field(default_factory=list)
     thresholds: dict[str, Any] = field(default_factory=dict)
     area_name: str | None = None
+    uses_demo_data: bool = False
     rule_version: str = "1"
 
     def to_dict(self) -> dict[str, Any]:
@@ -72,6 +73,9 @@ class Assessment:
         data["data_class"] = "derived"
         data["data_class_label"] = DATA_CLASS_LABEL["derived"]
         data["notice"] = DERIVED_NOTICE
+        if self.uses_demo_data:
+            data["headline"] = f"[DATOS DEMO] {self.headline}"
+            data["notice"] = "Este cálculo usa datos DEMO de ejemplo que no son reales. " + DERIVED_NOTICE
         for item in data["evidence"]:
             item["data_class_label"] = DATA_CLASS_LABEL.get(item["data_class"], item["data_class"])
         for item in data["exposure"]:

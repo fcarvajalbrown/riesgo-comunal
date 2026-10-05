@@ -61,13 +61,17 @@ def assess_sectors(conn: Connection, municipality_id: int, now: datetime | None 
         area = Area("sector", sector["id"], sector["name"])
         levels = {}
         reasons = []
+        uses_demo = False
         for module in modules:
             assessment = module.assess(context(conn, municipality, module.key, now, detail=False), area)
             levels[module.key] = assessment.level
+            uses_demo = uses_demo or assessment.uses_demo_data
             if assessment.level in ("MODERADO", "ALTO", "CRITICO"):
                 reasons.append(f"{module.name}: {assessment.explanation[0]}")
         overall = max_level(list(levels.values()))
-        result.append({**sector, "levels": levels, "overall_level": overall, "overall_level_label": LEVEL_LABEL[overall], "reasons": reasons})
+        result.append(
+            {**sector, "levels": levels, "overall_level": overall, "overall_level_label": LEVEL_LABEL[overall], "reasons": reasons, "uses_demo_data": uses_demo}
+        )
     _sector_cache[key] = (time.monotonic(), result)
     return result
 
