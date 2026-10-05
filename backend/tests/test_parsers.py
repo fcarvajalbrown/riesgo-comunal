@@ -159,3 +159,58 @@ def test_dmc_feed_items_are_read():
     feed = """<rss version="2.0"><channel><item><title>Aviso A1/2026: Viento</title>
       <link>https://example.invalid/a.xml</link><category>Aviso</category></item></channel></rss>"""
     assert parse_feed(feed) == [{"title": "Aviso A1/2026: Viento", "link": "https://example.invalid/a.xml", "category": "Aviso", "guid": "", "pub_date": ""}]
+
+
+def _write_gis(folder, filename, driver, crs="EPSG:32718"):
+    import os
+    import struct
+
+    import numpy as np
+    from pyogrio import raw
+
+    path = os.path.join(folder, filename)
+    geometry = np.array([struct.pack("<BIdd", 1, 1, 670000.0, 5895000.0)], dtype=object)
+    raw.write(path, geometry, [np.array(["Albergue Norte"], dtype=object)], fields=["nombre"], geometry_type="Point", crs=crs, driver=driver)
+    return path
+
+
+def _zip_folder(folder, skip=()):
+    import io
+    import os
+    import zipfile
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        for name in os.listdir(folder):
+            if not name.endswith(skip):
+                archive.write(os.path.join(folder, name), name)
+    return buffer.getvalue()
+
+
+def test_zipped_utm_shapefile_is_reprojected_to_wgs84(tmp_path):
+    from app.uploads.parsers import parse_features
+
+    _write_gis(str(tmp_path), "activos.shp", "ESRI Shapefile")
+    features = parse_features("activos.zip", _zip_folder(str(tmp_path)))
+    lon, lat = features[0].geometry["coordinates"]
+    assert round(lon, 2) == -73.09 and round(lat, 2) == -37.08
+    assert features[0].properties["nombre"] == "Albergue Norte"
+
+
+def test_geopackage_is_read(tmp_path):
+    from app.uploads.parsers import parse_features
+
+    path = _write_gis(str(tmp_path), "activos.gpkg", "GPKG")
+    with open(path, "rb") as handle:
+        features = parse_features("activos.gpkg", handle.read())
+    assert len(features) == 1 and round(features[0].geometry["coordinates"][1], 2) == -37.08
+
+
+def test_shapefile_without_projection_is_rejected(tmp_path):
+    import pytest
+
+    from app.uploads.parsers import ParseError, parse_features
+
+    _write_gis(str(tmp_path), "activos.shp", "ESRI Shapefile")
+    with pytest.raises(ParseError, match="sistema de coordenadas"):
+        parse_features("activos.zip", _zip_folder(str(tmp_path), skip=(".prj",)))

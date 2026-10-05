@@ -47,9 +47,9 @@ HAZARD_ALIASES = {
     "sismo": "sismo",
 }
 EXTENSIONS = {
-    "assets": (".csv", ".geojson", ".json", ".kml", ".kmz"),
-    "incidents": (".csv", ".geojson", ".json", ".kml", ".kmz"),
-    "sectors": (".geojson", ".json", ".kml", ".kmz"),
+    "assets": (".csv", ".geojson", ".json", ".kml", ".kmz", ".zip", ".gpkg"),
+    "incidents": (".csv", ".geojson", ".json", ".kml", ".kmz", ".zip", ".gpkg"),
+    "sectors": (".geojson", ".json", ".kml", ".kmz", ".zip", ".gpkg"),
     "document": (".pdf", ".txt", ".md"),
 }
 

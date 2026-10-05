@@ -1,6 +1,8 @@
 import csv
 import io
 import json
+import os
+import tempfile
 import unicodedata
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
@@ -168,6 +170,50 @@ def _kml_geometry(placemark: ET.Element) -> dict[str, Any] | None:
     return None
 
 
+def _plain(value: Any) -> Any:
+    if value is None:
+        return None
+    if hasattr(value, "item"):
+        value = value.item()
+    if isinstance(value, float) and value != value:
+        return None
+    if isinstance(value, (str, int, float, bool)):
+        return value
+    return str(value)
+
+
+def parse_gis(data: bytes) -> list[ParsedFeature]:
+    from pyogrio import raw
+    from pyogrio.errors import DataSourceError, DataLayerError
+
+    try:
+        meta, _, geometries, field_data = raw.read(data)
+    except (DataSourceError, DataLayerError) as exc:
+        raise ParseError(f"No se pudo leer el archivo SIG: {exc}")
+    if not meta.get("crs"):
+        raise ParseError("El archivo no declara su sistema de coordenadas (falta el .prj en el shapefile). Inclúyalo o exporte en WGS84.")
+    if geometries is None or len(geometries) == 0:
+        return []
+    with tempfile.TemporaryDirectory() as folder:
+        target = os.path.join(folder, "convertido.geojson")
+        raw.write(
+            target,
+            geometries,
+            field_data,
+            fields=meta["fields"],
+            geometry_type=meta["geometry_type"],
+            crs=meta["crs"],
+            driver="GeoJSON",
+            layer_options={"RFC7946": "YES"},
+        )
+        with open(target, "rb") as handle:
+            converted = json.loads(handle.read().decode("utf-8"))
+    return [
+        ParsedFeature(f.get("geometry"), {normalize_key(k): _plain(v) for k, v in (f.get("properties") or {}).items()})
+        for f in converted.get("features", [])
+    ]
+
+
 def parse_features(filename: str, data: bytes) -> list[ParsedFeature]:
     name = filename.lower()
     if name.endswith(".csv") or name.endswith(".txt"):
@@ -184,7 +230,9 @@ def parse_features(filename: str, data: bytes) -> list[ParsedFeature]:
             if not kml_name:
                 raise ParseError("El KMZ no contiene un archivo KML")
             return parse_kml(archive.read(kml_name))
-    raise ParseError("Formato no soportado. Use CSV, GeoJSON, KML o KMZ (shapefile y GeoPackage están planificados).")
+    if name.endswith(".zip") or name.endswith(".gpkg"):
+        return parse_gis(data)
+    raise ParseError("Formato no soportado. Use CSV, GeoJSON, KML, KMZ, shapefile comprimido en .zip o GeoPackage.")
 
 
 def extract_text(filename: str, data: bytes) -> tuple[list[TextChunk], int]:

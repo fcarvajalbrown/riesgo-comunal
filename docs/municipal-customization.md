@@ -29,12 +29,12 @@ Uploaded under "Datos municipales":
 
 | Kind | Formats | Required fields |
 |---|---|---|
-| Infrastructure and resources | CSV (lat/lon columns), GeoJSON, KML, KMZ | `nombre`, `categoria` (or a category chosen in the form) |
-| Historical incidents | CSV, GeoJSON, KML, KMZ | `fecha`, `amenaza`; optional `sector`, `descripcion`, `afectados`, coordinates |
-| Sectors | GeoJSON, KML, KMZ polygons | `nombre`; replaces the analysis cells |
+| Infrastructure and resources | CSV (lat/lon columns), GeoJSON, KML, KMZ, zipped Shapefile, GeoPackage | `nombre`, `categoria` (or a category chosen in the form) |
+| Historical incidents | CSV, GeoJSON, KML, KMZ, zipped Shapefile, GeoPackage | `fecha`, `amenaza`; optional `sector`, `descripcion`, `afectados`, coordinates |
+| Sectors | GeoJSON, KML, KMZ, zipped Shapefile, GeoPackage polygons | `nombre`; replaces the analysis cells |
 | Documents | PDF with text, TXT, MD | optional title |
 
-Recognised categories include `albergue`, `punto critico inundacion` (feeds the flood module), `generador`, `estanque de agua`, `puente`, `sumidero`, `grifo`, `maquinaria`, `vehiculo municipal`, `ruta de evacuacion`; other values are stored as given. Shapefile and GeoPackage need GDAL and are planned.
+Recognised categories include `albergue`, `punto critico inundacion` (feeds the flood module), `generador`, `estanque de agua`, `puente`, `sumidero`, `grifo`, `maquinaria`, `vehiculo municipal`, `ruta de evacuacion`; other values are stored as given. Shapefiles (zipped with their `.prj`) and GeoPackages are read with pyogrio (GDAL) and reprojected to WGS84 from any declared CRS, so UTM files work as exported; a file without a CRS is rejected with that reason.
 
 ## Adding a hazard module
 
