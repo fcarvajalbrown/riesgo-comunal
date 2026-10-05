@@ -4,7 +4,7 @@
 
 | Service | Image | Role |
 |---|---|---|
-| `db` | built from `postgis/postgis:17-3.5` + `postgresql-17-pgvector` | PostgreSQL, PostGIS, pgvector |
+| `db` | built from `pgvector/pgvector:0.8.7-pg17-bookworm` + `postgresql-17-postgis-3` | PostgreSQL, PostGIS, pgvector |
 | `bootstrap` | `backend/` | one-shot: migrations, tenant creation (downloads comuna boundaries), first admin, optional DEMO data |
 | `api` | `backend/` | FastAPI on port 8000 (internal) |
 | `worker` | `backend/` | APScheduler loop running due source adapters every minute |

@@ -102,7 +102,7 @@ Next.js (App Router) with TypeScript, Tailwind CSS, TanStack Query for server st
 
 ## Deployment architecture
 
-Docker Compose services: `db` (PostGIS + pgvector image built from `postgis/postgis`), `api`, `worker` (same image as `api`, different command), `web`, `caddy`. Optional `ollama` profile. Volumes: database, uploaded files, Caddy certificates. See `deployment.md`.
+Docker Compose services: `db` (PostGIS + pgvector image built from `pgvector/pgvector` plus the PostGIS package), `api`, `worker` (same image as `api`, different command), `web`, `caddy`. Optional `ollama` profile. Volumes: database, uploaded files, Caddy certificates. See `deployment.md`.
 
 ## Municipal customisation architecture
 
