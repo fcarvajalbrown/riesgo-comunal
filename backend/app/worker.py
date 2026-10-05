@@ -3,15 +3,23 @@ import signal
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 
+from app.db import scalar, transaction
 from app.ingest.runner import due_sources, run_source
 
 log = logging.getLogger("worker")
 TICK_SECONDS = 60
 
 
+def needs_backfill(key: str) -> bool:
+    if key != "usgs":
+        return False
+    with transaction() as conn:
+        return not scalar(conn, "select 1 from historical_event where source_key = 'usgs' limit 1")
+
+
 def tick() -> None:
     for key in due_sources():
-        result = run_source(key)
+        result = run_source(key, backfill=True) if needs_backfill(key) else run_source(key)
         log.info("ingestion %s: %s", key, result)
 
 

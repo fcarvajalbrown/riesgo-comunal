@@ -75,6 +75,29 @@ def cmd_seed_demo(args) -> None:
     print(json.dumps(seed_demo(args.tenant), ensure_ascii=False))
 
 
+def cmd_bootstrap(_args) -> None:
+    import os
+
+    cmd_migrate(_args)
+    cut = os.environ.get("TENANT_CUT")
+    slug = os.environ.get("TENANT_SLUG")
+    if cut and slug:
+        with transaction() as conn:
+            exists = scalar(conn, "select 1 from municipality where cut_code = :c", c=cut)
+        if not exists:
+            cmd_create_tenant(argparse.Namespace(cut=cut, slug=slug, name=os.environ.get("TENANT_NAME")))
+    email = os.environ.get("ADMIN_EMAIL")
+    password = os.environ.get("ADMIN_PASSWORD")
+    if email and password:
+        with transaction() as conn:
+            exists = scalar(conn, "select 1 from app_user where email = :e", e=email.lower())
+        if not exists:
+            role = "MUNICIPAL_ADMIN" if slug else "SUPER_ADMIN"
+            cmd_create_user(argparse.Namespace(email=email, role=role, tenant=slug, name="Administración", password=password))
+    if slug and os.environ.get("SEED_DEMO", "").lower() in ("1", "true", "yes"):
+        cmd_seed_demo(argparse.Namespace(tenant=slug))
+
+
 def cmd_worker(_args) -> None:
     from app.worker import main
 
@@ -110,6 +133,8 @@ def main(argv: list[str] | None = None) -> None:
     p = sub.add_parser("seed-demo")
     p.add_argument("--tenant", required=True)
     p.set_defaults(func=cmd_seed_demo)
+
+    sub.add_parser("bootstrap").set_defaults(func=cmd_bootstrap)
 
     sub.add_parser("worker").set_defaults(func=cmd_worker)
 
