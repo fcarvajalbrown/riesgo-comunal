@@ -73,5 +73,11 @@ Every assessment carries `level`, `level_label`, `data_class`, `headline`, `reas
 
 | Method | Path | Purpose |
 |---|---|---|
-| GET | `/public/{slug}/resumen` | minimal citizen summary: levels, headlines, alerts with official links, notice |
+| GET | `/public/{slug}/comuna` | name, region, centre, bounding box and branding (display name, colour, logo URL) |
+| GET | `/public/{slug}/resumen` | citizen summary: overall and per-hazard platform levels with headlines, official alerts in force or upcoming (level, dates, issuer, how it reached the platform, official link), feed note, notice |
+| GET | `/public/{slug}/geocode?q=` | address search within the comuna through the configured Nominatim server; 20/min per IP, cached, one upstream request per second |
+| GET | `/public/{slug}/lugar?lon=&lat=` | place check: tsunami evacuation area and nearest meeting point, wildfire recurrence class, DMC warnings over the point, municipal alerts; 422 beyond 5 km of the comuna; 60/min per IP |
+| GET | `/public/{slug}/capas/{key}` | GeoJSON for the public layers only (`comuna`, `tsunami_evacuation_area`, `tsunami_meeting_point`, `wildfire_hazard`, `dmc_warning`); 120/min per IP |
 | GET | `/public/{slug}/logo` | the comuna's logo |
+
+The residents' page at `/c/{slug}` (for example `/c/lota`) is built only on these endpoints. It needs no login and never shows municipal assets, incidents, contacts or uploads.
