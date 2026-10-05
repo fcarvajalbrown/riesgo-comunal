@@ -24,6 +24,7 @@ const KINDS = [
   { key: "assets", label: "Infraestructura y recursos", hint: "CSV con columnas nombre, categoria, latitud, longitud; o GeoJSON, KML/KMZ, shapefile en .zip (con su .prj) o GeoPackage. Coordenadas UTM se convierten solas.", accept: ".csv,.geojson,.json,.kml,.kmz,.zip,.gpkg" },
   { key: "incidents", label: "Incidentes históricos", hint: "Columnas fecha (AAAA-MM-DD), amenaza, sector, descripcion, afectados y coordenadas opcionales. También shapefile en .zip o GeoPackage.", accept: ".csv,.geojson,.json,.kml,.kmz,.zip,.gpkg" },
   { key: "sectors", label: "Sectores del municipio", hint: "Polígonos en GeoJSON, KML, shapefile en .zip o GeoPackage, con la propiedad nombre. Reemplazan las celdas de análisis.", accept: ".geojson,.json,.kml,.kmz,.zip,.gpkg" },
+  { key: "raster", label: "Capas raster (GeoTIFF)", hint: "GeoTIFF con su proyección (por ejemplo un mapa de amenaza municipal o un modelo de elevación). Se muestra como capa en el mapa.", accept: ".tif,.tiff" },
   { key: "document", label: "Documentos", hint: "PDF con texto (planes, protocolos). El asistente podrá citarlos.", accept: ".pdf,.txt,.md" },
 ] as const;
 

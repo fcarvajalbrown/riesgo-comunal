@@ -227,3 +227,38 @@ def test_automatic_warning_applies_only_where_its_polygon_reaches(env):
     finally:
         with transaction() as conn:
             conn.execute(text("delete from alert where external_id like 'pytest-%'"))
+
+
+def _geotiff_near_lota() -> bytes:
+    import numpy as np
+    from rasterio.io import MemoryFile
+    from rasterio.transform import from_origin
+
+    values = np.arange(60 * 80, dtype="float32").reshape(60, 80)
+    with MemoryFile() as memory:
+        with memory.open(driver="GTiff", width=80, height=60, count=1, dtype="float32", crs="EPSG:32718", transform=from_origin(668000, 5897000, 30, 30)) as dataset:
+            dataset.write(values, 1)
+        return memory.read()
+
+
+def test_geotiff_upload_is_previewed_and_isolated(env):
+    from pathlib import Path
+
+    client, tokens, *_ = env
+    response = client.post(
+        "/api/uploads",
+        headers=tokens["lota_admin"],
+        data={"kind": "raster", "title": "pytest raster"},
+        files={"file": ("pytest.tif", _geotiff_near_lota(), "image/tiff")},
+    )
+    assert response.status_code == 200 and response.json()["status"] == "done", response.text
+    upload_id = response.json()["upload_id"]
+    raster = next(r for r in client.get("/api/rasters", headers=tokens["lota_admin"]).json() if r["name"] == "pytest raster")
+    assert -73.2 < raster["west"] < raster["east"] < -73.0
+    preview = client.get(f"/api/rasters/{raster['id']}/preview.png", headers=tokens["lota_admin"])
+    assert preview.status_code == 200 and preview.content[:4] == b"\x89PNG"
+    assert client.get(f"/api/rasters/{raster['id']}/preview.png", headers=tokens["other_admin"]).status_code == 404
+    with transaction() as conn:
+        files = [scalar(conn, "select stored_path from upload where id = :id", id=upload_id), scalar(conn, "select preview_path from municipal_raster where id = :id", id=raster["id"])]
+    assert client.delete(f"/api/uploads/{upload_id}", headers=tokens["lota_admin"]).status_code == 200
+    assert not any(Path(f).exists() for f in files)

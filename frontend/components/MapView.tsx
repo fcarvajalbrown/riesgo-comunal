@@ -5,9 +5,9 @@ import * as maplibregl from "maplibre-gl";
 import type { GeoJSONSource, Map as MlMap } from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
 import { DataClassBadge } from "@/components/Badges";
-import { apiGet } from "@/lib/api";
+import { apiGet, apiObjectUrl } from "@/lib/api";
 import { DATA_CLASS_STYLE, LEVEL_STYLE, formatShortTime } from "@/lib/format";
-import type { LayerInfo, Me } from "@/lib/types";
+import type { LayerInfo, Me, RasterInfo } from "@/lib/types";
 
 const BASEMAP = "https://tiles.openfreemap.org/styles/positron";
 maplibregl.setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
@@ -163,6 +163,8 @@ export function MapView({
   const [styleReady, setStyleReady] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const catalog = useQuery({ queryKey: ["layers"], queryFn: () => apiGet<LayerInfo[]>("/layers") });
+  const rasters = useQuery({ queryKey: ["rasters"], queryFn: () => apiGet<RasterInfo[]>("/rasters") });
+  const [rasterOn, setRasterOn] = useState<number[]>([]);
   const [active, setActive] = useState<string[] | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -210,6 +212,41 @@ export function MapView({
       mapRef.current = null;
     };
   }, [me.municipality.lon, me.municipality.lat, me.municipality.bbox_geojson]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady || !rasters.data) return;
+    let cancelled = false;
+    for (const raster of rasters.data) {
+      const id = `raster-${raster.id}`;
+      const wanted = rasterOn.includes(raster.id);
+      if (!wanted && map.getSource(id)) {
+        map.removeLayer(id);
+        map.removeSource(id);
+      }
+      if (wanted && !map.getSource(id)) {
+        apiObjectUrl(`/rasters/${raster.id}/preview.png`)
+          .then((url) => {
+            if (cancelled || map.getSource(id)) return;
+            map.addSource(id, {
+              type: "image",
+              url,
+              coordinates: [
+                [raster.west, raster.north],
+                [raster.east, raster.north],
+                [raster.east, raster.south],
+                [raster.west, raster.south],
+              ],
+            });
+            map.addLayer({ id, type: "raster", source: id, paint: { "raster-opacity": 0.75 } }, map.getLayer("lyr-comuna-line") ? "lyr-comuna-line" : undefined);
+          })
+          .catch(() => setMapError("No se pudo cargar la capa raster."));
+      }
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [rasterOn, rasters.data, styleReady]);
 
   const dataKey = layerData.map((q) => q.dataUpdatedAt).join(",");
   useEffect(() => {
@@ -363,6 +400,32 @@ export function MapView({
                 );
               })}
             </ul>
+            {rasters.data && rasters.data.length > 0 && (
+              <div className="mt-3 border-t border-border pt-2">
+                <p className="text-xs font-semibold text-muted">Capas raster municipales</p>
+                <ul className="mt-1 space-y-1.5">
+                  {rasters.data.map((r) => (
+                    <li key={r.id}>
+                      <label className="flex cursor-pointer items-start gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          className="mt-1"
+                          checked={rasterOn.includes(r.id)}
+                          onChange={() => setRasterOn((cur) => (cur.includes(r.id) ? cur.filter((x) => x !== r.id) : [...cur, r.id]))}
+                        />
+                        <span className="flex-1">
+                          <span className="font-medium">{r.name}</span> <DataClassBadge dataClass="municipal" />
+                          <span className="block text-[11px] text-muted">
+                            GeoTIFF cargado por el municipio · {r.properties.crs ?? "sin CRS"}
+                            {r.properties.min !== undefined ? ` · valores ${r.properties.min.toFixed(1)} a ${r.properties.max?.toFixed(1)}` : ""}
+                          </span>
+                        </span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -10,6 +10,7 @@ from sqlalchemy import Connection, text
 from app.config import get_settings
 from app.db import scalar
 from app.uploads.parsers import ParsedFeature, ParseError, extract_text, normalize_value, parse_features
+from app.uploads.raster import RasterError, render_preview
 
 ASSET_CATEGORIES = {
     "albergue": "albergue",
@@ -51,6 +52,7 @@ EXTENSIONS = {
     "incidents": (".csv", ".geojson", ".json", ".kml", ".kmz", ".zip", ".gpkg"),
     "sectors": (".geojson", ".json", ".kml", ".kmz", ".zip", ".gpkg"),
     "document": (".pdf", ".txt", ".md"),
+    "raster": (".tif", ".tiff"),
 }
 
 
@@ -152,6 +154,8 @@ def handle_upload(
         with conn.begin_nested():
             if kind == "document":
                 count = _store_document(conn, municipality_id, upload_id, safe_name, data, title, is_demo)
+            elif kind == "raster":
+                count = _store_raster(conn, municipality_id, upload_id, provenance_id, path, safe_name, data, title, is_demo)
             else:
                 features = parse_features(safe_name, data)
                 if not features:
@@ -159,7 +163,7 @@ def handle_upload(
                 count = _store_features(conn, kind, municipality_id, upload_id, provenance_id, features, category, is_demo)
         conn.execute(text("update upload set status = 'done', record_count = :n where id = :id"), {"n": count, "id": upload_id})
         return {"upload_id": upload_id, "status": "done", "records": count}
-    except (ParseError, UploadError) as exc:
+    except (ParseError, UploadError, RasterError) as exc:
         conn.execute(text("update upload set status = 'failed', error = :e where id = :id"), {"e": str(exc), "id": upload_id})
         return {"upload_id": upload_id, "status": "failed", "error": str(exc)}
 
@@ -251,6 +255,42 @@ def _store_features(conn, kind, municipality_id, upload_id, provenance_id, featu
             )
         count += 1
     return count
+
+
+def _store_raster(conn, municipality_id, upload_id, provenance_id, path, filename, data, title, is_demo) -> int:
+    preview = render_preview(data)
+    inside = scalar(
+        conn,
+        "select st_dwithin(st_setsrid(st_geomfromgeojson(:g), 4326)::geography, boundary::geography, 5000) from municipality where id = :m",
+        g=json.dumps(preview.footprint),
+        m=municipality_id,
+    )
+    if not inside:
+        raise UploadError("El GeoTIFF está a más de 5 km de la comuna. Revise su sistema de coordenadas.")
+    preview_path = str(Path(path).with_suffix(".preview.png"))
+    Path(preview_path).write_bytes(preview.png)
+    name = title or Path(filename).stem.replace("_", " ")
+    if is_demo and not name.upper().startswith("DEMO"):
+        name = f"DEMO {name}"
+    conn.execute(
+        text(
+            """
+            insert into municipal_raster (municipality_id, name, preview_path, footprint, properties, is_demo, upload_id, provenance_id)
+            values (:m, :n, :pp, st_setsrid(st_geomfromgeojson(:g), 4326), cast(:p as jsonb), :demo, :u, :pid)
+            """
+        ),
+        {
+            "m": municipality_id,
+            "n": name,
+            "pp": preview_path,
+            "g": json.dumps(preview.footprint),
+            "p": json.dumps(preview.properties),
+            "demo": is_demo,
+            "u": upload_id,
+            "pid": provenance_id,
+        },
+    )
+    return 1
 
 
 def _store_document(conn, municipality_id, upload_id, filename, data, title, is_demo) -> int:

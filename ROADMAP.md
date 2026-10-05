@@ -32,7 +32,7 @@ The MVP list of the original specification is complete. These items from the res
 | G13 | Reports | Maps inside PDF reports; historical comparisons | Not Started | |
 | G14 | Residents | Public portal page: what is happening, am I near an affected area, official links | Not Started | |
 | G15 | Map | Address search, comparing two hazards side by side | Not Started | |
-| G16 | Municipal data | Shapefile, GeoPackage, GeoTIFF, photos; emergency contacts, personnel, inspection records | Not Started | Needs a GDAL-based dependency (approval) |
+| G16 | Municipal data | Done: zipped Shapefile, GeoPackage, GeoTIFF. Remaining: photos; emergency contacts, personnel, inspection records | In Progress | |
 | G17 | Customisation | Logo, terminology overrides, emergency contacts in the UI | Not Started | |
 | G18 | Assistant | Report generation on request; hazard and housing overlap question | Not Started | G3 for housing |
 | G19 | Security | Row-level security, encrypted secrets at rest, structured logging, monitoring of ingestion failures | Not Started | |

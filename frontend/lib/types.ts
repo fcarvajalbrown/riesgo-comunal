@@ -232,3 +232,16 @@ export interface Report {
   sources: { source: string; updated_at_local: string | null }[];
   disclaimer: string;
 }
+
+export interface RasterInfo {
+  id: number;
+  name: string;
+  is_demo: boolean;
+  provenance_id: number | null;
+  created_at: string;
+  west: number;
+  south: number;
+  east: number;
+  north: number;
+  properties: { crs?: string; bands?: number; resolution?: number[]; min?: number; max?: number };
+}

@@ -46,6 +46,12 @@ export async function apiSend<T>(path: string, method: "POST" | "PUT" | "DELETE"
   return handle<T>(await fetch(`/api${path}`, init));
 }
 
+export async function apiObjectUrl(path: string): Promise<string> {
+  const response = await fetch(`/api${path}`, { headers: headers() });
+  if (!response.ok) throw new ApiError(response.status, `Error ${response.status}`);
+  return URL.createObjectURL(await response.blob());
+}
+
 export async function apiDownload(path: string, fallbackName: string) {
   const response = await fetch(`/api${path}`, { headers: headers() });
   if (!response.ok) throw new ApiError(response.status, "No se pudo descargar el archivo");

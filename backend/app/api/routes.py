@@ -2,6 +2,7 @@ import json
 import time
 from collections import defaultdict, deque
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
@@ -271,7 +272,7 @@ def end_alert(alert_id: int, principal: Principal = Depends(require("alert:creat
 
 @router.post("/uploads", dependencies=[Depends(rate_limit("upload", 30, 60))])
 async def upload(
-    kind: Literal["assets", "incidents", "sectors", "document"] = Form(...),
+    kind: Literal["assets", "incidents", "sectors", "document", "raster"] = Form(...),
     file: UploadFile = File(...),
     category: str | None = Form(default=None),
     title: str | None = Form(default=None),
@@ -305,11 +306,47 @@ def list_uploads(principal: Principal = Depends(current_principal), conn: Connec
 
 @router.delete("/uploads/{upload_id}")
 def delete_upload(upload_id: int, principal: Principal = Depends(require("upload")), conn: Connection = Depends(get_conn)) -> dict[str, Any]:
+    files = [
+        r["path"]
+        for r in rows(
+            conn,
+            """
+            select stored_path as path from upload where id = :id and municipality_id = :m
+            union all
+            select preview_path from municipal_raster where upload_id = :id and municipality_id = :m
+            """,
+            id=upload_id,
+            m=principal.municipality_id,
+        )
+    ]
     deleted = conn.execute(text("delete from upload where id = :id and municipality_id = :m"), {"id": upload_id, "m": principal.municipality_id}).rowcount
     if not deleted:
         raise HTTPException(404, "Carga no encontrada")
+    for path in files:
+        Path(path).unlink(missing_ok=True)
     audit(conn, principal, "upload_delete", str(upload_id))
     return {"deleted": upload_id}
+
+
+@router.get("/rasters")
+def rasters(principal: Principal = Depends(current_principal), conn: Connection = Depends(get_conn)) -> list[dict[str, Any]]:
+    return rows(
+        conn,
+        """
+        select r.id, r.name, r.properties, r.is_demo, r.data_class, r.provenance_id, r.created_at,
+               st_xmin(r.footprint) as west, st_ymin(r.footprint) as south, st_xmax(r.footprint) as east, st_ymax(r.footprint) as north
+        from municipal_raster r where r.municipality_id = :m order by r.created_at desc
+        """,
+        m=principal.municipality_id,
+    )
+
+
+@router.get("/rasters/{raster_id}/preview.png")
+def raster_preview(raster_id: int, principal: Principal = Depends(current_principal), conn: Connection = Depends(get_conn)) -> Response:
+    path = scalar(conn, "select preview_path from municipal_raster where id = :id and municipality_id = :m", id=raster_id, m=principal.municipality_id)
+    if not path or not Path(path).exists():
+        raise HTTPException(404, "Capa raster no encontrada")
+    return Response(Path(path).read_bytes(), media_type="image/png", headers={"Cache-Control": "private, max-age=3600"})
 
 
 @router.get("/documents")

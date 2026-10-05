@@ -47,9 +47,11 @@ Every assessment carries `level`, `level_label`, `data_class`, `headline`, `reas
 
 | Method | Path | Permission | Purpose |
 |---|---|---|---|
-| POST | `/uploads` | `upload`, 30/min | multipart: `kind` (`assets`, `incidents`, `sectors`, `document`), `file`, optional `category`, `title` |
+| POST | `/uploads` | `upload`, 30/min | multipart: `kind` (`assets`, `incidents`, `sectors`, `document`, `raster`), `file`, optional `category`, `title` |
 | GET | `/uploads` | any | uploads with status and counts |
-| DELETE | `/uploads/{id}` | `upload` | remove an upload and its records |
+| DELETE | `/uploads/{id}` | `upload` | remove an upload, its records and its stored files |
+| GET | `/rasters` | any | GeoTIFF layers of the tenant with WGS84 bounds and metadata |
+| GET | `/rasters/{id}/preview.png` | any | transparent WGS84 preview of one GeoTIFF (tenant-checked) |
 | GET | `/documents` | any | documents with page and chunk counts |
 | POST | `/assistant` | any, 30/min | `{question, audience}` → `{answer, sources[], tools[], mode, generated_at, disclaimer}` |
 
