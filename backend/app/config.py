@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     jwt_secret: str = "dev-only-change-me"
     jwt_ttl_minutes: int = 720
     upload_dir: str = "data/uploads"
+    geocoder_url: str = "https://nominatim.openstreetmap.org/search"
     max_upload_mb: int = 25
     cors_origins: str = "http://localhost:3000"
 

@@ -23,6 +23,8 @@ from app.reports.pdf import render_pdf
 from app.risk import assess_area, assess_comuna, assess_sectors, module_catalog
 from app.stats.history import earthquake_statistics, icfsr_context, incident_statistics
 from app.config import get_settings
+from app.geocode import GeocodeError, search_address
+from app.place import OutsideComuna, place_report
 from app.tenants import get_municipality, merge_config, refresh_analysis_cells
 from app.uploads.service import UploadError, handle_upload
 
@@ -547,6 +549,83 @@ def audit_log(principal: Principal = Depends(require("audit:read")), conn: Conne
         """,
         m=principal.municipality_id,
     )
+
+
+PUBLIC_LAYERS = ("comuna", "tsunami_evacuation_area", "tsunami_meeting_point", "wildfire_hazard", "dmc_warning")
+
+
+def _bbox(conn: Connection, municipality_id: int) -> tuple[float, float, float, float]:
+    b = row(
+        conn,
+        "select st_xmin(e) as w, st_ymin(e) as s, st_xmax(e) as e, st_ymax(e) as n from (select st_expand(st_envelope(boundary), 0.02) as e from municipality where id = :m) x",
+        m=municipality_id,
+    )
+    return b["w"], b["s"], b["e"], b["n"]
+
+
+def _geocode(conn: Connection, municipality_id: int, q: str) -> list[dict[str, Any]]:
+    name = scalar(conn, "select name from municipality where id = :m", m=municipality_id)
+    try:
+        return search_address(q, _bbox(conn, municipality_id), name)
+    except GeocodeError as exc:
+        raise HTTPException(503, str(exc))
+
+
+def _public_municipality(conn: Connection, slug: str) -> int:
+    municipality_id = scalar(conn, "select id from municipality where slug = :s", s=slug)
+    if not municipality_id:
+        raise HTTPException(404, "Comuna no encontrada")
+    return municipality_id
+
+
+def _place(conn: Connection, municipality_id: int, lon: float, lat: float) -> dict[str, Any]:
+    try:
+        return place_report(conn, municipality_id, lon, lat)
+    except OutsideComuna as exc:
+        raise HTTPException(422, str(exc))
+
+
+@router.get("/geocode", dependencies=[Depends(rate_limit("geocode", 30, 60))])
+def geocode(q: str, principal: Principal = Depends(current_principal), conn: Connection = Depends(get_conn)) -> list[dict[str, Any]]:
+    return _geocode(conn, principal.municipality_id, q)
+
+
+@router.get("/lugar")
+def lugar(lon: float, lat: float, principal: Principal = Depends(current_principal), conn: Connection = Depends(get_conn)) -> dict[str, Any]:
+    return _place(conn, principal.municipality_id, lon, lat)
+
+
+@router.get("/public/{slug}/geocode", dependencies=[Depends(rate_limit("public_geocode", 20, 60))])
+def public_geocode(slug: str, q: str, conn: Connection = Depends(get_conn)) -> list[dict[str, Any]]:
+    return _geocode(conn, _public_municipality(conn, slug), q)
+
+
+@router.get("/public/{slug}/lugar", dependencies=[Depends(rate_limit("public_place", 60, 60))])
+def public_place(slug: str, lon: float, lat: float, conn: Connection = Depends(get_conn)) -> dict[str, Any]:
+    return _place(conn, _public_municipality(conn, slug), lon, lat)
+
+
+@router.get("/public/{slug}/capas/{key}", dependencies=[Depends(rate_limit("public_layers", 120, 60))])
+def public_layer(slug: str, key: str, conn: Connection = Depends(get_conn)) -> dict[str, Any]:
+    if key not in PUBLIC_LAYERS:
+        raise HTTPException(404, "Capa no disponible en el portal público")
+    return layer_geojson(conn, _public_municipality(conn, slug), key)
+
+
+@router.get("/public/{slug}/comuna")
+def public_comuna(slug: str, conn: Connection = Depends(get_conn)) -> dict[str, Any]:
+    municipality = get_municipality(conn, _public_municipality(conn, slug))
+    config = public_config(municipality["config"])
+    return {
+        "name": municipality["name"],
+        "region": municipality["region"],
+        "lon": municipality["lon"],
+        "lat": municipality["lat"],
+        "bbox": _bbox(conn, municipality["id"]),
+        "display_name": config["branding"].get("display_name") or f"Municipalidad de {municipality['name']}",
+        "primary_color": config["branding"].get("primary_color"),
+        "logo_url": config["branding"].get("logo_url"),
+    }
 
 
 @router.get("/public/{slug}/resumen")

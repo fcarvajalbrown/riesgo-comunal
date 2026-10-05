@@ -325,3 +325,28 @@ def test_logo_upload_is_public_and_hides_server_path(env):
         assert "logo_path" not in client.get("/api/me", headers=admin).json()["municipality"]["config"]["branding"]
     finally:
         assert client.delete("/api/municipality/logo", headers=admin).json()["branding"]["logo_url"] is None
+
+
+def test_public_place_check_uses_official_layers(env):
+    client, *_ = env
+    with transaction() as conn:
+        inside = conn.execute(
+            text(
+                """
+                select st_x(p) as lon, st_y(p) as lat from (
+                  select st_pointonsurface(f.geom) as p from feature f, municipality m
+                  where m.slug = 'lota' and f.dataset = 'tsunami_evacuation_area' and st_intersects(f.geom, m.boundary) limit 1) x
+                """
+            )
+        ).mappings().first()
+    if inside is None:
+        pytest.skip("requiere capas de tsunami ingestadas")
+    report = client.get(f"/api/public/lota/lugar?lon={inside['lon']}&lat={inside['lat']}").json()
+    tsunami = next(i for i in report["items"] if i["hazard"] == "tsunami")
+    assert tsunami["status"] == "dentro" and tsunami["data_class"] == "official" and tsunami["provenance_id"]
+    assert "no reemplaza" in report["notice"].lower()
+    assert client.get("/api/public/lota/lugar?lon=-70.6&lat=-33.4").status_code == 422
+    assert client.get("/api/public/lota/capas/municipal_asset").status_code == 404
+    assert client.get("/api/public/lota/capas/tsunami_evacuation_area").json()["type"] == "FeatureCollection"
+    comuna = client.get("/api/public/lota/comuna").json()
+    assert comuna["name"] == "Lota" and "logo_path" not in comuna

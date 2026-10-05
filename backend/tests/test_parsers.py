@@ -214,3 +214,29 @@ def test_shapefile_without_projection_is_rejected(tmp_path):
     _write_gis(str(tmp_path), "activos.shp", "ESRI Shapefile")
     with pytest.raises(ParseError, match="sistema de coordenadas"):
         parse_features("activos.zip", _zip_folder(str(tmp_path), skip=(".prj",)))
+
+
+def test_geocoder_is_bounded_and_cached(monkeypatch):
+    from app import geocode
+
+    calls = []
+
+    class Fake:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return [{"display_name": "Calle Falsa 123, Lota", "lon": "-73.15", "lat": "-37.09"}]
+
+    def fake_get(url, params, headers, timeout):
+        calls.append(params)
+        return Fake()
+
+    monkeypatch.setattr(geocode.httpx, "get", fake_get)
+    monkeypatch.setattr(geocode, "MIN_INTERVAL_SECONDS", 0)
+    geocode._cache.clear()
+    first = geocode.search_address("Calle  Falsa 123", (-73.2, -37.2, -73.0, -37.0), "Lota")
+    second = geocode.search_address("calle falsa 123", (-73.2, -37.2, -73.0, -37.0), "Lota")
+    assert first == second and len(calls) == 1
+    assert calls[0]["bounded"] == 1 and calls[0]["countrycodes"] == "cl" and "Lota" in calls[0]["q"]
+    assert geocode.search_address("ab", (-73.2, -37.2, -73.0, -37.0), "Lota") == []
