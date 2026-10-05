@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field, HttpUrl
 from sqlalchemy import Connection, text
 
 from app.ai.assistant import answer
-from app.alerts import ALERT_FEED_NOTE, active_alerts
+from app.alerts import ALERT_FEED_NOTE, ALERT_ORIGIN, active_alerts
 from app.api.layers import LAYERS, layer_catalog, layer_geojson, provenance_detail, search_places
 from app.auth import Principal, audit, current_principal, issue_token, require, verify_password
 from app.db import get_conn, row, rows, scalar
@@ -630,15 +630,30 @@ def public_comuna(slug: str, conn: Connection = Depends(get_conn)) -> dict[str, 
 
 @router.get("/public/{slug}/resumen")
 def public_summary(slug: str, conn: Connection = Depends(get_conn)) -> dict[str, Any]:
-    municipality_id = scalar(conn, "select id from municipality where slug = :s", s=slug)
-    if not municipality_id:
-        raise HTTPException(404, "Comuna no encontrada")
+    municipality_id = _public_municipality(conn, slug)
     result = assess_comuna(conn, municipality_id)
+    now = datetime.now(UTC)
     return {
         "municipality": result["municipality"]["name"],
         "computed_at": result["computed_at"],
+        "overall_level": result["overall_level"],
+        "overall_level_label": result["overall_level_label"],
         "items": [{"hazard": a["hazard_name"], "level": a["level"], "level_label": a["level_label"], "headline": a["headline"]} for a in result["assessments"]],
-        "alerts": [{"title": a["title"], "issuer": a["issuer"], "source_url": a["source_url"]} for a in active_alerts(conn, municipality_id)],
+        "alerts": [
+            {
+                "title": a["title"],
+                "issuer": a["issuer"],
+                "level": a["level"],
+                "hazard": a["hazard"],
+                "source_url": a["source_url"],
+                "starts_at": a["starts_at"],
+                "ends_at": a["ends_at"],
+                "in_force": a["starts_at"] <= now,
+                "origin": ALERT_ORIGIN.get(a["source_key"], "ingresada por la municipalidad"),
+            }
+            for a in active_alerts(conn, municipality_id, now)
+        ],
+        "alert_feed_note": ALERT_FEED_NOTE,
         "notice": result["notice"],
         "official_information": "Para alertas oficiales consulte senapred.cl y los canales de su municipalidad.",
     }

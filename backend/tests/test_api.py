@@ -170,6 +170,9 @@ def test_public_summary_has_notice(env):
     client, *_ = env
     body = client.get(f"/api/public/{TEST_SLUG}/resumen").json()
     assert "ausencia de un nivel alto no significa ausencia de peligro" in body["notice"]
+    assert body["overall_level"] and "alert_feed_note" in body
+    assert all({"level", "origin", "in_force", "source_url"} <= set(a) for a in body["alerts"])
+    assert client.get("/api/public/no-existe/resumen").status_code == 404
 
 
 def test_manual_alert_requires_source_url(env):
