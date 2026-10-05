@@ -64,3 +64,13 @@ export const ROLE_LABEL: Record<string, string> = {
   COMUNICACIONES: "Comunicaciones",
   VIEWER: "Consulta",
 };
+
+export const WARNING_TONE: Record<string, string> = {
+  Alarma: "border-red-300 bg-red-50 text-red-950",
+  Alerta: "border-orange-300 bg-orange-50 text-orange-950",
+  Aviso: "border-yellow-300 bg-yellow-50 text-yellow-950",
+  "Alerta Roja": "border-red-300 bg-red-50 text-red-950",
+  "Alerta Amarilla": "border-yellow-400 bg-yellow-50 text-yellow-950",
+  "Alerta Temprana Preventiva": "border-green-300 bg-green-50 text-green-950",
+  default: "border-red-200 bg-red-50 text-red-950",
+};

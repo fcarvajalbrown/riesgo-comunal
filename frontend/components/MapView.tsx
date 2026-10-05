@@ -9,10 +9,10 @@ import { apiGet, apiObjectUrl } from "@/lib/api";
 import { DATA_CLASS_STYLE, LEVEL_STYLE, formatShortTime } from "@/lib/format";
 import type { LayerInfo, Me, RasterInfo } from "@/lib/types";
 
-const BASEMAP = "https://tiles.openfreemap.org/styles/positron";
+export const BASEMAP = "https://tiles.openfreemap.org/styles/positron";
 maplibregl.setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
-const POINT_COLORS: Record<string, string> = {
+export const POINT_COLORS: Record<string, string> = {
   school: "#2563eb",
   health_facility: "#dc2626",
   tsunami_meeting_point: "#059669",
@@ -24,8 +24,8 @@ const POINT_COLORS: Record<string, string> = {
 };
 type FeatureCollectionLike = { type: "FeatureCollection"; features: unknown[] };
 
-const WILDFIRE_COLORS = ["#fde68a", "#fdba74", "#fb923c", "#ea580c", "#9a3412"];
-const WARNING_COLORS: Record<string, string> = { Alarma: "#b91c1c", Alerta: "#ea580c", Aviso: "#eab308" };
+export const WILDFIRE_COLORS = ["#fde68a", "#fdba74", "#fb923c", "#ea580c", "#9a3412"];
+export const WARNING_COLORS: Record<string, string> = { Alarma: "#b91c1c", Alerta: "#ea580c", Aviso: "#eab308" };
 
 export interface MapFocus {
   lon: number;
@@ -39,7 +39,7 @@ function levelExpression() {
   return ["match", ["get", "level"], ...entries, "#8a929c"] as unknown as maplibregl.ExpressionSpecification;
 }
 
-function addLayerStyle(map: MlMap, key: string) {
+export function addLayerStyle(map: MlMap, key: string) {
   const source = `src-${key}`;
   const before = map.getLayer("lyr-comuna-line") ? "lyr-comuna-line" : undefined;
   if (key === "comuna") {
