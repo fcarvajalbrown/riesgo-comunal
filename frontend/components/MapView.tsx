@@ -170,7 +170,10 @@ export function MapView({
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
+    let loaded = false;
     map.on("load", () => {
+      loaded = true;
+      setMapError(null);
       const ring = me.municipality.bbox_geojson?.coordinates?.[0];
       if (ring) {
         const xs = ring.map((c) => c[0]);
@@ -179,8 +182,8 @@ export function MapView({
       }
       setStyleReady(true);
     });
-    map.on("error", (e: { error: unknown }) => {
-      if (!map.isStyleLoaded()) setMapError("No se pudo cargar el mapa base. Revise la conexión a internet.");
+    map.on("error", (e: { error: unknown; sourceId?: string }) => {
+      if (!loaded && !e.sourceId) setMapError("No se pudo cargar el mapa base. Revise la conexión a internet.");
       console.warn(e.error);
     });
     mapRef.current = map;
