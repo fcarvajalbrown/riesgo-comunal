@@ -1,13 +1,13 @@
 # Riesgo Comunal
 
-Municipal risk intelligence platform for Chilean comunas. It collects official public data (SENAPRED, IDE Chile, SINCA, DGA, USGS, DMC, INE Censo 2024), combines it with each municipality's own data, and answers three questions in Spanish: what is happening now (AHORA), which areas are vulnerable (RIESGO), and what history and priorities the comuna has (PLANIFICAR). Every figure links back to its source.
+Municipal risk intelligence platform for Chilean comunas. It collects official public data (SENAPRED, IDE Chile, SINCA, DGA, USGS, DMC, INE Censo 2024, MOP Vialidad), combines it with each municipality's own data, and answers three questions in Spanish: what is happening now (AHORA), which areas are vulnerable (RIESGO), and what history and priorities the comuna has (PLANIFICAR). Every figure links back to its source.
 
 It is a decision-support tool. Levels shown are platform calculations from official data, not official alerts or assessments. Official alerts come from SENAPRED and the competent authorities.
 
 ## What it does
 
 - Ingests official layers on a schedule through source adapters; the browser and the assistant read only the platform database.
-- Hazard modules per comuna (wildfire, tsunami, flood, air quality, earthquake, meteorology, SENAPRED alerts) with a transparent rules engine and configurable thresholds; each hazard zone and sector also reports people, people aged 60 or over and dwellings inside it, estimated from INE Censo 2024 blocks.
+- Hazard modules per comuna (wildfire, tsunami, flood, air quality, earthquake, meteorology, SENAPRED alerts) with a transparent rules engine and configurable thresholds; each hazard zone and sector also reports people, people aged 60 or over and dwellings inside it, estimated from INE Censo 2024 blocks, plus MOP bridges and km of national road network.
 - Map with layer, place and address search (address search runs the same place check as the public page) and a side-by-side view to compare two hazard layers; role-based screens and reports (Alcalde, Emergencias, SECPLAN, Comunicaciones) with PDF export.
 - Uploads of municipal data: CSV, GeoJSON, KML, KMZ, zipped Shapefile, GeoPackage, GeoTIFF, photos, PDF, TXT, MD.
 - Public residents' page at `/c/{slug}`: official alerts in force, a per-hazard summary, an address or location check (tsunami evacuation area and nearest meeting point, wildfire recurrence, weather warnings), emergency numbers and official links. No login.

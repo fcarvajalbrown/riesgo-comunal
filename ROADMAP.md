@@ -20,7 +20,7 @@ The MVP list of the original specification is complete. These items from the res
 | G1 | Research | Sources not yet researched: CONAF, MINVU, Dirección de Obras Hidráulicas, Ministerio de Transportes, datos.gob.cl, regional government datasets, municipal open-data portals, NOAA | Not Started | |
 | G2 | Research | Per-source fields missing from `docs/data-sources.md`: WMS/WFS/WMTS availability, rate limits, geographic resolution, reliability, known limitations as separate columns | Not Started | |
 | G3 | Exposure | Population exposed per hazard zone and sector (INE census) | Done | INE Censo 2024 blocks, area-weighted estimate |
-| G4 | Exposure | Roads and bridges exposed (OpenStreetMap) | Not Started | |
+| G4 | Exposure | Roads and bridges exposed | Done | Official MOP Vialidad network and bridge inventory instead of OpenStreetMap; urban streets not covered |
 | G5 | Hazards | Volcanic module (SENAPRED layer, SERNAGEOMIN alert levels) | Not Started | |
 | G6 | Hazards | Landslide / remoción en masa module | Not Started | Official source to be found |
 | G7 | Hazards | Coastal surge / marejadas module | Not Started | Official machine-readable source to be found |

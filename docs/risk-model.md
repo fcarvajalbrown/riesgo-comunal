@@ -96,6 +96,8 @@ Thresholds in `default_thresholds` can be changed per comuna by a municipal admi
 
 Every spatial hazard module that lists exposed facilities also lists people, persons aged 60 or over, and private dwellings inside the hazard zone, from the INE Censo 2024 block base. Blocks partly inside a zone count in proportion to the share of their area inside it, which assumes people are spread evenly within each block. The figures are labelled **Estimado** with that note. In rural entities, which are large, the estimate is rough. Checked when added: for Lota's tsunami evacuation area the area-weighted estimate is 14,405 persons, counting a block only when its representative point is inside gives 14,646, and counting every block that touches the zone gives 20,776, so the estimate sits close to the first two and well below the upper bound. Exposure never changes a hazard level. Each sector also carries an estimated resident count computed the same way.
 
+Roads and bridges come from MOP's Dirección de Vialidad: the exposure lists the bridges, viaducts and overpasses inside the zone, and the kilometres of national road network inside it with the route roles involved (for Lota's tsunami evacuation area, 10.6 km on routes 160 and O-850). Only roads and bridges under Vialidad are covered; urban streets, which municipalities and SERVIU manage, are not, and the exposure note says so.
+
 ## Comuna context (not a level)
 
 SENAPRED's ICFSR (Índice Comunal de Factores Subyacentes del Riesgo) is shown as an official contextual index with its four components and the year of application. It is not merged into hazard levels.
