@@ -14,11 +14,16 @@ def main() -> int:
     parser.add_argument("--fill", nargs=2, metavar=("SELECTOR", "TEXT"), default=None)
     parser.add_argument("--click", action="append", default=[])
     parser.add_argument("--settle-ms", type=int, default=4000)
+    parser.add_argument("--local-storage", action="append", default=[], metavar="KEY=VALUE")
+    parser.add_argument("--press-enter", action="store_true")
     args = parser.parse_args()
     errors: list[str] = []
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page(viewport={"width": args.width, "height": args.height})
+        for item in args.local_storage:
+            key, value = item.split("=", 1)
+            page.add_init_script(f"window.localStorage.setItem({key!r}, {value!r})")
         page.on("console", lambda m: errors.append(f"console.{m.type}: {m.text}") if m.type == "error" else None)
         page.on("pageerror", lambda e: errors.append(f"pageerror: {e}"))
         page.goto(args.url, wait_until="networkidle", timeout=60000)
@@ -26,6 +31,9 @@ def main() -> int:
             page.get_by_text(args.wait_text).first.wait_for(timeout=30000)
         if args.fill:
             page.fill(args.fill[0], args.fill[1])
+            if args.press_enter:
+                page.press(args.fill[0], "Enter")
+                page.wait_for_timeout(args.settle_ms)
         for target in args.click:
             page.get_by_text(target, exact=False).first.click()
             page.wait_for_timeout(args.settle_ms)
