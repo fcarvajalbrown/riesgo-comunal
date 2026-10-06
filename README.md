@@ -8,7 +8,7 @@ It is a decision-support tool. Levels shown are platform calculations from offic
 
 - Ingests official layers on a schedule through source adapters; the browser and the assistant read only the platform database.
 - Hazard modules per comuna (wildfire, tsunami, flood, air quality, earthquake, meteorology, SENAPRED alerts) with a transparent rules engine and configurable thresholds.
-- Map, role-based screens and reports (Alcalde, Emergencias, SECPLAN, Comunicaciones) with PDF export.
+- Map with layer, place and address search (address search runs the same place check as the public page) and a side-by-side view to compare two hazard layers; role-based screens and reports (Alcalde, Emergencias, SECPLAN, Comunicaciones) with PDF export.
 - Uploads of municipal data: CSV, GeoJSON, KML, KMZ, zipped Shapefile, GeoPackage, GeoTIFF, photos, PDF, TXT, MD.
 - Public residents' page at `/c/{slug}`: official alerts in force, a per-hazard summary, an address or location check (tsunami evacuation area and nearest meeting point, wildfire recurrence, weather warnings), emergency numbers and official links. No login.
 - Statistics with period, sample size, source, method and limitations.

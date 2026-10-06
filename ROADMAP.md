@@ -31,7 +31,7 @@ The MVP list of the original specification is complete. These items from the res
 | G12 | Statistics | Incidents by sector, seasonality, recurrence, affected area | Not Started | |
 | G13 | Reports | Maps inside PDF reports; historical comparisons | Not Started | |
 | G14 | Residents | Public portal page: what is happening, am I near an affected area, official links | Done | `/c/{slug}` |
-| G15 | Map | Address search, comparing two hazards side by side | In Progress | Address search done on the public page; staff map and hazard comparison pending |
+| G15 | Map | Address search, comparing two hazards side by side | Done | Staff map: Enter searches addresses and runs the place check; "Comparar amenazas" shows two synced maps |
 | G16 | Municipal data | Zipped Shapefile, GeoPackage, GeoTIFF, photos, emergency contacts and personnel, inspection records | Done | |
 | G17 | Customisation | Logo, brand colour, terminology overrides, emergency contacts in the UI | Done | |
 | G18 | Assistant | Report generation on request; hazard and housing overlap question | Not Started | G3 for housing |
