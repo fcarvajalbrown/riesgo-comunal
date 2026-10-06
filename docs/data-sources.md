@@ -44,7 +44,7 @@ Status values:
 | Open-Meteo | Open-Meteo | Forecasts | REST JSON | `https://api.open-meteo.com/v1/forecast` | Hourly | Yes | Data CC BY 4.0; **free API is non-commercial only** | No on the free tier (paid plan required) | Per plan | Model aggregator, not official | EVALUATED, NOT USED (commercial restriction) |
 | NASA FIRMS | NASA | Active fire hotspots (MODIS/VIIRS) | REST CSV/JSON, needs free `MAP_KEY` | `https://firms.modaps.eosdis.nasa.gov/api/area/` | ~3 h | Yes | NASA open data | Yes (NASA data policy) | Yes | Satellite detection, not official fire status | EVALUATED, NOT USED in MVP (needs key; planned) |
 | Copernicus / Sentinel | ESA / EU | Imagery, EMS rapid mapping | Various | n/a | n/a | n/a | Copernicus open licence | Yes | Yes | Not official for Chile | EVALUATED, NOT USED (out of MVP scope) |
-| INE Censo | Instituto Nacional de Estadísticas | Population by manzana / entidad | Downloads (shapefile / CSV) | `https://www.ine.gob.cl/terminos-de-uso-y-licencia-de-datos-abiertos` (terms page) | Census cycle | Censos | INE open-data terms (page exists; text not reviewed in this pass) | UNVERIFIED | UNVERIFIED | Official statistics | UNVERIFIED (population exposure planned next) |
+| INE Censo de Población y Vivienda 2024 (manzana-entidad) | Instituto Nacional de Estadísticas (ArcGIS org `INE-CHILE`, `hUyD8u3TeZLKPe4T`) | Census 2024 aggregate counts per urban block (manzana) and rural settlement (entidad): persons, private dwellings, households, ages 0-5 and 60+, disability; comuna totals | ArcGIS REST FeatureServer (GeoJSON via `f=geojson`, EPSG 4674 served as 4326) | `https://services5.arcgis.com/hUyD8u3TeZLKPe4T/arcgis/rest/services/Censo2024_v2/FeatureServer/5` (Manzanas_Entidades_CPV24); comuna totals `.../FeatureServer/11` (Comunal_CPV24) | Census cycle; service edited 2026 | Censo 2024 only in this layer | CC BY-SA 4.0 (INE open-data terms) | Yes, with attribution and ShareAlike | Yes | Official statistics | INGESTED |
 
 ## Notes per source
 
@@ -81,3 +81,8 @@ SENAPRED's ArcGIS Online organisation returns error 429 ("API calls for large ge
 ### ICFSR
 
 Field names `ic_ot`, `ic_cc`, `ic_soc`, `ic_gob` are mapped to SENAPRED's four published dimensions (Ordenamiento Territorial; Cambio Climático y Recursos Naturales; Condiciones Socioeconómicas y Demográficas; Gobernanza) by their abbreviations; SENAPRED's layer does not label them. The index is a municipal self-diagnosis (41 variables), per SENAPRED's "Factores Subyacentes" page.
+
+### INE Censo 2024 blocks
+
+The adapter `ine_censo2024` reads only aggregate counts per block or rural entity, never microdata. Checked when it was added: the blocks whose representative point lies in Lota add up to 39,782 persons in 875 polygons, against INE's comuna total of 39,980 in the `Comunal_CPV24` layer (99.5%); Retiro 22,184 in 284 polygons against 22,310 (99.4%). The platform shows the block-based estimate and keeps the official comuna total beside it. INE publishes the same base as downloadable files (GeoParquet) from the census results site; the service was used because it can be filtered by area.
+
