@@ -303,3 +303,21 @@ def test_senapred_thread_ends_when_cancelled():
     assert record.starts_at.isoformat() == "2026-10-02T21:05:44-03:00"
     assert record.ends_at.isoformat() == "2026-10-05T13:28:00-03:00"
     assert record.source_url == link
+
+
+def test_census_block_keeps_only_aggregate_counts():
+    from app.sources.ine_census import block_record, comuna_record
+
+    feature = {
+        "geometry": {"type": "Polygon", "coordinates": [[[-73.1, -37.0], [-73.0, -37.0], [-73.0, -37.1], [-73.1, -37.0]]]},
+        "properties": {"CUT": 8106, "MANZENT": 8106011001003.0, "TIPO_MZ": "URBANO", "CATEGORIA": "Ciudad", "ENTIDAD": "LOTA", "n_per": 136, "n_vp": 50, "n_edad_60_mas": 20, "n_hog": None},
+    }
+    record = block_record(feature)
+    assert record.external_id == "8106011001003"
+    assert record.category == "urbano"
+    assert record.properties["cut"] == "08106"
+    assert record.properties["n_per"] == 136 and record.properties["n_hog"] == 0
+    assert block_record({"properties": {}}) is None
+
+    total = comuna_record({"CUT": 7405, "COMUNA": "RETIRO", "n_per": 22310, "n_vp": 10148, "n_hog": 8218})
+    assert (total.cut_code, total.year, total.value) == ("07405", 2024, 22310)
