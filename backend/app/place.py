@@ -62,7 +62,7 @@ def place_report(conn: Connection, municipality_id: int, lon: float, lat: float)
     if tsunami:
         text = "Este lugar está dentro del área que se debe evacuar ante un tsunami."
         if meeting:
-            text += f" El punto de encuentro más cercano ({meeting_label(meeting['name'])}) está a unos {round(meeting['meters'] / 50) * 50:.0f} m en línea recta; está marcado en el mapa."
+            text += f" El punto de encuentro más cercano ({meeting_label(meeting['name'])}) está a unos {round(meeting['meters'] / 50) * 50:.0f} m en línea recta."
         items.append(
             {
                 "hazard": "tsunami",

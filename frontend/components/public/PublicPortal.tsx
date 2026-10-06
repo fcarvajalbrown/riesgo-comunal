@@ -101,6 +101,7 @@ function PlaceResult({ report }: { report: PlaceReport }) {
       {report.items.map((item, i) => (
         <div key={i} className={`rounded-xl border p-3 text-sm ${item.status === "dentro" ? "border-blue-300 bg-blue-50" : "border-border bg-surface"}`}>
           <p>{item.text}</p>
+          {item.meeting_point && <p className="mt-1">El punto de encuentro está marcado en verde en el mapa.</p>}
           {item.action && <p className="mt-1 font-semibold">{item.action}</p>}
           <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
             <DataClassBadge dataClass={item.data_class} /> Fuente: {item.source}
