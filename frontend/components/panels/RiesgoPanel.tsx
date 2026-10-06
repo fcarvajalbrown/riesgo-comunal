@@ -71,6 +71,7 @@ export function RiesgoPanel({ onFocus, selectedSector, onSelectSector }: { onFoc
                 <span className="flex-1 text-sm">
                   <span className="font-medium">{s.name}</span> {s.uses_demo_data && <DemoBadge />}
                   {s.reasons[0] && <span className="block text-xs text-muted">{s.reasons[0]}</span>}
+                  {s.population_estimate ? <span className="block text-xs text-muted">Unas {s.population_estimate.toLocaleString("es-CL")} personas (estimación con Censo 2024)</span> : null}
                 </span>
               </button>
             </li>

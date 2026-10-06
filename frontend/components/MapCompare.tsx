@@ -13,7 +13,7 @@ import type { LayerInfo, Me } from "@/lib/types";
 type Collection = { type: "FeatureCollection"; features: unknown[] };
 type Camera = { center: [number, number]; zoom: number };
 
-const PREFERRED = ["wildfire_hazard", "tsunami_evacuation_area", "sectors", "dmc_warning", "municipal_incident", "earthquake"];
+const PREFERRED = ["wildfire_hazard", "census_block", "tsunami_evacuation_area", "sectors", "dmc_warning", "municipal_incident", "earthquake"];
 
 function pickDefaults(options: LayerInfo[]): [string, string] {
   const keys = options.map((l) => l.key);

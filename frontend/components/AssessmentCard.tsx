@@ -87,10 +87,11 @@ export function AssessmentCard({ assessment, onFocus }: { assessment: Assessment
                     <li key={x.category} className="rounded-lg border border-border p-2.5 text-sm">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="font-medium">
-                          {x.count} · {x.label}
+                          {x.count.toLocaleString("es-CL")} · {x.label}
                         </span>
                         <DataClassBadge dataClass={x.data_class} />
                       </div>
+                      {x.note && <p className="mt-1 text-xs text-muted">{x.note}</p>}
                       <ul className="mt-1 flex flex-wrap gap-1.5">
                         {x.items.map((item) => (
                           <li key={item.id}>

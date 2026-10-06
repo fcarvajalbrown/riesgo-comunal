@@ -59,6 +59,11 @@ function popupHtml(layer: LayerInfo | undefined, props: Record<string, unknown>)
     ["occurred_on", "Fecha"],
     ["affected_people", "Personas afectadas"],
     ["vigencia", "Vigencia"],
+    ["n_per", "Personas (Censo 2024)"],
+    ["n_vp", "Viviendas particulares"],
+    ["n_edad_60_mas", "Personas de 60 años o más"],
+    ["densidad", "Personas por hectárea"],
+    ["population_estimate", "Población estimada (Censo 2024)"],
   ];
   const seen = new Set<string>();
   for (const [key, label] of fields) {

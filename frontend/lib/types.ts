@@ -30,6 +30,7 @@ export interface Exposure {
   data_class_label: string;
   source: string;
   items: ExposureItem[];
+  note?: string | null;
 }
 
 export interface Assessment {
@@ -94,6 +95,7 @@ export interface SectorResult {
   overall_level_label: string;
   reasons: string[];
   uses_demo_data: boolean;
+  population_estimate?: number | null;
 }
 
 export interface RiesgoResponse extends ComunaAssessment {

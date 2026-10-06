@@ -21,6 +21,7 @@ export const POINT_COLORS: Record<string, string> = {
 };
 
 export const WILDFIRE_COLORS = ["#fde68a", "#fdba74", "#fb923c", "#ea580c", "#9a3412"];
+export const DENSITY_COLORS = ["#f2f0f7", "#cbc9e2", "#9e9ac8", "#756bb1", "#54278f"];
 export const WARNING_COLORS: Record<string, string> = { Alarma: "#b91c1c", Alerta: "#ea580c", Aviso: "#eab308" };
 
 function levelExpression() {
@@ -71,6 +72,22 @@ export function addLayerStyle(map: MlMap, key: string) {
     map.addLayer({ id: "lyr-dmc_warning-line", type: "line", source, paint: { "line-color": "#a16207", "line-width": 1.5, "line-dasharray": [3, 2] } }, before);
     return;
   }
+  if (key === "census_block") {
+    map.addLayer(
+      {
+        id: "lyr-census_block-fill",
+        type: "fill",
+        source,
+        paint: {
+          "fill-color": ["step", ["coalesce", ["get", "densidad"], 0], DENSITY_COLORS[0], 5, DENSITY_COLORS[1], 20, DENSITY_COLORS[2], 50, DENSITY_COLORS[3], 100, DENSITY_COLORS[4]],
+          "fill-opacity": 0.6,
+        },
+      },
+      before,
+    );
+    map.addLayer({ id: "lyr-census_block-line", type: "line", source, paint: { "line-color": "#ffffff", "line-width": 0.4 } }, before);
+    return;
+  }
   if (key === "tsunami_evacuation_area") {
     map.addLayer({ id: "lyr-tsunami_evacuation_area-fill", type: "fill", source, paint: { "fill-color": "#2563eb", "fill-opacity": 0.28 } }, before);
     map.addLayer({ id: "lyr-tsunami_evacuation_area-line", type: "line", source, paint: { "line-color": "#1d4ed8", "line-width": 1.2, "line-dasharray": [2, 1] } }, before);
@@ -105,7 +122,9 @@ export function LayerLegend({ layer }: { layer: LayerInfo }) {
         ? layer.legend.map((l) => ({ key: l.value, label: l.label, color: WILDFIRE_COLORS[Number(l.value) - 1] }))
         : layer.key === "dmc_warning"
           ? layer.legend.map((l) => ({ key: l.value, label: l.label, color: WARNING_COLORS[l.value] }))
-          : layer.key === "tsunami_evacuation_area"
+          : layer.key === "census_block"
+            ? layer.legend.map((l) => ({ key: l.value, label: l.label, color: DENSITY_COLORS[{ "0": 0, "5": 1, "20": 2, "50": 3, "100": 4 }[l.value] ?? 0] }))
+            : layer.key === "tsunami_evacuation_area"
             ? [{ key: "area", label: "área a evacuar", color: "#2563eb" }]
             : POINT_COLORS[layer.key]
               ? [{ key: "point", label: "símbolo en el mapa", color: POINT_COLORS[layer.key], round: true }]
