@@ -2,11 +2,13 @@
 
 ## Current state
 
-MVP complete (ROADMAP Phase 1 Done). Runs natively (dev DB on port 5440 via `tools/dev-db/`) and with `docker compose up -d` (verified on a clean clone). Smoke checks: `tools/docker-check/run.sh` and `tools/docker-check/api-check.sh`.
+MVP complete and verified with `docker compose up -d` on a clean clone. Full-spec gap items done: G3, G4, G14, G15, G16, G17; G9 partly (official DMC warnings; observations blocked). Tenants: Lota (08106) and Retiro (07405). 99 backend tests pass. Next step: G5 volcanic module. The paste-ready handoff is in `PROMPT.md`.
 
 ## Open flags
 
-- Blocked on external parties: DMC credential, SENAPRED alert feed, licence confirmations, CSN approval (see ROADMAP open items).
-- Ubuntu-22.04 WSL VHDX holds about 6.6 GB of freed space; left as is by choice. Docker Engine stays installed there for future compose checks.
-- Remote: private GitHub repo fcarvajalbrown/riesgo-comunal, branch main.
-- No ADRs written yet; stack decisions live in `docs/architecture.md`.
+- Blocked on external parties: DMC credential, NASA FIRMS key, official SENAPRED feed, licence confirmations (SENAPRED, IDE Chile, SINCA, DGA, MOP), CSN approval.
+- Retiro tsunami card says "Sin datos" instead of "no aplica" for an inland comuna.
+- OpenStreetMap urban streets deferred.
+- `frontend/e2e/` and `frontend/playwright.config.ts` uncommitted, waiting for G20.
+- Local dev: run uvicorn with `--timeout-keep-alive 75` behind the Next proxy.
+- Docker Engine stays installed in WSL Ubuntu-22.04 for compose checks.
