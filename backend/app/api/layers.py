@@ -50,6 +50,17 @@ LAYERS: dict[str, LayerDef] = {
         LayerDef("tsunami_evacuation_area", "Área a evacuar por tsunami", "Áreas de evacuación por tsunami (SENAPRED).", "official", "senapred", "tsunami_evacuation_area", "polygon"),
         LayerDef("tsunami_meeting_point", "Puntos de encuentro (tsunami)", "Puntos de encuentro ante tsunami (SENAPRED).", "official", "senapred", "tsunami_meeting_point", "point"),
         LayerDef(
+            "road_segment",
+            "Red vial nacional (MOP)",
+            "Caminos bajo tuición de la Dirección de Vialidad por clasificación; no incluye calles urbanas.",
+            "official",
+            "mop_vialidad",
+            "road_segment",
+            "line",
+            (("Camino Nacional", "Nacional"), ("Camino Regional Principal", "Regional principal"), ("Camino Regional Provincial", "Regional provincial"), ("Camino Regional Comunal", "Regional comunal"), ("Camino Regional de Acceso", "Regional de acceso")),
+        ),
+        LayerDef("bridge", "Puentes (MOP)", "Puentes, viaductos y pasos superiores bajo tuición de Vialidad.", "official", "mop_vialidad", "bridge", "point"),
+        LayerDef(
             "census_block",
             "Población por manzana (Censo 2024)",
             "Personas por hectárea en manzanas urbanas y entidades rurales (INE, Censo de Población y Vivienda 2024).",
@@ -152,6 +163,35 @@ def layer_geojson(conn: Connection, municipality_id: int, key: str) -> dict[str,
                 where m.id = :mid and f.dataset = :d and st_intersects(f.geom, m.boundary)
                 """,
                 d=key,
+                **m,
+            )
+        )
+    if key == "road_segment":
+        return _collection(
+            rows(
+                conn,
+                """
+                select f.id as fid, f.name, f.category as clasificacion, f.properties->>'clase' as clase, f.properties->>'rol' as rol,
+                       f.properties->>'carpeta' as carpeta, f.provenance_id,
+                       st_asgeojson(st_intersection(f.geom, m.boundary), 6) as geojson
+                from feature f, municipality m
+                where m.id = :mid and f.dataset = 'road_segment' and st_intersects(f.geom, m.boundary)
+                """,
+                **m,
+            )
+        )
+    if key == "bridge":
+        return _collection(
+            rows(
+                conn,
+                """
+                select f.id as fid, f.name, f.category as tipo, f.properties->>'cauce' as cauce,
+                       f.properties->>'camino' as camino, (f.properties->>'largo_m')::float8 as largo_m,
+                       f.properties->>'anio_construccion' as anio_construccion, f.provenance_id,
+                       st_asgeojson(f.geom, 6) as geojson
+                from feature f, municipality m
+                where m.id = :mid and f.dataset = 'bridge' and st_dwithin(f.geom::geography, m.boundary::geography, 200)
+                """,
                 **m,
             )
         )

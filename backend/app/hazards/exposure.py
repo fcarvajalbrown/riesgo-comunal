@@ -14,6 +14,9 @@ CENSUS_COUNTS = (
     ("census_dwellings", "n_vp", "Viviendas particulares (Censo 2024)"),
 )
 
+ROAD_SOURCE = "Dirección de Vialidad, MOP"
+ROAD_NOTE = "Solo caminos y puentes bajo tuición de Vialidad; no incluye calles urbanas a cargo del municipio o de SERVIU."
+
 FACILITY_LABELS = {
     "school": ("Establecimientos educacionales", "official", "IDE Chile / MINEDUC"),
     "health_facility": ("Establecimientos de salud", "official", "IDE Chile / MINSAL"),
@@ -51,7 +54,7 @@ def exposure_within(ctx: HazardContext, area: Area, hazard_sql: str, params: dic
         """,
         **p,
     )
-    result: list[Exposure] = population_within(ctx, base, p)
+    result: list[Exposure] = population_within(ctx, base, p) + roads_within(ctx, base, p, limit_items)
     for dataset, (label, data_class, source) in FACILITY_LABELS.items():
         items = [r for r in official if r["dataset"] == dataset]
         if dataset == "school":
@@ -94,6 +97,48 @@ def population_within(ctx: HazardContext, base: str, params: dict[str, Any]) -> 
     if not totals["blocks"]:
         return []
     return [Exposure(key, label, round(float(totals[key])), "estimated", CENSUS_SOURCE, note=CENSUS_NOTE) for key, _, label in CENSUS_COUNTS]
+
+
+def roads_within(ctx: HazardContext, base: str, params: dict[str, Any], limit_items: int) -> list[Exposure]:
+    bridges = rows(
+        ctx.conn,
+        base
+        + """
+        select f.id, f.name, f.category, st_x(f.geom) as lon, st_y(f.geom) as lat
+        from feature f, area, hz
+        where f.dataset = 'bridge' and st_intersects(f.geom, area.g) and st_intersects(f.geom, hz.g)
+        order by f.name
+        """,
+        **params,
+    )
+    roads = rows(
+        ctx.conn,
+        base
+        + """
+        select f.properties->>'rol' as rol, sum(st_length(st_intersection(f.geom, hz.g)::geography)) / 1000 as km
+        from feature f, area, hz
+        where f.dataset = 'road_segment' and st_intersects(f.geom, area.g) and st_intersects(f.geom, hz.g)
+        group by 1 order by 2 desc
+        """,
+        **params,
+    )
+    result = []
+    if bridges:
+        result.append(Exposure("bridge", "Puentes, viaductos y pasos superiores de Vialidad", len(bridges), "official", ROAD_SOURCE, _items(bridges, limit_items)))
+    km = sum(r["km"] for r in roads if r["km"])
+    if km >= 0.05:
+        named = ", ".join(r["rol"] for r in roads[:8] if r["rol"])
+        result.append(
+            Exposure(
+                "road_km",
+                "km de caminos de la red vial nacional",
+                round(km, 1),
+                "official",
+                ROAD_SOURCE,
+                note=(f"Rutas: {named}. " if named else "") + ROAD_NOTE,
+            )
+        )
+    return result
 
 
 def _items(items: list[dict[str, Any]], limit: int) -> list[dict[str, Any]]:

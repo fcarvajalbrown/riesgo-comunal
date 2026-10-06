@@ -367,3 +367,15 @@ def test_population_exposure_is_an_estimate_with_its_source(env):
     assert "INE" in people["source"] and "superficie" in people["note"]
     layer = client.get("/api/layers/census_block", headers=tokens["lota_alcalde"]).json()
     assert layer["features"] and "densidad" in layer["features"][0]["properties"]
+
+
+def test_road_exposure_reports_km_from_mop(env):
+    client, tokens, *_ = env
+    with transaction() as conn:
+        if not scalar(conn, "select 1 from feature where dataset = 'road_segment' limit 1"):
+            pytest.skip("requiere la red vial MOP ingestada")
+    body = client.get("/api/riesgo", headers=tokens["lota_alcalde"]).json()
+    tsunami = next(a for a in body["assessments"] if a["hazard"] == "tsunami")
+    roads = next(x for x in tsunami["exposure"] if x["category"] == "road_km")
+    assert roads["count"] > 0 and roads["data_class"] == "official" and "calles urbanas" in roads["note"]
+    assert client.get("/api/layers/road_segment", headers=tokens["lota_alcalde"]).json()["features"]

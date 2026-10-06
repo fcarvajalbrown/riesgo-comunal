@@ -47,7 +47,7 @@ class Evidence:
 class Exposure:
     category: str
     label: str
-    count: int
+    count: float
     data_class: str
     source: str
     items: list[dict[str, Any]] = field(default_factory=list)
