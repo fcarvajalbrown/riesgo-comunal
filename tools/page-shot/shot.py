@@ -16,6 +16,7 @@ def main() -> int:
     parser.add_argument("--settle-ms", type=int, default=4000)
     parser.add_argument("--local-storage", action="append", default=[], metavar="KEY=VALUE")
     parser.add_argument("--press-enter", action="store_true")
+    parser.add_argument("--select", nargs=2, action="append", default=[], metavar=("SELECTOR", "VALUE"))
     args = parser.parse_args()
     errors: list[str] = []
     with sync_playwright() as p:
@@ -36,6 +37,9 @@ def main() -> int:
                 page.wait_for_timeout(args.settle_ms)
         for target in args.click:
             page.get_by_text(target, exact=False).first.click()
+            page.wait_for_timeout(args.settle_ms)
+        for selector, value in args.select:
+            page.select_option(selector, value)
             page.wait_for_timeout(args.settle_ms)
         page.wait_for_timeout(args.settle_ms)
         page.screenshot(path=args.out, full_page=True)
