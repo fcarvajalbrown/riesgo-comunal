@@ -321,3 +321,34 @@ def test_census_block_keeps_only_aggregate_counts():
 
     total = comuna_record({"CUT": 7405, "COMUNA": "RETIRO", "n_per": 22310, "n_vp": 10148, "n_hog": 8218})
     assert (total.cut_code, total.year, total.value) == ("07405", 2024, 22310)
+
+
+def test_mop_roads_and_bridges_become_geojson_records():
+    from app.sources.arcgis import esri_to_geojson
+    from app.sources.mop_vialidad import bridge_record, road_record
+
+    assert esri_to_geojson({"x": -73.1, "y": -37.1}) == {"type": "Point", "coordinates": [-73.1, -37.1]}
+    assert esri_to_geojson({"paths": [[[-73.1, -37.1], [-73.0, -37.0]]]})["type"] == "MultiLineString"
+    assert esri_to_geojson({"rings": [[[0, 0], [1, 0], [0, 1], [0, 0]]]}) is None
+
+    road = road_record(
+        {
+            "geometry": {"type": "MultiLineString", "coordinates": [[[-73.1, -37.1], [-73.0, -37.0]]]},
+            "properties": {"GlobalID": "{ABC-1}", "ROL": "Ruta 160_1", "ROL_LABEL": "160", "NOMBRE_CAMINO": "Concepción - Lebu", "CLASIFICACION": "Camino Nacional", "CARPETA": "Pavimento"},
+        }
+    )
+    assert road.external_id == "abc-1" and road.category == "Camino Nacional" and road.properties["rol"] == "160"
+    from app.sources.mop_vialidad import road_class
+
+    assert road_class("Camino Nacional Longitudinal") == "Camino Nacional"
+    assert road_class("Camino Regional Comunal (En Proceso de Enrolamiento)") == "Camino Regional Comunal"
+    assert road_class(None) is None
+
+    bridge = bridge_record(
+        {
+            "geometry": {"type": "Point", "coordinates": [-73.0, -37.2]},
+            "properties": {"OBJECTID": 7, "NOMBRE_PUENTE": "PUENTE LIA", "CAUCE_QUEB": "LIA", "LARGO": 50.5, "AÑO_CONTRUCCION": 0, "TIPO_INFRA_WEB": " "},
+        }
+    )
+    assert bridge.external_id == "7" and bridge.category is None
+    assert bridge.properties["cauce"] == "LIA" and bridge.properties["anio_construccion"] is None

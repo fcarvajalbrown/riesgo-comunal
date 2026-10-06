@@ -117,6 +117,52 @@ def query_esri_points(client: httpx.Client, layer_url: str, scope: IngestScope) 
     return list(features.values())
 
 
+def esri_to_geojson(geometry: dict[str, Any]) -> dict[str, Any] | None:
+    if "x" in geometry and "y" in geometry:
+        return {"type": "Point", "coordinates": [geometry["x"], geometry["y"]]}
+    if geometry.get("paths"):
+        return {"type": "MultiLineString", "coordinates": geometry["paths"]}
+    return None
+
+
+def query_esri_by_ids(
+    client: httpx.Client, layer_url: str, scope: IngestScope, out_fields: str = "*", chunk: int = 200, max_offset: float | None = None
+) -> list[dict[str, Any]]:
+    ids: set[int] = set()
+    for envelope in scope.bboxes:
+        data = _get_json(
+            client,
+            f"{layer_url}/query",
+            {
+                "where": "1=1",
+                "geometry": ",".join(str(v) for v in envelope),
+                "geometryType": "esriGeometryEnvelope",
+                "inSR": 4326,
+                "spatialRel": "esriSpatialRelIntersects",
+                "returnIdsOnly": "true",
+                "f": "json",
+            },
+        )
+        ids.update(data.get("objectIds") or [])
+    ordered = sorted(ids)
+    features = []
+    for start in range(0, len(ordered), chunk):
+        params: dict[str, Any] = {
+            "objectIds": ",".join(str(i) for i in ordered[start : start + chunk]),
+            "outFields": out_fields,
+            "outSR": 4326,
+            "f": "json",
+        }
+        if max_offset:
+            params["maxAllowableOffset"] = max_offset
+        data = _get_json(client, f"{layer_url}/query", params)
+        for f in data.get("features", []):
+            geometry = esri_to_geojson(f.get("geometry") or {})
+            if geometry:
+                features.append({"type": "Feature", "geometry": geometry, "properties": f.get("attributes") or {}})
+    return features
+
+
 def _get_json(client: httpx.Client, url: str, params: dict[str, Any], attempts: int = 4) -> dict[str, Any]:
     for attempt in range(attempts):
         response = client.get(url, params=params)
