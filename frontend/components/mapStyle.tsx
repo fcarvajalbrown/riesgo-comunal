@@ -18,9 +18,17 @@ export const POINT_COLORS: Record<string, string> = {
   earthquake: "#92400e",
   municipal_asset: "#0f766e",
   municipal_incident: "#b45309",
+  bridge: "#1e293b",
 };
 
 export const WILDFIRE_COLORS = ["#fde68a", "#fdba74", "#fb923c", "#ea580c", "#9a3412"];
+export const ROAD_COLORS: Record<string, string> = {
+  "Camino Nacional": "#b91c1c",
+  "Camino Regional Principal": "#ea580c",
+  "Camino Regional Provincial": "#ca8a04",
+  "Camino Regional Comunal": "#0d9488",
+  "Camino Regional de Acceso": "#64748b",
+};
 export const DENSITY_COLORS = ["#f2f0f7", "#cbc9e2", "#9e9ac8", "#756bb1", "#54278f"];
 export const WARNING_COLORS: Record<string, string> = { Alarma: "#b91c1c", Alerta: "#ea580c", Aviso: "#eab308" };
 
@@ -70,6 +78,21 @@ export function addLayerStyle(map: MlMap, key: string) {
       before,
     );
     map.addLayer({ id: "lyr-dmc_warning-line", type: "line", source, paint: { "line-color": "#a16207", "line-width": 1.5, "line-dasharray": [3, 2] } }, before);
+    return;
+  }
+  if (key === "road_segment") {
+    map.addLayer(
+      {
+        id: "lyr-road_segment-line",
+        type: "line",
+        source,
+        paint: {
+          "line-color": ["match", ["get", "clase"], ...Object.entries(ROAD_COLORS).flat(), "#94a3b8"] as unknown as maplibregl.ExpressionSpecification,
+          "line-width": ["match", ["get", "clase"], "Camino Nacional", 4, "Camino Regional Principal", 3, 2],
+        },
+      },
+      before,
+    );
     return;
   }
   if (key === "census_block") {
@@ -122,7 +145,9 @@ export function LayerLegend({ layer }: { layer: LayerInfo }) {
         ? layer.legend.map((l) => ({ key: l.value, label: l.label, color: WILDFIRE_COLORS[Number(l.value) - 1] }))
         : layer.key === "dmc_warning"
           ? layer.legend.map((l) => ({ key: l.value, label: l.label, color: WARNING_COLORS[l.value] }))
-          : layer.key === "census_block"
+          : layer.key === "road_segment"
+            ? layer.legend.map((l) => ({ key: l.value, label: l.label, color: ROAD_COLORS[l.value] ?? "#64748b" }))
+            : layer.key === "census_block"
             ? layer.legend.map((l) => ({ key: l.value, label: l.label, color: DENSITY_COLORS[{ "0": 0, "5": 1, "20": 2, "50": 3, "100": 4 }[l.value] ?? 0] }))
             : layer.key === "tsunami_evacuation_area"
             ? [{ key: "area", label: "área a evacuar", color: "#2563eb" }]

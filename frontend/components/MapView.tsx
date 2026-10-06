@@ -59,6 +59,13 @@ function popupHtml(layer: LayerInfo | undefined, props: Record<string, unknown>)
     ["occurred_on", "Fecha"],
     ["affected_people", "Personas afectadas"],
     ["vigencia", "Vigencia"],
+    ["rol", "Rol"],
+    ["clasificacion", "Clasificación"],
+    ["carpeta", "Carpeta"],
+    ["cauce", "Cauce"],
+    ["camino", "Camino"],
+    ["largo_m", "Largo (m)"],
+    ["anio_construccion", "Año de construcción"],
     ["n_per", "Personas (Censo 2024)"],
     ["n_vp", "Viviendas particulares"],
     ["n_edad_60_mas", "Personas de 60 años o más"],
@@ -222,7 +229,7 @@ export function MapView({
     const map = mapRef.current;
     if (!map || !styleReady) return;
     const handler = (e: maplibregl.MapMouseEvent) => {
-      const layers = (map.getStyle().layers ?? []).map((l) => l.id).filter((id) => id.startsWith("lyr-") && id !== "lyr-comuna-line" && !id.endsWith("-line"));
+      const layers = (map.getStyle().layers ?? []).map((l) => l.id).filter((id) => id.startsWith("lyr-") && id !== "lyr-comuna-line" && (!id.endsWith("-line") || id === "lyr-road_segment-line"));
       const features = map.queryRenderedFeatures(e.point, { layers });
       if (!features.length) return;
       const feature = features[0];
