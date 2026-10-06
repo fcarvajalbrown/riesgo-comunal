@@ -4,7 +4,7 @@ import { useQueries } from "@tanstack/react-query";
 import * as maplibregl from "maplibre-gl";
 import type { GeoJSONSource, Map as MlMap, Marker } from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
-import { BASEMAP, POINT_COLORS, WARNING_COLORS, WILDFIRE_COLORS, addLayerStyle } from "@/components/MapView";
+import { BASEMAP, POINT_COLORS, WARNING_COLORS, WILDFIRE_COLORS, addLayerStyle } from "@/components/mapStyle";
 import { publicGet } from "@/lib/publicApi";
 import type { PublicComuna } from "@/lib/types";
 

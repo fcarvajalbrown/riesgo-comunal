@@ -2,30 +2,16 @@
 
 import { useQueries, useQuery } from "@tanstack/react-query";
 import * as maplibregl from "maplibre-gl";
-import type { GeoJSONSource, Map as MlMap } from "maplibre-gl";
-import { useEffect, useRef, useState } from "react";
+import type { GeoJSONSource, Map as MlMap, Marker } from "maplibre-gl";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { DataClassBadge } from "@/components/Badges";
-import { apiGet, apiObjectUrl } from "@/lib/api";
-import { DATA_CLASS_STYLE, LEVEL_STYLE, formatShortTime } from "@/lib/format";
-import type { LayerInfo, Me, RasterInfo } from "@/lib/types";
+import { MapCompare } from "@/components/MapCompare";
+import { BASEMAP, LayerLegend, addLayerStyle } from "@/components/mapStyle";
+import { ApiError, apiGet, apiObjectUrl } from "@/lib/api";
+import { DATA_CLASS_STYLE, formatShortTime } from "@/lib/format";
+import type { GeocodeResult, LayerInfo, Me, PlaceReport, RasterInfo } from "@/lib/types";
 
-export const BASEMAP = "https://tiles.openfreemap.org/styles/positron";
-maplibregl.setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
-
-export const POINT_COLORS: Record<string, string> = {
-  school: "#2563eb",
-  health_facility: "#dc2626",
-  tsunami_meeting_point: "#059669",
-  aq_station: "#7c3aed",
-  dga_station: "#0891b2",
-  earthquake: "#92400e",
-  municipal_asset: "#0f766e",
-  municipal_incident: "#b45309",
-};
 type FeatureCollectionLike = { type: "FeatureCollection"; features: unknown[] };
-
-export const WILDFIRE_COLORS = ["#fde68a", "#fdba74", "#fb923c", "#ea580c", "#9a3412"];
-export const WARNING_COLORS: Record<string, string> = { Alarma: "#b91c1c", Alerta: "#ea580c", Aviso: "#eab308" };
 
 export interface MapFocus {
   lon: number;
@@ -34,81 +20,24 @@ export interface MapFocus {
   label?: string;
 }
 
-function levelExpression() {
-  const entries = Object.entries(LEVEL_STYLE).flatMap(([level, style]) => [level, style.hex]);
-  return ["match", ["get", "level"], ...entries, "#8a929c"] as unknown as maplibregl.ExpressionSpecification;
-}
+const escapeHtml = (v: unknown) => String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] as string);
 
-export function addLayerStyle(map: MlMap, key: string) {
-  const source = `src-${key}`;
-  const before = map.getLayer("lyr-comuna-line") ? "lyr-comuna-line" : undefined;
-  if (key === "comuna") {
-    map.addLayer({ id: "lyr-comuna-line", type: "line", source, paint: { "line-color": "#1f4e79", "line-width": 2.5 } });
-    return;
+export function placeHtml(label: string, report: PlaceReport): string {
+  const lines = [`<div style="font-weight:600;font-size:13px;margin-bottom:6px">${escapeHtml(label)}</div>`];
+  for (const item of report.items) {
+    lines.push(`<div style="margin-bottom:6px">${escapeHtml(item.text)}<div style="color:#64748b;font-size:11px">${escapeHtml(DATA_CLASS_STYLE[item.data_class].label)} · ${escapeHtml(item.source)}</div></div>`);
   }
-  if (key === "sectors") {
-    map.addLayer({ id: "lyr-sectors-fill", type: "fill", source, paint: { "fill-color": levelExpression(), "fill-opacity": 0.32 } }, before);
-    map.addLayer({ id: "lyr-sectors-line", type: "line", source, paint: { "line-color": "#ffffff", "line-width": 0.8 } }, before);
-    return;
+  for (const w of report.warnings) lines.push(`<div style="margin-bottom:6px"><b>${escapeHtml(w.level)} DMC:</b> ${escapeHtml(w.title)}</div>`);
+  for (const a of report.alerts) lines.push(`<div style="margin-bottom:6px"><b>${escapeHtml(a.issuer)}:</b> ${escapeHtml(a.title)}</div>`);
+  if (!report.items.length && !report.warnings.length && !report.alerts.length) {
+    lines.push(`<div>Fuera de las áreas de tsunami e incendios publicadas y sin avisos meteorológicos vigentes.</div>`);
   }
-  if (key === "wildfire_hazard") {
-    map.addLayer(
-      {
-        id: "lyr-wildfire_hazard-fill",
-        type: "fill",
-        source,
-        paint: {
-          "fill-color": ["match", ["to-string", ["get", "clase"]], "1", WILDFIRE_COLORS[0], "2", WILDFIRE_COLORS[1], "3", WILDFIRE_COLORS[2], "4", WILDFIRE_COLORS[3], "5", WILDFIRE_COLORS[4], "#cccccc"],
-          "fill-opacity": 0.55,
-        },
-      },
-      before,
-    );
-    return;
-  }
-  if (key === "dmc_warning") {
-    map.addLayer(
-      {
-        id: "lyr-dmc_warning-fill",
-        type: "fill",
-        source,
-        paint: {
-          "fill-color": ["match", ["get", "level"], "Alarma", WARNING_COLORS.Alarma, "Alerta", WARNING_COLORS.Alerta, WARNING_COLORS.Aviso],
-          "fill-opacity": 0.22,
-        },
-      },
-      before,
-    );
-    map.addLayer({ id: "lyr-dmc_warning-line", type: "line", source, paint: { "line-color": "#a16207", "line-width": 1.5, "line-dasharray": [3, 2] } }, before);
-    return;
-  }
-  if (key === "tsunami_evacuation_area") {
-    map.addLayer({ id: "lyr-tsunami_evacuation_area-fill", type: "fill", source, paint: { "fill-color": "#2563eb", "fill-opacity": 0.28 } }, before);
-    map.addLayer({ id: "lyr-tsunami_evacuation_area-line", type: "line", source, paint: { "line-color": "#1d4ed8", "line-width": 1.2, "line-dasharray": [2, 1] } }, before);
-    return;
-  }
-  const color = POINT_COLORS[key] ?? "#334155";
-  if (key === "municipal_asset") {
-    map.addLayer({ id: `lyr-${key}-fill`, type: "fill", source, filter: ["==", ["geometry-type"], "Polygon"], paint: { "fill-color": color, "fill-opacity": 0.3 } });
-    map.addLayer({ id: `lyr-${key}-line`, type: "line", source, filter: ["==", ["geometry-type"], "LineString"], paint: { "line-color": color, "line-width": 2 } });
-  }
-  map.addLayer({
-    id: `lyr-${key}-circle`,
-    type: "circle",
-    source,
-    filter: ["==", ["geometry-type"], "Point"],
-    paint: {
-      "circle-color": color,
-      "circle-radius": key === "earthquake" ? ["interpolate", ["linear"], ["coalesce", ["get", "magnitude"], 3], 2.5, 4, 6, 14] : 5.5,
-      "circle-stroke-color": "#ffffff",
-      "circle-stroke-width": 1.5,
-      "circle-opacity": key === "earthquake" ? 0.7 : 0.95,
-    },
-  });
+  lines.push(`<div style="margin-top:6px;padding-top:6px;border-top:1px solid #e2e8f0;font-size:11px;color:#64748b">${escapeHtml(report.notice)}</div>`);
+  return lines.join("");
 }
 
 function popupHtml(layer: LayerInfo | undefined, props: Record<string, unknown>): string {
-  const esc = (v: unknown) => String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] as string);
+  const esc = escapeHtml;
   const lines: string[] = [];
   const title = props.name ?? props.place ?? props.hazard ?? layer?.name ?? "";
   lines.push(`<div style="font-weight:600;font-size:14px;margin-bottom:4px">${esc(title)}</div>`);
@@ -168,6 +97,16 @@ export function MapView({
   const [active, setActive] = useState<string[] | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [addressQuery, setAddressQuery] = useState("");
+  const [comparing, setComparing] = useState(false);
+  const addressMarker = useRef<Marker | null>(null);
+  const addresses = useQuery({
+    queryKey: ["geocode", addressQuery],
+    queryFn: () => apiGet<GeocodeResult[]>(`/geocode?q=${encodeURIComponent(addressQuery)}`),
+    enabled: addressQuery.length >= 3,
+    staleTime: Infinity,
+    retry: false,
+  });
   const results = useQuery({
     queryKey: ["search", search],
     queryFn: () => apiGet<{ name: string; layer: string; lon: number; lat: number }[]>(`/search?q=${encodeURIComponent(search)}`),
@@ -302,6 +241,29 @@ export function MapView({
     if (focus.label) new maplibregl.Popup().setLngLat([focus.lon, focus.lat]).setText(focus.label).addTo(map);
   }, [focus]);
 
+  function submitAddress(e: FormEvent) {
+    e.preventDefault();
+    setAddressQuery(search.trim());
+  }
+
+  async function checkPlace(r: GeocodeResult) {
+    const map = mapRef.current;
+    if (!map) return;
+    setSearch("");
+    setAddressQuery("");
+    addressMarker.current?.remove();
+    map.flyTo({ center: [r.lon, r.lat], zoom: 16 });
+    const popup = new maplibregl.Popup({ maxWidth: "320px", offset: 30 }).setHTML(`<div style="font-size:13px">Revisando ${escapeHtml(r.name)}...</div>`);
+    addressMarker.current = new maplibregl.Marker({ color: "#b42318" }).setLngLat([r.lon, r.lat]).setPopup(popup).addTo(map);
+    addressMarker.current.togglePopup();
+    try {
+      const report = await apiGet<PlaceReport>(`/lugar?lon=${r.lon}&lat=${r.lat}`);
+      popup.setHTML(placeHtml(r.name, report));
+    } catch (err) {
+      popup.setHTML(`<div style="font-size:13px">${escapeHtml(err instanceof ApiError && err.status === 422 ? "La dirección está fuera de la comuna." : (err as Error).message)}</div>`);
+    }
+  }
+
   function toggle(key: string) {
     setActive(activeLayers.includes(key) ? activeLayers.filter((k) => k !== key) : [...activeLayers, key]);
   }
@@ -309,39 +271,77 @@ export function MapView({
   return (
     <div className="relative h-full min-h-[420px] w-full overflow-hidden rounded-2xl border border-border bg-slate-100">
       <div ref={container} style={{ position: "absolute", inset: 0 }} />
+      {comparing && catalog.data && <MapCompare me={me} catalog={catalog.data} view={mapRef.current} onClose={() => setComparing(false)} />}
       {mapError && <div className="absolute inset-x-3 top-3 rounded-lg bg-amber-50 p-2 text-sm text-amber-900 shadow">{mapError}</div>}
-      <div className="absolute left-3 top-3 w-64 max-w-[calc(100%-5rem)]">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar establecimiento, sector o activo"
-          className="w-full rounded-lg border border-border bg-white/95 px-3 py-2 text-sm shadow outline-none focus:border-brand"
-        />
-        {results.data && search.trim().length >= 2 && (
-          <ul className="mt-1 max-h-60 overflow-auto rounded-lg border border-border bg-white text-sm shadow">
-            {results.data.length === 0 && <li className="px-3 py-2 text-muted">Sin resultados</li>}
-            {results.data.map((r, i) => (
-              <li key={i}>
-                <button
-                  className="w-full px-3 py-2 text-left hover:bg-slate-50"
-                  onClick={() => {
-                    mapRef.current?.flyTo({ center: [r.lon, r.lat], zoom: 15.5 });
-                    new maplibregl.Popup().setLngLat([r.lon, r.lat]).setText(r.name).addTo(mapRef.current!);
-                    setSearch("");
-                  }}
-                >
-                  {r.name}
-                  <span className="ml-1 text-xs text-muted">{catalog.data?.find((l) => l.key === r.layer)?.name}</span>
+      <div className="absolute left-3 top-3 z-10 w-72 max-w-[calc(100%-5rem)]">
+        <form onSubmit={submitAddress}>
+          <input
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setAddressQuery("");
+            }}
+            placeholder="Buscar lugar o dirección (Enter)"
+            aria-label="Buscar establecimiento, sector, activo o dirección"
+            className="w-full rounded-lg border border-border bg-white/95 px-3 py-2 text-sm shadow outline-none focus:border-brand"
+          />
+        </form>
+        {search.trim().length >= 2 && (
+          <div className="mt-1 max-h-72 overflow-auto rounded-lg border border-border bg-white text-sm shadow">
+            <ul>
+              {results.data?.map((r, i) => (
+                <li key={i}>
+                  <button
+                    className="w-full px-3 py-2 text-left hover:bg-slate-50"
+                    onClick={() => {
+                      mapRef.current?.flyTo({ center: [r.lon, r.lat], zoom: 15.5 });
+                      new maplibregl.Popup().setLngLat([r.lon, r.lat]).setText(r.name).addTo(mapRef.current!);
+                      setSearch("");
+                    }}
+                  >
+                    {r.name}
+                    <span className="ml-1 text-xs text-muted">{catalog.data?.find((l) => l.key === r.layer)?.name}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="border-t border-border px-3 py-2">
+              {!addressQuery && (
+                <button type="button" className="text-left text-xs font-medium text-brand underline disabled:opacity-50" onClick={() => setAddressQuery(search.trim())} disabled={search.trim().length < 3}>
+                  {results.data && results.data.length === 0 ? "Sin resultados en las capas. " : ""}Buscar como dirección
                 </button>
-              </li>
-            ))}
-          </ul>
+              )}
+              {addresses.isFetching && <p className="text-xs text-muted">Buscando dirección...</p>}
+              {addresses.error && <p className="text-xs text-red-700">{(addresses.error as Error).message}</p>}
+              {addresses.data && (
+                <>
+                  <p className="text-xs font-semibold text-muted">Direcciones</p>
+                  {addresses.data.length === 0 && <p className="text-xs text-muted">No se encontró la dirección en la comuna.</p>}
+                  <ul>
+                    {addresses.data.map((r, i) => (
+                      <li key={i}>
+                        <button type="button" className="w-full py-1.5 text-left text-sm hover:text-brand" onClick={() => checkPlace(r)}>
+                          {r.name}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  {addresses.data[0] && <p className="text-[10px] text-muted">{addresses.data[0].attribution}</p>}
+                </>
+              )}
+            </div>
+          </div>
         )}
       </div>
-      <div className="absolute bottom-8 right-3 w-72 max-w-[calc(100%-1.5rem)]">
-        <button onClick={() => setPanelOpen(!panelOpen)} className="ml-auto block rounded-lg bg-white/95 px-3 py-1.5 text-sm font-medium shadow">
-          {panelOpen ? "Ocultar capas" : `Capas (${activeLayers.length})`}
-        </button>
+      <div className="absolute bottom-8 right-3 z-10 w-72 max-w-[calc(100%-1.5rem)]">
+        <div className="flex justify-end gap-2">
+          <button onClick={() => setComparing(true)} className="rounded-lg bg-white/95 px-3 py-1.5 text-sm font-medium shadow">
+            Comparar amenazas
+          </button>
+          <button onClick={() => setPanelOpen(!panelOpen)} className="rounded-lg bg-white/95 px-3 py-1.5 text-sm font-medium shadow">
+            {panelOpen ? "Ocultar capas" : `Capas (${activeLayers.length})`}
+          </button>
+        </div>
         {panelOpen && catalog.data && (
           <div className="mt-2 max-h-[55vh] overflow-auto rounded-xl border border-border bg-white/97 p-3 shadow-lg">
             <p className="mb-2 text-xs text-muted">Active pocas capas a la vez para leer mejor el mapa.</p>
@@ -359,41 +359,7 @@ export function MapView({
                           {layer.source}
                           {layer.updated_at ? ` · ${formatShortTime(layer.updated_at)}` : ""}
                         </span>
-                        {on && layer.key === "sectors" && (
-                          <span className="mt-1 flex flex-wrap gap-1">
-                            {layer.legend.map((l) => (
-                              <span key={l.value} className="inline-flex items-center gap-1 text-[11px]">
-                                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: LEVEL_STYLE[l.value as keyof typeof LEVEL_STYLE]?.hex }} />
-                                {l.label}
-                              </span>
-                            ))}
-                          </span>
-                        )}
-                        {on && layer.key === "wildfire_hazard" && (
-                          <span className="mt-1 flex flex-wrap gap-1">
-                            {layer.legend.map((l) => (
-                              <span key={l.value} className="inline-flex items-center gap-1 text-[11px]">
-                                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: WILDFIRE_COLORS[Number(l.value) - 1] }} />
-                                {l.label}
-                              </span>
-                            ))}
-                          </span>
-                        )}
-                        {on && layer.key === "dmc_warning" && (
-                          <span className="mt-1 flex flex-wrap gap-1">
-                            {layer.legend.map((l) => (
-                              <span key={l.value} className="inline-flex items-center gap-1 text-[11px]">
-                                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: WARNING_COLORS[l.value] }} />
-                                {l.label}
-                              </span>
-                            ))}
-                          </span>
-                        )}
-                        {on && POINT_COLORS[layer.key] && (
-                          <span className="mt-1 inline-flex items-center gap-1 text-[11px]">
-                            <span className="h-2.5 w-2.5 rounded-full" style={{ background: POINT_COLORS[layer.key] }} /> símbolo en el mapa
-                          </span>
-                        )}
+                        {on && <LayerLegend layer={layer} />}
                       </span>
                     </label>
                   </li>
