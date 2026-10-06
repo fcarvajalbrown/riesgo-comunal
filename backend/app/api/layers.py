@@ -49,6 +49,16 @@ LAYERS: dict[str, LayerDef] = {
         ),
         LayerDef("tsunami_evacuation_area", "Área a evacuar por tsunami", "Áreas de evacuación por tsunami (SENAPRED).", "official", "senapred", "tsunami_evacuation_area", "polygon"),
         LayerDef("tsunami_meeting_point", "Puntos de encuentro (tsunami)", "Puntos de encuentro ante tsunami (SENAPRED).", "official", "senapred", "tsunami_meeting_point", "point"),
+        LayerDef(
+            "census_block",
+            "Población por manzana (Censo 2024)",
+            "Personas por hectárea en manzanas urbanas y entidades rurales (INE, Censo de Población y Vivienda 2024).",
+            "official",
+            "ine_censo2024",
+            "census_block",
+            "polygon",
+            (("100", "100 o más por ha"), ("50", "50 a 99 por ha"), ("20", "20 a 49 por ha"), ("5", "5 a 19 por ha"), ("0", "Menos de 5 por ha")),
+        ),
         LayerDef("school", "Establecimientos educacionales", "Directorio MINEDUC vía IDE Chile.", "official", "ide_geoportal", "school", "point", default_on=True),
         LayerDef("health_facility", "Establecimientos de salud", "Establecimientos MINSAL vía IDE Chile.", "official", "ide_geoportal", "health_facility", "point", default_on=True),
         LayerDef(
@@ -129,6 +139,7 @@ def layer_geojson(conn: Connection, municipality_id: int, key: str) -> dict[str,
             f["levels"] = info.get("levels", {})
             f["reasons"] = info.get("reasons", [])
             f["uses_demo_data"] = info.get("uses_demo_data", False)
+            f["population_estimate"] = info.get("population_estimate")
         return _collection(features)
     if key in ("wildfire_hazard", "tsunami_evacuation_area"):
         return _collection(
@@ -141,6 +152,22 @@ def layer_geojson(conn: Connection, municipality_id: int, key: str) -> dict[str,
                 where m.id = :mid and f.dataset = :d and st_intersects(f.geom, m.boundary)
                 """,
                 d=key,
+                **m,
+            )
+        )
+    if key == "census_block":
+        return _collection(
+            rows(
+                conn,
+                """
+                select f.id as fid, f.name, f.category as tipo, f.properties->>'categoria' as categoria,
+                       (f.properties->>'n_per')::int as n_per, (f.properties->>'n_vp')::int as n_vp,
+                       (f.properties->>'n_edad_60_mas')::int as n_edad_60_mas,
+                       round(((f.properties->>'n_per')::numeric / nullif(st_area(f.geom::geography) / 10000, 0))::numeric, 1)::float8 as densidad,
+                       f.provenance_id, st_asgeojson(f.geom, 6) as geojson
+                from feature f, municipality m
+                where m.id = :mid and f.dataset = 'census_block' and st_intersects(st_pointonsurface(f.geom), m.boundary)
+                """,
                 **m,
             )
         )

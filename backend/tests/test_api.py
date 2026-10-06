@@ -353,3 +353,17 @@ def test_public_place_check_uses_official_layers(env):
     assert client.get("/api/public/lota/capas/tsunami_evacuation_area").json()["type"] == "FeatureCollection"
     comuna = client.get("/api/public/lota/comuna").json()
     assert comuna["name"] == "Lota" and "logo_path" not in comuna
+
+
+def test_population_exposure_is_an_estimate_with_its_source(env):
+    client, tokens, *_ = env
+    with transaction() as conn:
+        if not scalar(conn, "select 1 from feature where dataset = 'census_block' limit 1"):
+            pytest.skip("requiere el censo 2024 ingestado")
+    body = client.get("/api/riesgo", headers=tokens["lota_alcalde"]).json()
+    tsunami = next(a for a in body["assessments"] if a["hazard"] == "tsunami")
+    people = next(x for x in tsunami["exposure"] if x["category"] == "census_population")
+    assert people["data_class"] == "estimated" and people["count"] > 0
+    assert "INE" in people["source"] and "superficie" in people["note"]
+    layer = client.get("/api/layers/census_block", headers=tokens["lota_alcalde"]).json()
+    assert layer["features"] and "densidad" in layer["features"][0]["properties"]

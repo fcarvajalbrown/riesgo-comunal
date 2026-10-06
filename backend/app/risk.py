@@ -56,8 +56,10 @@ def assess_sectors(conn: Connection, municipality_id: int, now: datetime | None 
         m=municipality_id,
         k=kind,
     )
+    population = sector_population(conn, municipality_id, kind)
     result = []
     for sector in sectors:
+        sector = {**sector, "population_estimate": population.get(sector["id"])}
         area = Area("sector", sector["id"], sector["name"])
         levels = {}
         reasons = []
@@ -74,6 +76,21 @@ def assess_sectors(conn: Connection, municipality_id: int, now: datetime | None 
         )
     _sector_cache[key] = (time.monotonic(), result)
     return result
+
+
+def sector_population(conn: Connection, municipality_id: int, kind: str) -> dict[int, int]:
+    found = rows(
+        conn,
+        """
+        select s.id, round(sum((b.properties->>'n_per')::numeric * st_area(st_intersection(b.geom, s.geom)) / nullif(st_area(b.geom), 0))) as people
+        from sector s join feature b on b.dataset = 'census_block' and st_intersects(b.geom, s.geom)
+        where s.municipality_id = :m and s.kind = :k
+        group by s.id
+        """,
+        m=municipality_id,
+        k=kind,
+    )
+    return {r["id"]: int(r["people"]) for r in found if r["people"] is not None}
 
 
 def assess_area(conn: Connection, municipality_id: int, sector_id: int, now: datetime | None = None) -> dict[str, Any]:

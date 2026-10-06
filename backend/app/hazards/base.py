@@ -51,6 +51,7 @@ class Exposure:
     data_class: str
     source: str
     items: list[dict[str, Any]] = field(default_factory=list)
+    note: str | None = None
 
 
 @dataclass

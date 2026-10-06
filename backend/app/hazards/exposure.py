@@ -3,6 +3,17 @@ from typing import Any
 from app.db import rows
 from app.hazards.base import Area, Exposure, HazardContext
 
+CENSUS_SOURCE = "INE, Censo de Población y Vivienda 2024 (base manzana-entidad)"
+CENSUS_NOTE = (
+    "Estimación de la plataforma: cada manzana o entidad aporta en proporción a la parte de su superficie dentro de la zona, "
+    "suponiendo población repartida de forma pareja. En entidades rurales grandes la cifra es aproximada."
+)
+CENSUS_COUNTS = (
+    ("census_population", "n_per", "Personas (Censo 2024)"),
+    ("census_older", "n_edad_60_mas", "Personas de 60 años o más (Censo 2024)"),
+    ("census_dwellings", "n_vp", "Viviendas particulares (Censo 2024)"),
+)
+
 FACILITY_LABELS = {
     "school": ("Establecimientos educacionales", "official", "IDE Chile / MINEDUC"),
     "health_facility": ("Establecimientos de salud", "official", "IDE Chile / MINSAL"),
@@ -40,7 +51,7 @@ def exposure_within(ctx: HazardContext, area: Area, hazard_sql: str, params: dic
         """,
         **p,
     )
-    result: list[Exposure] = []
+    result: list[Exposure] = population_within(ctx, base, p)
     for dataset, (label, data_class, source) in FACILITY_LABELS.items():
         items = [r for r in official if r["dataset"] == dataset]
         if dataset == "school":
@@ -62,6 +73,27 @@ def exposure_within(ctx: HazardContext, area: Area, hazard_sql: str, params: dic
             )
         )
     return result
+
+
+def population_within(ctx: HazardContext, base: str, params: dict[str, Any]) -> list[Exposure]:
+    sums = ", ".join(f"coalesce(sum((b.properties->>'{field}')::numeric * frac), 0) as {key}" for key, field, _ in CENSUS_COUNTS)
+    totals = rows(
+        ctx.conn,
+        base
+        + f"""
+        , parts as (
+            select b.properties, st_area(st_intersection(b.geom, hz.g)) / nullif(st_area(b.geom), 0) as frac
+            from feature b, area, hz
+            where b.dataset = 'census_block' and st_intersects(b.geom, area.g) and st_intersects(b.geom, hz.g)
+        )
+        select count(*) as blocks, {sums}
+        from parts b
+        """,
+        **params,
+    )[0]
+    if not totals["blocks"]:
+        return []
+    return [Exposure(key, label, round(float(totals[key])), "estimated", CENSUS_SOURCE, note=CENSUS_NOTE) for key, _, label in CENSUS_COUNTS]
 
 
 def _items(items: list[dict[str, Any]], limit: int) -> list[dict[str, Any]]:
