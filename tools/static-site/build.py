@@ -74,9 +74,9 @@ a:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
 h1,h2,h3,p{margin:0}
 h1,h2,h3{line-height:1.15}
 ul{list-style:none;margin:0;padding:0}
-.brand{background:var(--ink);color:#ffffff;padding:clamp(.8rem,2vw,1.4rem) clamp(1rem,3vw,2.5rem)}
-.brand-line{font-size:clamp(1.5rem,3.6vw,2.9rem);font-weight:700;line-height:1.1;max-width:60rem}
-.snap{margin-top:.5rem;font-size:.95rem;color:#c9d4dd}
+.brand{background:var(--ink);color:#ffffff;padding:.7rem clamp(1rem,3vw,2.5rem);display:flex;justify-content:space-between;align-items:baseline;gap:.4rem 1.5rem;flex-wrap:wrap}
+.brand-line{font-size:clamp(1.1rem,2.1vw,1.7rem);font-weight:700;line-height:1.15}
+.snap{font-size:.9rem;color:#c9d4dd}
 .top{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap;padding:1.1rem clamp(1rem,3vw,2.5rem);border-bottom:1px solid var(--rule)}
 .top h1{font-size:clamp(1.35rem,2.4vw,1.9rem)}
 .top p{color:var(--soft)}
@@ -96,14 +96,14 @@ body.fit{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:
 .prov a:hover{background:#dde5eb}
 .prov a strong{font-size:1.1rem}
 .lvl{display:inline-flex;align-items:center;gap:.45rem;font-weight:700;font-size:.95rem;white-space:nowrap}
-.band{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2rem;align-items:center;padding:clamp(1.5rem,4vw,3.5rem) clamp(1rem,3vw,2.5rem)}
-.band nav a{font-size:.95rem}
-.band h1{font-size:clamp(1.6rem,3.2vw,2.6rem);font-weight:400;margin:.6rem 0 .2rem}
-.word{font-size:clamp(3.4rem,11vw,8.5rem);font-weight:700;line-height:.95;letter-spacing:-.02em}
-.word-note{margin-top:.8rem;max-width:40rem;font-size:1rem}
-.band svg{width:clamp(7rem,22vw,17rem);height:auto;display:block}
+.band{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1.5rem;align-items:center;padding:1rem clamp(1rem,3vw,2.5rem)}
+.band nav a{font-size:.9rem}
+.band h1{font-size:clamp(1.5rem,3.4vw,2.6rem);font-weight:400;margin:.3rem 0}
+.word{font-weight:700}
+.word-note{max-width:44rem;font-size:.92rem}
+.band svg{width:clamp(4rem,9vw,7rem);height:auto;display:block}
 .band svg path{fill:currentColor;fill-opacity:.25;stroke:currentColor;stroke-width:1.5;vector-effect:non-scaling-stroke}
-.body{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(1.5rem,3vw,3.5rem);padding:2rem clamp(1rem,3vw,2.5rem) 3rem}
+.body{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(1.5rem,3vw,3.5rem);padding:1.25rem clamp(1rem,3vw,2.5rem) 3rem}
 .body h2{font-size:1.35rem;margin-bottom:.9rem}
 .body section+section{margin-top:2.25rem}
 .alert{border-left:.45rem solid;background:var(--land);padding:1rem 1.1rem;margin-bottom:.8rem}
@@ -129,7 +129,7 @@ body.fit{height:auto;overflow:visible}
 .mapwrap{height:62vh}
 .list{border-left:0;overflow:visible}
 .body,.band{grid-template-columns:1fr}
-.band svg{width:9rem}
+.band svg{display:none}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 """
@@ -274,8 +274,7 @@ def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str
 <header class="band" style="background:{background};color:{foreground}">
 <div>
 <nav><a href="../index.html">Todas las comunas del Maule</a></nav>
-<h1>{escape(comuna["name"])}, nivel general</h1>
-<p class="word">{escape(summary["overall_level_label"])}</p>
+<h1>{escape(comuna["name"])}: nivel general <span class="word">{escape(summary["overall_level_label"])}</span></h1>
 <p class="word-note">Cálculo de referencia con información oficial. En una emergencia, siga las indicaciones de SENAPRED y de su municipalidad.</p>
 </div>
 {silhouette(shape)}
