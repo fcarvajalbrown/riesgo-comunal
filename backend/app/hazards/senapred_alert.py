@@ -1,4 +1,4 @@
-from app.alerts import active_alerts
+from app.alerts import active_alerts, alert_feed_status
 from app.hazards.base import Area, Assessment, Evidence, HazardContext, HazardModule
 from app.hazards.rules import classify_senapred_alerts
 
@@ -29,6 +29,13 @@ class SenapredAlertModule(HazardModule):
         ]
         alerts = [a for a in alerts if a["starts_at"] <= ctx.now]
         result = classify_senapred_alerts([a["level"] for a in alerts])
+        status = alert_feed_status(ctx.conn, ctx.now)
+        level, headline = result.level, result.reason
+        explanation = [result.reason, EQUIVALENCE_NOTE, "Que no haya una alerta registrada no significa que no haya peligro."]
+        if status["message"]:
+            explanation.insert(0, status["message"])
+            if not alerts:
+                level, headline = "SIN_DATOS", status["message"]
         evidence = [
             Evidence(
                 f"{a['level']}: {a['title']}",
@@ -44,9 +51,9 @@ class SenapredAlertModule(HazardModule):
         return Assessment(
             hazard=self.key,
             hazard_name=self.name,
-            level=result.level,
-            headline=result.reason,
-            explanation=[result.reason, EQUIVALENCE_NOTE, "Que no haya una alerta registrada no significa que no haya peligro."],
+            level=level,
+            headline=headline,
+            explanation=explanation,
             evidence=evidence,
             missing=[],
             thresholds={},

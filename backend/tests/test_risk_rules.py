@@ -176,3 +176,29 @@ def test_meeting_point_codes_are_not_presented_as_names():
     assert meeting_label("08106PE007") == "código 08106PE007"
     assert meeting_label("Plaza de Armas") == "Plaza de Armas"
     assert meeting_label(None) == "sin nombre"
+
+
+def test_international_alert_levels():
+    from app.hazards.rules import classify_international_alerts
+
+    assert classify_international_alerts([]).level == "BAJO"
+    assert classify_international_alerts(["GDACS verde"]).level == "INFORMATIVO"
+    assert classify_international_alerts(["GDACS verde", "PTWC vigilancia de tsunami"]).level == "MODERADO"
+    assert classify_international_alerts(["GDACS naranja", "PTWC información"]).level == "ALTO"
+    result = classify_international_alerts(["GDACS roja", "PTWC amenaza de tsunami"])
+    assert result.level == "CRITICO"
+    assert "no reemplaza el aviso oficial" in result.reason
+    assert classify_international_alerts(["PTWC algo nuevo"]).level == "INFORMATIVO"
+
+
+def test_senapred_feed_problem_reports_failure_and_staleness():
+    from datetime import UTC, datetime, timedelta
+
+    from app.hazards.rules import senapred_feed_problem
+
+    now = datetime(2026, 10, 6, 23, 0, tzinfo=UTC)
+    assert senapred_feed_problem(now - timedelta(minutes=5), None, 10, now) is None
+    assert "no se actualizan hace 45 min" in senapred_feed_problem(now - timedelta(minutes=45), None, 10, now)
+    assert "falló" in senapred_feed_problem(now - timedelta(minutes=5), "Timeout", 10, now)
+    assert "no ha funcionado todavía" in senapred_feed_problem(None, "Timeout", 10, now)
+    assert "desactivada" in senapred_feed_problem(None, None, 10, now, enabled=False)

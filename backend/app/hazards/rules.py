@@ -99,3 +99,41 @@ def classify_senapred_alerts(levels: list[str]) -> RuleResult:
     order = list(SENAPRED_ALERT_LEVEL)
     top = max(known, key=order.index)
     return RuleResult(SENAPRED_ALERT_LEVEL[top], f"{top} de SENAPRED vigente para la comuna.")
+
+
+INTERNATIONAL_ALERT_LEVEL = {
+    "GDACS verde": "INFORMATIVO",
+    "GDACS naranja": "ALTO",
+    "GDACS roja": "CRITICO",
+    "PTWC información": "INFORMATIVO",
+    "PTWC vigilancia de tsunami": "MODERADO",
+    "PTWC aviso de tsunami": "MODERADO",
+    "PTWC amenaza de tsunami": "ALTO",
+    "PTWC alerta de tsunami": "ALTO",
+}
+INTERNATIONAL_NOTE = "Fuente internacional, no reemplaza el aviso oficial de SENAPRED ni del SHOA."
+
+
+def classify_international_alerts(levels: list[str]) -> RuleResult:
+    if not levels:
+        return RuleResult("BAJO", "No hay alertas de las fuentes internacionales de respaldo (GDACS, PTWC) que alcancen la comuna.")
+    ranked = [INTERNATIONAL_ALERT_LEVEL.get(level, "INFORMATIVO") for level in levels]
+    order = ("INFORMATIVO", "MODERADO", "ALTO", "CRITICO")
+    top = max(ranked, key=order.index)
+    names = ", ".join(sorted({level for level, rank in zip(levels, ranked) if rank == top}))
+    return RuleResult(top, f"{names} vigente para la comuna. {INTERNATIONAL_NOTE}")
+
+
+def senapred_feed_problem(last_success_at, last_error: str | None, interval_minutes: int, now, enabled: bool = True) -> str | None:
+    if not enabled:
+        return "La lectura automática de alertas de SENAPRED está desactivada."
+    lines = (last_error or "").strip().splitlines()
+    last_error = lines[0][:160].rstrip(".:") if lines else None
+    if last_success_at is None:
+        return "La lectura automática de alertas de SENAPRED no ha funcionado todavía" + (f" (último error: {last_error})." if last_error else ".")
+    age_minutes = (now - last_success_at).total_seconds() / 60
+    if last_error:
+        return f"La última lectura de alertas de SENAPRED falló (error: {last_error}); la última lectura correcta fue hace {age_minutes:.0f} min."
+    if age_minutes > 3 * interval_minutes:
+        return f"Las alertas de SENAPRED no se actualizan hace {age_minutes:.0f} min (se esperan cada {interval_minutes} min)."
+    return None

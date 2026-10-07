@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field, HttpUrl
 from sqlalchemy import Connection, text
 
 from app.ai.assistant import answer
-from app.alerts import ALERT_FEED_NOTE, ALERT_ORIGIN, active_alerts
+from app.alerts import ALERT_FEED_NOTE, ALERT_ORIGIN, active_alerts, alert_feed_status
 from app.api.layers import LAYERS, layer_catalog, layer_geojson, provenance_detail, search_places
 from app.auth import Principal, audit, current_principal, issue_token, require, verify_password
 from app.db import get_conn, row, rows, scalar
@@ -89,6 +89,7 @@ def ahora(principal: Principal = Depends(current_principal), conn: Connection = 
     result = assess_comuna(conn, principal.municipality_id, mode="ahora")
     result["alerts"] = active_alerts(conn, principal.municipality_id)
     result["alert_feed_note"] = ALERT_FEED_NOTE
+    result["alert_feed_status"] = alert_feed_status(conn)
     result["exposure_summary"] = _exposure_summary(conn, principal.municipality_id)
     return result
 
