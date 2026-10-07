@@ -72,20 +72,21 @@ a:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
 h1,h2,h3,p{margin:0}
 h1,h2,h3{line-height:1.15}
 ul{list-style:none;margin:0;padding:0}
-.brand{background:var(--ink);color:#ffffff;padding:clamp(1rem,2.5vw,1.75rem) clamp(1rem,3vw,2.5rem)}
+.brand{background:var(--ink);color:#ffffff;padding:clamp(.8rem,2vw,1.4rem) clamp(1rem,3vw,2.5rem)}
 .brand-line{font-size:clamp(1.5rem,3.6vw,2.9rem);font-weight:700;line-height:1.1;max-width:60rem}
 .snap{margin-top:.5rem;font-size:.95rem;color:#c9d4dd}
 .top{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap;padding:1.1rem clamp(1rem,3vw,2.5rem);border-bottom:1px solid var(--rule)}
 .top h1{font-size:clamp(1.35rem,2.4vw,1.9rem)}
 .top p{color:var(--soft)}
-.region{display:grid;grid-template-columns:minmax(0,3fr) minmax(20rem,2fr);align-items:start}
-.mapwrap{position:sticky;top:0;height:100vh;background:var(--sea);display:flex;flex-direction:column}
+body.fit{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+.region{display:grid;grid-template-columns:minmax(0,3fr) minmax(20rem,2fr);flex:1;min-height:0}
+.mapwrap{min-height:0;height:100%;background:var(--sea);display:flex;flex-direction:column}
 .mapwrap svg{flex:1;min-height:0;width:100%;display:block}
 .map path{stroke:#ffffff;stroke-width:1.2;vector-effect:non-scaling-stroke;transition:filter .15s}
 .map a:hover path{filter:brightness(.82);stroke:var(--ink);stroke-width:2.2}
 .legend{display:flex;flex-wrap:wrap;gap:.4rem 1.1rem;padding:.8rem clamp(1rem,3vw,2.5rem);background:var(--paper);border-top:1px solid var(--rule);font-size:.9rem}
 .sw{width:.95rem;height:.95rem;border-radius:2px;display:inline-block;flex:none}
-.list{padding:1.5rem clamp(1rem,3vw,2.5rem) 3rem;border-left:1px solid var(--rule)}
+.list{padding:1.5rem clamp(1rem,3vw,2.5rem) 3rem;border-left:1px solid var(--rule);overflow-y:auto;min-height:0}
 .intro{color:var(--soft);max-width:36rem;margin-bottom:1.5rem}
 .prov{margin-bottom:1.75rem}
 .prov h2{font-size:1rem;color:var(--soft);font-weight:400;padding-bottom:.4rem;border-bottom:1px solid var(--rule)}
@@ -121,9 +122,10 @@ ul{list-style:none;margin:0;padding:0}
 .links a{font-weight:700}
 .foot{padding:1.5rem clamp(1rem,3vw,2.5rem) 2.5rem;border-top:1px solid var(--rule);color:var(--soft);font-size:.9rem}
 @media (max-width:900px){
+body.fit{height:auto;overflow:visible}
 .region{grid-template-columns:1fr}
-.mapwrap{position:relative;height:62vh}
-.list{border-left:0}
+.mapwrap{height:62vh}
+.list{border-left:0;overflow:visible}
 .body,.band{grid-template-columns:1fr}
 .band svg{width:9rem}
 }
@@ -161,7 +163,7 @@ def level_mark(level: str, label: str | None = None) -> str:
     return f'<span class="lvl"><span class="sw" style="background:{background}" aria-hidden="true"></span>{escape(label or default_label)}</span>'
 
 
-def page(title: str, body: str) -> str:
+def page(title: str, body: str, body_class: str = "") -> str:
     return f"""<!doctype html>
 <html lang="es">
 <head>
@@ -174,7 +176,7 @@ def page(title: str, body: str) -> str:
 <link rel="stylesheet" href="{FONT}">
 <style>{STYLE}</style>
 </head>
-<body>
+<body class="{body_class}">
 {body}
 </body>
 </html>
@@ -339,7 +341,7 @@ def index_page(entries: list[tuple[str, str, dict]], generated: str, shapes: dic
 {"".join(groups)}
 </div>
 </main>"""
-    return page("Riesgo en mi comuna, Región del Maule", body)
+    return page("Riesgo en mi comuna, Región del Maule", body, "fit")
 
 
 def main() -> int:
