@@ -133,6 +133,9 @@ class HazardModule(ABC):
     @abstractmethod
     def assess(self, ctx: HazardContext, area: Area) -> Assessment: ...
 
+    def assess_sectors(self, ctx: HazardContext, areas: list[Area]) -> list[Assessment]:
+        return [self.assess(ctx, area) for area in areas]
+
     def describe(self) -> dict[str, Any]:
         return {
             "key": self.key,

@@ -1,4 +1,4 @@
-from app.db import row
+from app.db import row, rows
 from app.hazards.base import Area, Assessment, Evidence, HazardContext, HazardModule
 from app.hazards.common import latest_provenance
 from app.hazards.exposure import exposure_within
@@ -11,6 +11,23 @@ HIGH_CLASSES_SQL = """
       and st_intersects(f.geom, (select g from area))
 """
 
+SECTOR_STATS_SQL = """
+    select s.id, st_area(s.geom::geography) / 1e6 as area_km2,
+           coalesce(sum(p.km2), 0) as covered,
+           coalesce(sum(p.km2) filter (where p.clase >= 3), 0) as ge3,
+           coalesce(sum(p.km2) filter (where p.clase >= 4), 0) as ge4,
+           coalesce(sum(p.km2) filter (where p.clase = 5), 0) as c5
+    from sector s
+    left join lateral (
+        select (f.properties->>'clase')::int as clase,
+               st_area(st_intersection(f.geom, s.geom)::geography) / 1e6 as km2
+        from feature f
+        where f.dataset = 'wildfire_hazard' and st_intersects(f.geom, s.geom)
+    ) p on true
+    where s.id = any(:ids)
+    group by s.id
+"""
+
 
 class WildfireModule(HazardModule):
     key = "wildfire"
@@ -21,7 +38,6 @@ class WildfireModule(HazardModule):
     layers = ("wildfire_hazard",)
 
     def assess(self, ctx: HazardContext, area: Area) -> Assessment:
-        t = self.thresholds(ctx.thresholds)
         stats = row(
             ctx.conn,
             f"""
@@ -41,8 +57,17 @@ class WildfireModule(HazardModule):
             """,
             **area.params(),
         )
-        result = classify_wildfire(stats["area_km2"], stats["ge3"], stats["ge4"], stats["covered"], t)
+        return self.build(ctx, area, stats, latest_provenance(ctx.conn, "senapred", "wildfire_hazard"))
+
+    def assess_sectors(self, ctx: HazardContext, areas: list[Area]) -> list[Assessment]:
+        found = rows(ctx.conn, SECTOR_STATS_SQL, ids=[a.id for a in areas])
+        stats = {r["id"]: r for r in found}
         prov = latest_provenance(ctx.conn, "senapred", "wildfire_hazard")
+        return [self.build(ctx, area, stats[area.id], prov) for area in areas]
+
+    def build(self, ctx: HazardContext, area: Area, stats: dict, prov: dict) -> Assessment:
+        t = self.thresholds(ctx.thresholds)
+        result = classify_wildfire(stats["area_km2"], stats["ge3"], stats["ge4"], stats["covered"], t)
         evidence = [
             Evidence("Superficie analizada", f"{stats['area_km2']:.1f} km²", "derived", "Cálculo de la plataforma"),
             Evidence(
