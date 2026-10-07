@@ -108,7 +108,7 @@ ul{list-style:none;margin:0;padding:0}
 .muni p{font-size:.9rem;opacity:.9}
 .muni nav{margin-left:auto;font-size:.9rem}
 .wrap{max-width:72rem;margin:0 auto;padding:1rem}
-.notice{border:1px solid var(--border);background:var(--surface);color:var(--muted);border-radius:.75rem;padding:.6rem .75rem;font-size:.88rem}
+.notice{border:1px solid var(--border);background:var(--surface);color:var(--fg);border-radius:.75rem;padding:.6rem .75rem;font-size:.88rem}
 .rain{border:2px solid #1d4ed8}
 .rain h2{color:#1d4ed8}
 .outlook{font-size:.95rem;margin-bottom:.6rem}
@@ -466,7 +466,7 @@ def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str
 </div></header>
 <main class="wrap">
 {banner}
-<p class="notice">Reunimos la información de SENAPRED, el SHOA, la Dirección Meteorológica de Chile y otras fuentes, y calculamos el riesgo de cada comuna. En una emergencia, siga las indicaciones de la autoridad.</p>
+<p class="notice"><strong>Cuando la información oficial no está disponible, la gente igual necesita saber:</strong> aquí está nuestra evaluación del riesgo, con SENAPRED, el SHOA, la Dirección Meteorológica de Chile y todas las fuentes que sí responden. En una emergencia, siga las indicaciones de la autoridad.</p>
 <div class="grid">
 <div>
 {rain_card(
@@ -544,7 +544,7 @@ def index_page(entries: list[tuple[str, str, dict]], generated: str, region: dic
 </section>
 <section class="card" aria-labelledby="telefonos"><h2 id="telefonos">Teléfonos de emergencia</h2><ul class="phones">{phones}</ul></section>
 <section class="card" aria-labelledby="enlaces"><h2 id="enlaces">Información oficial</h2><ul class="links">{links}</ul></section>
-<p class="notice">Reunimos la información de SENAPRED, el SHOA, la Dirección Meteorológica de Chile y otras fuentes, y calculamos el riesgo de cada comuna. En una emergencia, siga las indicaciones de la autoridad.</p>
+<p class="notice"><strong>Cuando la información oficial no está disponible, la gente igual necesita saber:</strong> aquí está nuestra evaluación del riesgo, con SENAPRED, el SHOA, la Dirección Meteorológica de Chile y todas las fuentes que sí responden. En una emergencia, siga las indicaciones de la autoridad.</p>
 <p class="foot" style="padding:.75rem 0">Mapa base: OpenFreeMap, OpenMapTiles, datos de OpenStreetMap. Capas: SENAPRED, CONAF, Dirección Meteorológica de Chile. Lluvia por satélite: NASA GIBS (GPM IMERG). Viento y pronóstico: <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a> (CC BY 4.0).</p>
 </div>
 </main>
