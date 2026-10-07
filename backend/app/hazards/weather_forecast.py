@@ -1,8 +1,11 @@
 from datetime import timedelta
+from zoneinfo import ZoneInfo
 
 from app.db import rows
 from app.hazards.base import Area, Assessment, Evidence, HazardContext, HazardModule
-from app.hazards.rules import classify_forecast
+from app.hazards.rules import classify_forecast, plain_outlook
+
+CHILE = ZoneInfo("America/Santiago")
 
 FORECAST_NOTE = (
     "Pronóstico de modelo calculado en el centro de la comuna (Weather data by Open-Meteo.com). "
@@ -13,7 +16,7 @@ FORECAST_NOTE = (
 
 class WeatherForecastModule(HazardModule):
     key = "weather_forecast"
-    name = "Pronóstico de lluvia, viento y calor"
+    name = "Pronóstico del tiempo"
     description = "Lluvia, ráfagas y temperatura máximas pronosticadas para las próximas 48 horas en el centro de la comuna (Open-Meteo)."
     modes = ("ahora",)
     spatial = False
@@ -42,6 +45,9 @@ class WeatherForecastModule(HazardModule):
             return values[parameter]["value"] if parameter in values else None
 
         result = classify_forecast(value("om_rain_24h_max"), value("om_gust_max"), value("om_temp_max"), t)
+        issued = max((r["observed_at"] for r in latest), default=None)
+        outlook = plain_outlook({k: r["value"] for k, r in values.items()}, issued.astimezone(CHILE).date()) if issued else []
+        headline = " ".join(outlook) if outlook else result.reason
         evidence = [
             Evidence(r["parameter_name"], f"{r['value']:g} {r['unit']}", "forecast", "Weather data by Open-Meteo.com", r["observed_at"], r["provenance_id"], FORECAST_NOTE)
             for r in latest
@@ -50,8 +56,8 @@ class WeatherForecastModule(HazardModule):
             hazard=self.key,
             hazard_name=self.name,
             level=result.level,
-            headline=result.reason,
-            explanation=[result.reason, FORECAST_NOTE],
+            headline=headline,
+            explanation=[headline, result.reason, FORECAST_NOTE],
             evidence=evidence,
             missing=[] if latest else ["Pronóstico reciente de Open-Meteo"],
             thresholds=t,

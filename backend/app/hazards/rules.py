@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import timedelta
 
 
 @dataclass(frozen=True)
@@ -153,3 +154,25 @@ def classify_forecast(rain_24h_mm: float | None, gust_kmh: float | None, temp_c:
     if rain_24h_mm is not None and rain_24h_mm >= t["rain_24h_moderado"]:
         return RuleResult("MODERADO", f"{summary} La lluvia supera el umbral provisional de {t['rain_24h_moderado']:.0f} mm.")
     return RuleResult("BAJO" if rain_24h_mm is not None else "INFORMATIVO", summary)
+
+
+WEEKDAYS = ("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
+RAIN_PERIODS = (("madrugada", "la madrugada"), ("manana", "la mañana"), ("tarde", "la tarde"), ("noche", "la noche"))
+WET_PERIOD_MM = 1.0
+
+
+def plain_outlook(values: dict[str, float], first_day, days: int = 3) -> list[str]:
+    lines = []
+    for day in range(days):
+        rainy = [name for key, name in RAIN_PERIODS if values.get(f"om_d{day}_rain_{key}", 0.0) >= WET_PERIOD_MM]
+        tmax = values.get(f"om_d{day}_tmax")
+        if not rainy and tmax is None and not any(k.startswith(f"om_d{day}_") for k in values):
+            continue
+        date = first_day + timedelta(days=day)
+        label = "Hoy" if day == 0 else "Mañana" if day == 1 else f"El {WEEKDAYS[date.weekday()]}"
+        if rainy:
+            rain = "lluvia durante " + (rainy[0] if len(rainy) == 1 else ", ".join(rainy[:-1]) + " y " + rainy[-1])
+        else:
+            rain = "sin lluvia"
+        lines.append(f"{label}: {rain}" + (f", máxima de {tmax:.0f} grados." if tmax is not None else "."))
+    return lines
