@@ -136,3 +136,18 @@ Fallback alert inputs for AHORA when the SENAPRED reading (`senapred_alertas`) f
 - **PTWC/NTWC**: a message is kept when its epicentre lies between 120 W and 65 W and between 60 S and 5 N (off South America's Pacific coast) or when its text bulletin names Chile. It is attached to the comunas whose boundary intersects a SENAPRED tsunami evacuation area (7 of the 31 installed tenants on 2026-10-06; all comunas if the layer is not loaded). Later messages of the same event supersede earlier ones, and a cancellation ends the thread. On 2026-10-06 the PHEB feed held a Caribbean information statement (Puerto Rico region, M5.2) and the PAAQ feed an Alaska information statement (M5.3), so the live ingestion stored 0 alerts.
 - **WMO Severe Weather**: the aggregated JSON held 1,517 items on 2026-10-06, none from Chile: no `capURL` prefix for a Chilean member and no item text mentioning Chile or the DMC, while the DMC's own CAP RSS (ingested as `dmc_cap`) listed 10 bulletins at the same time. It therefore adds nothing for Chile today, neither as a mirror nor as a fallback, and no adapter was written. If Chile appears in it later, its items would mirror the DMC CAP feed already ingested.
 - The PTWC text bulletin is fetched only from the link the Atom entry publishes. No undocumented API is called.
+
+## Coordinate-based global sources (candidates, not built)
+
+Researched to reduce dependence on SENAPRED: sources that answer for any latitude and longitude, so a comuna gets a value from its centroid or sample points even when no Chilean feed covers it. Values are model or satellite estimates, not official warnings, and must be labelled as such. None is built yet.
+
+| Source | What it gives by coordinates | Access | Terms as published | Notes |
+|---|---|---|---|---|
+| Open-Meteo Forecast API (open-meteo.com) | Hourly forecast up to 16 days: precipitation, wind, gusts, temperature | JSON, no key | Free for non-commercial use; commercial use needs a paid plan with an API key | Lets the platform derive rain and wind thresholds per comuna without the DMC credential |
+| Open-Meteo Flood API (GloFAS) | Daily river discharge forecast up to 30 days with ensemble spread, snapped to the nearest river cell | JSON, no key | Same as Open-Meteo | Coordinates must sit on or near the river channel; useful for the Maule, Mataquito and Loncomilla basins |
+| Open-Meteo Air Quality API (Copernicus CAMS) | PM2.5, PM10, ozone, NO2 current and forecast | JSON, no key | Same as Open-Meteo | About 40 km global model outside Europe; fills gaps where SINCA has no station |
+| ThinkHazard! (GFDRR, World Bank) | Classified hazard level (very low to high) for 11 hazards per administrative unit | JSON API, documented at github.com/GFDRR/thinkhazard/blob/master/API.md | UNVERIFIED | Permanent hazard levels per province or comuna, independent of SENAPRED maps |
+| NASA FIRMS | Active fire detections (MODIS, VIIRS) by area or country (CHL) | CSV/JSON, free MAP_KEY | Public, NASA | Already planned as G10, blocked on the MAP_KEY |
+| USGS ShakeMap and PAGER | Estimated shaking intensity and exposure for significant earthquakes | Event products in the USGS feed already ingested | USGS public domain | Gives "felt here" intensity per comuna instead of distance only |
+| Smithsonian GVP Weekly Volcanic Activity Report | Weekly volcano activity notes, including SERNAGEOMIN level changes | RSS | UNVERIFIED | Weekly cadence only; complements G5 |
+| Copernicus GWIS fire weather index | Fire danger index (FWI) | Climate Data Store, 0.25 degree grid | Copernicus licence | No simple coordinate API found yet |
