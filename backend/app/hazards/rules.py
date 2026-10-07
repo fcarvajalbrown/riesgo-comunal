@@ -127,13 +127,11 @@ def classify_international_alerts(levels: list[str]) -> RuleResult:
 def senapred_feed_problem(last_success_at, last_error: str | None, interval_minutes: int, now, enabled: bool = True) -> str | None:
     if not enabled:
         return "La lectura automática de alertas de SENAPRED está desactivada."
-    lines = (last_error or "").strip().splitlines()
-    last_error = lines[0][:160].rstrip(".:") if lines else None
     if last_success_at is None:
-        return "La lectura automática de alertas de SENAPRED no ha funcionado todavía" + (f" (último error: {last_error})." if last_error else ".")
+        return "La lectura automática de alertas de SENAPRED no ha funcionado todavía: senapred.cl no respondió a la plataforma."
     age_minutes = (now - last_success_at).total_seconds() / 60
     if last_error:
-        return f"La última lectura de alertas de SENAPRED falló (error: {last_error}); la última lectura correcta fue hace {age_minutes:.0f} min."
+        return f"La última lectura de alertas de SENAPRED falló: senapred.cl no respondió a la plataforma. La última lectura correcta fue hace {age_minutes:.0f} min."
     if age_minutes > 3 * interval_minutes:
         return f"Las alertas de SENAPRED no se actualizan hace {age_minutes:.0f} min (se esperan cada {interval_minutes} min)."
     return None

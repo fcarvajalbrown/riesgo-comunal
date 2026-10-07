@@ -201,4 +201,5 @@ def test_senapred_feed_problem_reports_failure_and_staleness():
     assert "no se actualizan hace 45 min" in senapred_feed_problem(now - timedelta(minutes=45), None, 10, now)
     assert "falló" in senapred_feed_problem(now - timedelta(minutes=5), "Timeout", 10, now)
     assert "no ha funcionado todavía" in senapred_feed_problem(None, "Timeout", 10, now)
+    assert "Timeout" not in senapred_feed_problem(now - timedelta(minutes=5), "Timeout", 10, now)
     assert "desactivada" in senapred_feed_problem(None, None, 10, now, enabled=False)
