@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Chanco: Alto</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%23e42827%27/%3E%3Cpath d=%27M16 5 29 27H3z%27 fill=%27%23ffffff%27/%3E%3Crect x=%2714.5%27 y=%2712%27 width=%273%27 height=%278%27 fill=%27%23e42827%27/%3E%3Crect x=%2714.5%27 y=%2722%27 width=%273%27 height=%273%27 fill=%27%23e42827%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+:root{--paper:#e8edf1;--ink:#14212c;--soft:#4a5a68;--land:#ffffff;--sea:#aed0f0;--brand:#e42827;--brand-deep:#d6152a;--rule:#b6c4cf;--line:#d3dce3;--warn:#fff4d6;--warn-ink:#4a3200}
+*{box-sizing:border-box}
+html{background:var(--paper)}
+body{margin:0;font-family:"Atkinson Hyperlegible",system-ui,sans-serif;font-size:1.0625rem;line-height:1.55;color:var(--ink);background:var(--paper)}
+a{color:inherit;text-underline-offset:.18em}
+a:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+h1,h2,h3,p{margin:0}
+h1,h2,h3{line-height:1.15}
+ul{list-style:none;margin:0;padding:0}
+.brand{background:var(--brand);color:#ffffff;border-bottom:4px solid var(--brand-deep);padding:.7rem clamp(1rem,3vw,2.5rem);display:flex;justify-content:space-between;align-items:baseline;gap:.4rem 1.5rem;flex-wrap:wrap}
+.brand-line{font-size:clamp(1.1rem,2.1vw,1.7rem);font-weight:700;line-height:1.15}
+.snap{font-size:.9rem;color:#ffffff}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap;padding:1.1rem clamp(1rem,3vw,2.5rem);border-bottom:1px solid var(--rule)}
+.top h1{font-size:clamp(1.35rem,2.4vw,1.9rem)}
+.top p{color:var(--soft)}
+body.fit{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+.region{display:grid;grid-template-columns:minmax(0,3fr) minmax(20rem,2fr);flex:1;min-height:0}
+.mapwrap{min-height:0;height:100%;background:var(--sea);display:flex;flex-direction:column}
+.mapwrap svg{flex:1;min-height:0;width:100%;display:block}
+.map path{stroke:#ffffff;stroke-width:1.2;vector-effect:non-scaling-stroke;transition:filter .15s}
+.map a:hover path{filter:brightness(.82);stroke:var(--ink);stroke-width:2.2}
+.legend{display:flex;flex-wrap:wrap;gap:.4rem 1.1rem;padding:.8rem clamp(1rem,3vw,2.5rem);background:var(--paper);border-top:1px solid var(--rule);font-size:.9rem}
+.sw{width:.95rem;height:.95rem;border-radius:2px;display:inline-block;flex:none}
+.list{padding:1.5rem clamp(1rem,3vw,2.5rem) 3rem;border-left:1px solid var(--rule);overflow-y:auto;min-height:0}
+.intro{color:var(--soft);max-width:36rem;margin-bottom:1.5rem}
+.prov{margin-bottom:1.75rem}
+.prov h2{font-size:1rem;color:var(--soft);font-weight:400;padding-bottom:.4rem;border-bottom:1px solid var(--rule)}
+.prov a{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.55rem .25rem;border-bottom:1px solid var(--line);text-decoration:none}
+.prov a:hover{background:#dde5eb}
+.prov a strong{font-size:1.1rem}
+.lvl{display:inline-flex;align-items:center;gap:.45rem;font-weight:700;font-size:.95rem;white-space:nowrap}
+.band{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1.5rem;align-items:center;padding:1rem clamp(1rem,3vw,2.5rem)}
+.band nav a{font-size:.9rem}
+.band h1{font-size:clamp(1.5rem,3.4vw,2.6rem);font-weight:400;margin:.3rem 0}
+.word{font-weight:700}
+.word-note{max-width:44rem;font-size:.92rem}
+.band svg{width:clamp(4rem,9vw,7rem);height:auto;display:block}
+.band svg path{fill:currentColor;fill-opacity:.25;stroke:currentColor;stroke-width:1.5;vector-effect:non-scaling-stroke}
+.body{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(1.5rem,3vw,3.5rem);padding:1.25rem clamp(1rem,3vw,2.5rem) 3rem}
+.body h2{font-size:1.35rem;margin-bottom:.9rem}
+.body section+section{margin-top:2.25rem}
+.alert{border-left:.45rem solid;background:var(--land);padding:1rem 1.1rem;margin-bottom:.8rem}
+.alert h3{font-size:1.15rem;margin:.25rem 0 .4rem}
+.alert p+p{margin-top:.25rem}
+.meta{color:var(--soft);font-size:.92rem;display:block}
+.calm{background:var(--land);padding:1rem 1.1rem;border-left:.45rem solid var(--rule)}
+.calm p+p{margin-top:.35rem}
+.haz li{display:grid;grid-template-columns:.4rem minmax(0,1fr);gap:.85rem;padding:.75rem 0;border-bottom:1px solid var(--line)}
+.bar{border-radius:2px}
+.note{color:var(--soft);font-size:.92rem;max-width:44rem;margin-top:.8rem}
+.src{margin-top:.8rem}
+.src li{padding:.5rem 0;border-bottom:1px solid var(--line)}
+.phones{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem}
+.phones a{display:block;background:var(--land);padding:.8rem;text-decoration:none;text-align:center;font-size:.92rem}
+.phones strong{display:block;font-size:2rem;line-height:1.1}
+.links li{padding:.55rem 0;border-bottom:1px solid var(--line)}
+.links a{font-weight:700}
+.foot{padding:1.5rem clamp(1rem,3vw,2.5rem) 2.5rem;border-top:1px solid var(--rule);color:var(--soft);font-size:.9rem}
+@media (max-width:900px){
+body.fit{height:auto;overflow:visible}
+.region{grid-template-columns:1fr}
+.mapwrap{height:62vh}
+.list{border-left:0;overflow:visible}
+.body,.band{grid-template-columns:1fr}
+.band svg{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body class="">
+<div class="brand"><p class="brand-line">Una iniciativa de la oficina de la senadora Paulina Vodanovic</p><p class="snap">Última actualización: 7 de octubre de 2026 a las 00:31.</p></div>
+<header class="band" style="background:#d4590f;color:#ffffff">
+<div>
+<nav><a href="../index.html">Todas las comunas del Maule</a></nav>
+<h1>Chanco: nivel general <span class="word">Alto</span></h1>
+<p class="word-note">Cálculo de referencia con información oficial. En una emergencia, siga las indicaciones de SENAPRED y de su municipalidad.</p>
+</div>
+<svg viewBox="-59.57711512 35.52757768 0.2852131200000031 0.36704663999999954" aria-hidden="true" focusable="false"><path d="M -59.3055 35.6744 L -59.3071 35.6841 -59.3147 35.6973 -59.311 35.7 -59.3131 35.71 -59.321 35.7228 -59.319 35.731 -59.3229 35.7414 -59.3202 35.7433 -59.3201 35.7493 -59.3351 35.7609 -59.3366 35.7724 -59.3401 35.7767 -59.3402 35.7843 -59.3441 35.7896 -59.3422 35.7906 -59.3427 35.7929 -59.3475 35.7933 -59.3491 35.7964 -59.3474 35.7981 -59.3481 35.8016 -59.356 35.8126 -59.3596 35.8142 -59.3609 35.8214 -59.3667 35.8235 -59.3743 35.8216 -59.3839 35.8245 -59.3863 35.8287 -59.3881 35.8284 -59.3896 35.8333 -59.4054 35.8374 -59.4107 35.8471 -59.4225 35.846 -59.4144 35.8659 -59.4093 35.8684 -59.4042 35.8758 -59.4136 35.881 -59.4251 35.881 -59.4364 35.8497 -59.4415 35.841 -59.4466 35.8364 -59.4541 35.8364 -59.4605 35.8335 -59.4672 35.8259 -59.4724 35.8243 -59.4682 35.8139 -59.4698 35.8104 -59.4683 35.8059 -59.4749 35.8035 -59.471 35.7983 -59.4734 35.7955 -59.4825 35.7943 -59.4844 35.7916 -59.4739 35.7798 -59.4781 35.7807 -59.4852 35.7739 -59.495 35.776 -59.4993 35.7699 -59.5197 35.6958 -59.5363 35.6558 -59.5635 35.6018 -59.5587 35.5971 -59.5549 35.5864 -59.5488 35.5811 -59.5476 35.5613 -59.5449 35.5665 -59.5381 35.5637 -59.5212 35.5725 -59.5097 35.5719 -59.5065 35.574 -59.5001 35.5688 -59.4926 35.5736 -59.4772 35.5726 -59.4762 35.5768 -59.4732 35.5782 -59.4702 35.5738 -59.466 35.5745 -59.4665 35.5663 -59.4631 35.5605 -59.4569 35.5631 -59.4523 35.5566 -59.4464 35.5578 -59.4467 35.5525 -59.4399 35.5482 -59.4314 35.5483 -59.4244 35.5522 -59.4233 35.5554 -59.4125 35.5566 -59.4068 35.5486 -59.3977 35.5412 -59.3997 35.554 -59.3979 35.5606 -59.3993 35.5719 -59.4024 35.5788 -59.3949 35.606 -59.399 35.608 -59.4005 35.6134 -59.4097 35.6171 -59.409 35.6208 -59.4036 35.6262 -59.4051 35.6296 -59.4038 35.6345 -59.4096 35.6387 -59.4133 35.6358 -59.4162 35.639 -59.4162 35.6432 -59.3998 35.6484 -59.3975 35.6588 -59.3864 35.6703 -59.3496 35.689 -59.3453 35.6931 -59.3296 35.6897 -59.3103 35.6752 Z"/></svg>
+</header>
+<main class="body">
+<div>
+<section aria-labelledby="alertas">
+<h2 id="alertas">Alertas oficiales</h2>
+<ul><li class="alert" style="border-color:#e3b505"><p class="meta"><strong>Aviso</strong>, vigente</p><h3>Aviso A535-1/2026 [Actualización]: Probables Tormentas Eléctricas en zonas desde la región de Coquimbo a la región del Biobío</h3><p class="meta">Dirección Meteorológica de Chile. Desde el 6 de octubre, 12:00 hora de Chile (15:00 UTC), hasta el 9 de octubre, 23:59 hora de Chile (02:59 UTC).</p><p class="meta">Origen: canal oficial CAP de la DMC.</p><p><a href="https://archivos.meteochile.gob.cl/portaldmc/AAA/doc/evento_A535-1_2026.php" rel="noreferrer">Ver el anuncio oficial</a></p></li><li class="alert" style="border-color:#e3b505"><p class="meta"><strong>Aviso</strong>, vigente</p><h3>Aviso A531-3/2026 [Actualización]: Viento Normal a Moderado en zonas desde la región de Coquimbo a la región del Biobío</h3><p class="meta">Dirección Meteorológica de Chile. Desde el 5 de octubre, 12:00 hora de Chile (15:00 UTC), hasta el 8 de octubre, 23:59 hora de Chile (02:59 UTC).</p><p class="meta">Origen: canal oficial CAP de la DMC.</p><p><a href="https://archivos.meteochile.gob.cl/portaldmc/AAA/doc/evento_A531-3_2026.php" rel="noreferrer">Ver el anuncio oficial</a></p></li></ul>
+<p class="note">Los avisos, alertas y alarmas meteorológicas de la Dirección Meteorológica de Chile se reciben automáticamente desde su canal oficial CAP. Las alertas de SENAPRED (temprana preventiva, amarilla, roja) se leen automáticamente cada 10 minutos desde la página pública senapred.cl/alertas, que no es un servicio oficial de datos: confirme siempre en senapred.cl. Los boletines de tsunami del SHOA se leen cada 5 minutos desde la tabla pública del SNAM (snamchile.cl), que tampoco es un servicio oficial de datos. El municipio también puede ingresar alertas con su enlace oficial. Como respaldo se leen fuentes internacionales (GDACS y los centros de alerta de tsunami de NOAA), que no reemplazan los avisos oficiales de SENAPRED ni del SHOA.</p>
+</section>
+<section aria-labelledby="fuentes"><h2 id="fuentes">Estado de las fuentes</h2><p class="note">La plataforma lee varias fuentes independientes. Si una falla, las demás siguen funcionando y se muestra el último dato recibido de cada una.</p><p class="calm note">Sin respuesta reciente: SENAPRED: alertas vigentes (lectura de senapred.cl/alertas). Siguen funcionando: DMC: avisos, alertas y alarmas meteorológicas (CAP), GDACS: alertas mundiales de desastres (respaldo internacional), PTWC / NTWC: mensajes de tsunami (respaldo internacional), SHOA: boletines del Sistema Nacional de Alarma de Maremotos (lectura de snamchile.cl).</p><ul class="src"><li><strong>DMC: avisos, alertas y alarmas meteorológicas (CAP)</strong>: <strong style="color:#166534">Funcionando</strong><span class="meta">Dirección Meteorológica de Chile. Último dato recibido: 7 de octubre, 00:09 hora de Chile (03:09 UTC).</span></li><li><strong>GDACS: alertas mundiales de desastres (respaldo internacional)</strong>: <strong style="color:#166534">Funcionando</strong><span class="meta">Global Disaster Alert and Coordination System (Comisión Europea y Naciones Unidas). Último dato recibido: 7 de octubre, 00:10 hora de Chile (03:10 UTC).</span></li><li><strong>PTWC / NTWC: mensajes de tsunami (respaldo internacional)</strong>: <strong style="color:#166534">Funcionando</strong><span class="meta">NOAA National Weather Service, Pacific Tsunami Warning Center y National Tsunami Warning Center. Último dato recibido: 7 de octubre, 00:10 hora de Chile (03:10 UTC).</span></li><li><strong>SENAPRED: alertas vigentes (lectura de senapred.cl/alertas)</strong>: <strong style="color:#991b1b">Falla</strong><span class="meta">Servicio Nacional de Prevención y Respuesta ante Desastres. Último dato recibido: nunca.</span></li><li><strong>SHOA: boletines del Sistema Nacional de Alarma de Maremotos (lectura de snamchile.cl)</strong>: <strong style="color:#166534">Funcionando</strong><span class="meta">Servicio Hidrográfico y Oceanográfico de la Armada. Último dato recibido: 7 de octubre, 00:09 hora de Chile (03:09 UTC).</span></li><li><strong>Otras fuentes de datos</strong>: 7 de 7 funcionando.</li></ul></section>
+</div>
+<div>
+<section aria-labelledby="amenazas">
+<h2 id="amenazas">Por amenaza</h2>
+<ul class="haz"><li><span class="bar" style="background:#d4590f" aria-hidden="true"></span><div><strong>Tsunami: Alto</strong><span class="meta">Parte del territorio debe evacuarse ante un tsunami.</span></div></li><li><span class="bar" style="background:#e3b505" aria-hidden="true"></span><div><strong>Condiciones meteorológicas: Moderado</strong><span class="meta">Aviso de la Dirección Meteorológica de Chile vigente para la comuna.</span></div></li><li><span class="bar" style="background:#2f7d4a" aria-hidden="true"></span><div><strong>Incendio forestal: Bajo</strong><span class="meta">La recurrencia de incendios registrada es baja.</span></div></li><li><span class="bar" style="background:#2f7d4a" aria-hidden="true"></span><div><strong>Alertas internacionales de respaldo: Bajo</strong><span class="meta">No hay alertas de las fuentes internacionales de respaldo (GDACS, PTWC) que alcancen la comuna.</span></div></li><li><span class="bar" style="background:#2b5ea7" aria-hidden="true"></span><div><strong>Sismos recientes: Informativo</strong><span class="meta">Sin sismos de magnitud 4 o más en las últimas 72 horas a menos de 150 km.</span></div></li><li><span class="bar" style="background:#8a929c" aria-hidden="true"></span><div><strong>Inundación y anegamiento: Sin datos suficientes</strong><span class="meta">No hay datos de inundación cargados para la comuna.</span></div></li><li><span class="bar" style="background:#8a929c" aria-hidden="true"></span><div><strong>Calidad del aire (MP2,5): Sin datos suficientes</strong><span class="meta">No hay mediciones recientes suficientes de MP2,5 para la comuna.</span></div></li><li><span class="bar" style="background:#8a929c" aria-hidden="true"></span><div><strong>Alertas de SENAPRED: Sin datos suficientes</strong><span class="meta">La lectura automática de alertas de SENAPRED no ha funcionado todavía: senapred.cl no respondió a la plataforma. Fuentes de respaldo internacionales activas: GDACS: alertas mundiales de desastres (respaldo internacional). Confirme las alertas oficiales en senapred.cl y shoa.cl.</span></div></li></ul>
+<p class="note">Nivel calculado por esta plataforma con reglas publicadas y configurables. No es una evaluación ni una alerta oficial. La ausencia de un nivel alto no significa ausencia de peligro.</p>
+<p class="note">Calculado el 7 de octubre, 00:31 hora de Chile (03:31 UTC).</p>
+</section>
+<section aria-labelledby="telefonos">
+<h2 id="telefonos">Teléfonos de emergencia</h2>
+<ul class="phones"><li><a href="tel:131"><strong>131</strong>Ambulancia (SAMU)</a></li><li><a href="tel:132"><strong>132</strong>Bomberos</a></li><li><a href="tel:133"><strong>133</strong>Carabineros</a></li></ul>
+</section>
+<section aria-labelledby="enlaces">
+<h2 id="enlaces">Información oficial</h2>
+<ul class="links"><li><a href="https://senapred.cl" rel="noreferrer">SENAPRED</a><span class="meta">Servicio Nacional de Prevención y Respuesta ante Desastres</span></li><li><a href="https://senapred.cl/alertas" rel="noreferrer">Alertas vigentes de SENAPRED</a><span class="meta">Listado oficial de alertas declaradas</span></li><li><a href="https://www.shoa.cl" rel="noreferrer">SHOA</a><span class="meta">Servicio Hidrográfico y Oceanográfico de la Armada, alertas de tsunami</span></li><li><a href="https://www.meteochile.gob.cl" rel="noreferrer">Dirección Meteorológica de Chile</a><span class="meta">Pronósticos, avisos, alertas y alarmas meteorológicas</span></li></ul>
+<p class="note">Para alertas oficiales consulte senapred.cl y los canales de su municipalidad.</p>
+</section>
+</div>
+</main>
+<footer class="foot"><p>Fuentes: SENAPRED, SHOA, Dirección Meteorológica de Chile, CONAF, INE y las demás fuentes listadas en Estado de las fuentes.</p></footer>
+</body>
+</html>
