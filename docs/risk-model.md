@@ -126,3 +126,7 @@ If the municipality uploads sectors, levels are computed per sector. If not, the
 - Forecasts older than `max_age_hours` (6) or farther than `point_radius_km` (30 km) from the comuna centroid are ignored, which gives `SIN_DATOS`.
 - It is a model forecast, never an official warning; the DMC warnings in module `meteo` remain the official ones.
 - Public wording: the headline residents see is a plain day-by-day outlook for today and the next two days, for example "Hoy: lluvia durante la tarde y la noche, máxima de 20 grados." A period (madrugada 0-6 h, mañana 6-12 h, tarde 12-19 h, noche 19-24 h, Chile time) counts as rainy when its forecast total is at least 1 mm, the usual climatological convention for a wet period. Millimetres, gusts and the provisional rain level stay in the evidence for staff; wind is not described to residents until a validated threshold exists.
+
+### SENAPRED alerts whose official page stops responding
+
+After each successful reading of senapred.cl/alertas, the adapter opens the official page of every SENAPRED alert still shown and checks whether SENAPRED's site answers "Página no encontrada". Such an alert keeps counting toward the comuna level and stays visible, flagged `pagina_oficial_no_disponible`; the public card says the official page does not respond and that the alert stays in force until SENAPRED publishes a new bulletin. A later bulletin for the same declaration supersedes it as usual. Decided by Felipe: a missing page on SENAPRED's side is their server problem, not evidence that the alert ended.

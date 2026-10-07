@@ -374,3 +374,16 @@ def test_collapsed_polygon_parts_are_dropped():
     assert drop_collapsed_parts(holed)["coordinates"] == square
     point = {"type": "Point", "coordinates": [-71.3, -35.0]}
     assert drop_collapsed_parts(point) == point
+
+
+def test_senapred_missing_page_is_detected_and_flagged():
+    from datetime import UTC, datetime
+
+    from app.sources.base import AlertRecord
+    from app.sources.senapred_alerts import UNAVAILABLE_FLAG, flag_records, page_missing
+
+    assert page_missing("Página no encontrada - 404\nEl contenido al que intentas acceder no se encuentra disponible.")
+    assert not page_missing("Se declara Alerta Temprana Preventiva para la Región del Maule")
+    record = AlertRecord("x", "SENAPRED", "meteo", "Alerta Temprana Preventiva", "t", "https://senapred.cl/alerta/x", datetime(2026, 10, 5, tzinfo=UTC), None, None)
+    flag_records([record], {"https://senapred.cl/alerta/x": True})
+    assert record.properties[UNAVAILABLE_FLAG] is True

@@ -678,6 +678,7 @@ def public_summary(slug: str, conn: Connection = Depends(get_conn)) -> dict[str,
                 "ends_at": a["ends_at"],
                 "in_force": a["starts_at"] <= now,
                 "origin": ALERT_ORIGIN.get(a["source_key"], "ingresada por la municipalidad"),
+                "official_page_unavailable": bool((a["properties"] or {}).get("pagina_oficial_no_disponible")),
             }
             for a in active_alerts(conn, municipality_id, now)
         ],

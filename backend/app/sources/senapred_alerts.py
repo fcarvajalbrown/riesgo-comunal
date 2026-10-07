@@ -225,6 +225,43 @@ def render_cards(max_pages: int = MAX_PAGES, timeout_ms: int = 60000) -> list[di
     return cards
 
 
+NOT_FOUND_TEXT = "pagina no encontrada"
+UNAVAILABLE_FLAG = "pagina_oficial_no_disponible"
+
+
+def page_missing(body_text: str) -> bool:
+    return NOT_FOUND_TEXT in fold(body_text or "")
+
+
+def check_pages(urls: list[str], timeout_ms: int = 30000) -> dict[str, bool]:
+    from playwright.sync_api import Error as PlaywrightError
+    from playwright.sync_api import sync_playwright
+
+    results: dict[str, bool] = {}
+    if not urls:
+        return results
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        try:
+            page = browser.new_page()
+            for url in urls:
+                try:
+                    page.goto(url, wait_until="networkidle", timeout=timeout_ms)
+                    page.wait_for_timeout(2000)
+                    results[url] = page_missing(page.inner_text("body"))
+                except PlaywrightError:
+                    continue
+        finally:
+            browser.close()
+    return results
+
+
+def flag_records(records: list[AlertRecord], checks: dict[str, bool]) -> None:
+    for record in records:
+        if record.source_url in checks:
+            record.properties[UNAVAILABLE_FLAG] = checks[record.source_url]
+
+
 def probe() -> dict[str, Any]:
     cards = render_cards(max_pages=2)
     return {"cards": len(cards), "parsed": [parse_card(c["text"], (c["links"] or [""])[0]) for c in cards[:6]]}
@@ -252,7 +289,23 @@ class SenapredAlertsAdapter(SourceAdapter):
         cards = self.cards if self.cards is not None else render_cards()
         if not cards:
             raise SourceError("senapred.cl/alertas no mostró alertas; la página pudo cambiar")
-        return [RawPayload(dataset="senapred_alert", url=PAGE_URL, body=cards)]
+        checks: dict[str, bool] = {}
+        if self.cards is None:
+            from app.db import rows, transaction
+
+            with transaction() as conn:
+                urls = [
+                    r["source_url"]
+                    for r in rows(
+                        conn,
+                        """
+                        select distinct source_url from alert
+                        where source_key = 'senapred_alertas' and source_url is not null and (ends_at is null or ends_at > now())
+                        """,
+                    )
+                ]
+            checks = check_pages(urls)
+        return [RawPayload(dataset="senapred_alert", url=PAGE_URL, body=cards, options={"page_checks": checks})]
 
     def normalize(self, raw: RawPayload, parsed: Any) -> Batch:
         from app.db import rows, transaction
@@ -272,6 +325,22 @@ class SenapredAlertsAdapter(SourceAdapter):
                 "select external_id as cut, name, properties->>'region' as region, properties->>'provincia' as provincia from feature where dataset = 'comuna_boundary'",
             )
         records, more = to_records(bulletins, comunas)
+        checks = raw.options.get("page_checks") or {}
+        flag_records(records, checks)
+        if checks:
+            from sqlalchemy import text
+
+            with transaction() as conn:
+                for url, missing in checks.items():
+                    conn.execute(
+                        text(
+                            """
+                            update alert set properties = coalesce(properties, '{}'::jsonb) || jsonb_build_object(cast(:flag as text), cast(:missing as boolean))
+                            where source_key = 'senapred_alertas' and source_url = :url
+                            """
+                        ),
+                        {"flag": UNAVAILABLE_FLAG, "missing": missing, "url": url},
+                    )
         return Batch(
             dataset=raw.dataset,
             url=raw.url,
