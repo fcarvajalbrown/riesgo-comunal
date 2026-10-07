@@ -653,14 +653,20 @@ def public_sources(slug: str, conn: Connection = Depends(get_conn)) -> list[dict
 @router.get("/public/{slug}/resumen")
 def public_summary(slug: str, conn: Connection = Depends(get_conn)) -> dict[str, Any]:
     municipality_id = _public_municipality(conn, slug)
-    result = assess_comuna(conn, municipality_id)
+    result = assess_comuna(conn, municipality_id, mode="ahora")
+    standing = assess_comuna(conn, municipality_id, mode="riesgo", now=result["computed_at"])
     now = datetime.now(UTC)
+
+    def brief(assessments: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        return [{"hazard": a["hazard_name"], "level": a["level"], "level_label": a["level_label"], "headline": a["headline"]} for a in assessments]
+
     return {
         "municipality": result["municipality"]["name"],
         "computed_at": result["computed_at"],
         "overall_level": result["overall_level"],
         "overall_level_label": result["overall_level_label"],
-        "items": [{"hazard": a["hazard_name"], "level": a["level"], "level_label": a["level_label"], "headline": a["headline"]} for a in result["assessments"]],
+        "items": brief(result["assessments"]),
+        "standing_items": brief(standing["assessments"]),
         "alerts": [
             {
                 "title": a["title"],

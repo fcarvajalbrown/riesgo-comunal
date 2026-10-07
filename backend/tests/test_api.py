@@ -172,6 +172,8 @@ def test_public_summary_has_notice(env):
     assert "ausencia de un nivel alto no significa ausencia de peligro" in body["notice"]
     assert body["overall_level"] and "alert_feed_note" in body
     assert all({"level", "origin", "in_force", "source_url"} <= set(a) for a in body["alerts"])
+    assert all(i["hazard"] != "Tsunami" for i in body["items"])
+    assert any(i["hazard"] == "Tsunami" for i in body["standing_items"])
     assert client.get("/api/public/no-existe/resumen").status_code == 404
 
 
