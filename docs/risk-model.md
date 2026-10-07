@@ -117,3 +117,11 @@ If the municipality uploads sectors, levels are computed per sector. If not, the
 ## Testing
 
 `backend/tests/test_risk_rules.py` covers every rule boundary above with fixed inputs (given evidence X, expect level Y), the `SIN_DATOS` paths, and that the explanation lists every factor used.
+
+### Pronóstico de lluvia, viento y calor (module `weather_forecast`)
+
+- Source: Open-Meteo forecast at the centre of each comuna's envelope (source `open_meteo`, hourly, CC BY 4.0, attribution "Weather data by Open-Meteo.com"). Mode `ahora`.
+- From the hourly forecast the adapter keeps three values for the next 48 hours: the largest rolling 24-hour rain total, the highest wind gust and the highest temperature.
+- Level: rain at or above `rain_24h_alto` (60 mm) gives `ALTO`, at or above `rain_24h_moderado` (30 mm) gives `MODERADO`, otherwise `BAJO`. These are the same provisional placeholders as the observed-rain rule, not official thresholds. Gusts and temperature are reported in the headline without a level, because no validated threshold exists yet; with no rain value the level is `INFORMATIVO`.
+- Forecasts older than `max_age_hours` (6) or farther than `point_radius_km` (30 km) from the comuna centroid are ignored, which gives `SIN_DATOS`.
+- It is a model forecast, never an official warning; the DMC warnings in module `meteo` remain the official ones.

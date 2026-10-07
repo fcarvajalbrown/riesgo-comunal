@@ -135,3 +135,21 @@ def senapred_feed_problem(last_success_at, last_error: str | None, interval_minu
     if age_minutes > 3 * interval_minutes:
         return f"Las alertas de SENAPRED no se actualizan hace {age_minutes:.0f} min (se esperan cada {interval_minutes} min)."
     return None
+
+
+def classify_forecast(rain_24h_mm: float | None, gust_kmh: float | None, temp_c: float | None, t: dict) -> RuleResult:
+    if rain_24h_mm is None and gust_kmh is None and temp_c is None:
+        return RuleResult("SIN_DATOS", "No hay pronóstico reciente disponible para la comuna.")
+    parts = []
+    if rain_24h_mm is not None:
+        parts.append(f"lluvia de hasta {rain_24h_mm:.1f} mm en 24 horas")
+    if gust_kmh is not None:
+        parts.append(f"ráfagas de hasta {gust_kmh:.0f} km/h")
+    if temp_c is not None:
+        parts.append(f"máxima de {temp_c:.0f} °C")
+    summary = "Pronóstico para las próximas 48 horas: " + ", ".join(parts) + "."
+    if rain_24h_mm is not None and rain_24h_mm >= t["rain_24h_alto"]:
+        return RuleResult("ALTO", f"{summary} La lluvia supera el umbral provisional de {t['rain_24h_alto']:.0f} mm.")
+    if rain_24h_mm is not None and rain_24h_mm >= t["rain_24h_moderado"]:
+        return RuleResult("MODERADO", f"{summary} La lluvia supera el umbral provisional de {t['rain_24h_moderado']:.0f} mm.")
+    return RuleResult("BAJO" if rain_24h_mm is not None else "INFORMATIVO", summary)
