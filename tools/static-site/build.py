@@ -14,12 +14,12 @@ CHILE = ZoneInfo("America/Santiago")
 MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
 
 LEVELS = {
-    "CRITICO": ("#b42318", "#ffffff", "!!", "Crítico"),
-    "ALTO": ("#d4590f", "#ffffff", "!", "Alto"),
-    "MODERADO": ("#e3b505", "#422006", "~", "Moderado"),
-    "BAJO": ("#2f7d4a", "#ffffff", "-", "Bajo"),
-    "INFORMATIVO": ("#2b5ea7", "#ffffff", "i", "Informativo"),
-    "SIN_DATOS": ("#8a929c", "#ffffff", "?", "Sin datos"),
+    "CRITICO": ("#b42318", "#ffffff", "Crítico"),
+    "ALTO": ("#d4590f", "#ffffff", "Alto"),
+    "MODERADO": ("#e3b505", "#2a1a00", "Moderado"),
+    "BAJO": ("#2f7d4a", "#ffffff", "Bajo"),
+    "INFORMATIVO": ("#2b5ea7", "#ffffff", "Informativo"),
+    "SIN_DATOS": ("#8a929c", "#ffffff", "Sin datos"),
 }
 
 WARNING_BORDER = {
@@ -42,40 +42,92 @@ SOURCE_STATE = {
 OFFICIAL_LINKS = [
     ("SENAPRED", "Servicio Nacional de Prevención y Respuesta ante Desastres", "https://senapred.cl"),
     ("Alertas vigentes de SENAPRED", "Listado oficial de alertas declaradas", "https://senapred.cl/alertas"),
+    ("SHOA", "Servicio Hidrográfico y Oceanográfico de la Armada, alertas de tsunami", "https://www.shoa.cl"),
     ("Dirección Meteorológica de Chile", "Pronósticos, avisos, alertas y alarmas meteorológicas", "https://www.meteochile.gob.cl"),
 ]
 
 EMERGENCY_PHONES = [("131", "Ambulancia (SAMU)"), ("132", "Bomberos"), ("133", "Carabineros")]
 
+PROVINCES = {"071": "Provincia de Talca", "073": "Provincia de Curicó", "074": "Provincia de Linares", "072": "Provincia de Cauquenes"}
+
+FONT = "https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap"
+
+SHAPES_SQL = """
+with g as (
+    select slug, cut_code, st_scale(st_simplifypreservetopology(boundary, 0.0015), 0.82, 1) as geom
+    from municipality where cut_code like '07%'
+)
+select slug, cut_code as cut, st_assvg(geom, 0, 4) as d,
+       st_xmin(geom) as x0, st_ymin(geom) as y0, st_xmax(geom) as x1, st_ymax(geom) as y1
+from g
+"""
+
 STYLE = """
+:root{--paper:#e8edf1;--ink:#14212c;--soft:#4a5a68;--land:#ffffff;--sea:#cfdce6;--rule:#b6c4cf;--line:#d3dce3;--warn:#fff4d6;--warn-ink:#4a3200}
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.5;color:#1e293b;background:#f8fafc}
-main,header>div{max-width:52rem;margin:0 auto;padding:1rem}
-header{background:#1e3a5f;color:#fff}
-header h1{margin:0;font-size:1.4rem}
-header p{margin:.25rem 0 0}
-a{color:#1d4ed8}
-header a{color:#fff}
-section{background:#fff;border:1px solid #e2e8f0;border-radius:1rem;padding:1rem;margin:1rem 0}
-h2{font-size:1.15rem;margin:0 0 .75rem}
-h3{font-size:1rem;margin:1rem 0 .5rem}
-ul{padding:0;list-style:none;margin:0}
-.snapshot{border:2px solid #b45309;background:#fffbeb;color:#451a03;border-radius:.75rem;padding:.75rem 1rem;margin:1rem 0}
-.notice{border:1px solid #fcd34d;background:#fffbeb;border-radius:.75rem;padding:.75rem 1rem}
-.badge{display:inline-block;border-radius:999px;padding:.1rem .6rem;font-weight:600;font-size:.85rem;white-space:nowrap}
-.badge span{font-family:monospace;opacity:.8;margin-right:.3rem}
-.overall{font-size:1.05rem}
-.list>li{border-top:1px solid #e2e8f0;padding:.6rem 0}
-.list>li:first-child{border-top:0}
-.alert{border:1px solid #e2e8f0;border-left:6px solid #b42318;border-radius:.75rem;padding:.75rem;margin:.5rem 0;background:#fff}
-.alert p{margin:.2rem 0}
-.muted{color:#475569;font-size:.875rem}
-.small{font-size:.8rem}
-.phones{display:flex;gap:.5rem;flex-wrap:wrap}
-.phones a{display:block;border:1px solid #e2e8f0;border-radius:.75rem;padding:.5rem 1rem;text-align:center;text-decoration:none;color:#1e293b}
-.phones strong{display:block;font-size:1.5rem;color:#1e3a5f}
-footer{max-width:52rem;margin:0 auto;padding:1rem 1rem 2rem;border-top:1px solid #e2e8f0}
-.index li{display:flex;justify-content:space-between;gap:.75rem;align-items:center;flex-wrap:wrap}
+html{background:var(--paper)}
+body{margin:0;font-family:"Atkinson Hyperlegible",system-ui,sans-serif;font-size:1.0625rem;line-height:1.55;color:var(--ink);background:var(--paper)}
+a{color:inherit;text-underline-offset:.18em}
+a:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+h1,h2,h3,p{margin:0}
+h1,h2,h3{line-height:1.15}
+ul{list-style:none;margin:0;padding:0}
+.brand{background:var(--ink);color:#ffffff;padding:clamp(1rem,2.5vw,1.75rem) clamp(1rem,3vw,2.5rem)}
+.brand-line{font-size:clamp(1.5rem,3.6vw,2.9rem);font-weight:700;line-height:1.1;max-width:60rem}
+.snap{margin-top:.5rem;font-size:.95rem;color:#c9d4dd}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap;padding:1.1rem clamp(1rem,3vw,2.5rem);border-bottom:1px solid var(--rule)}
+.top h1{font-size:clamp(1.35rem,2.4vw,1.9rem)}
+.top p{color:var(--soft)}
+.region{display:grid;grid-template-columns:minmax(0,3fr) minmax(20rem,2fr);align-items:start}
+.mapwrap{position:sticky;top:0;height:100vh;background:var(--sea);display:flex;flex-direction:column}
+.mapwrap svg{flex:1;min-height:0;width:100%;display:block}
+.map path{stroke:#ffffff;stroke-width:1.2;vector-effect:non-scaling-stroke;transition:filter .15s}
+.map a:hover path{filter:brightness(.82);stroke:var(--ink);stroke-width:2.2}
+.legend{display:flex;flex-wrap:wrap;gap:.4rem 1.1rem;padding:.8rem clamp(1rem,3vw,2.5rem);background:var(--paper);border-top:1px solid var(--rule);font-size:.9rem}
+.sw{width:.95rem;height:.95rem;border-radius:2px;display:inline-block;flex:none}
+.list{padding:1.5rem clamp(1rem,3vw,2.5rem) 3rem;border-left:1px solid var(--rule)}
+.intro{color:var(--soft);max-width:36rem;margin-bottom:1.5rem}
+.prov{margin-bottom:1.75rem}
+.prov h2{font-size:1rem;color:var(--soft);font-weight:400;padding-bottom:.4rem;border-bottom:1px solid var(--rule)}
+.prov a{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.55rem .25rem;border-bottom:1px solid var(--line);text-decoration:none}
+.prov a:hover{background:#dde5eb}
+.prov a strong{font-size:1.1rem}
+.lvl{display:inline-flex;align-items:center;gap:.45rem;font-weight:700;font-size:.95rem;white-space:nowrap}
+.band{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2rem;align-items:center;padding:clamp(1.5rem,4vw,3.5rem) clamp(1rem,3vw,2.5rem)}
+.band nav a{font-size:.95rem}
+.band h1{font-size:clamp(1.6rem,3.2vw,2.6rem);font-weight:400;margin:.6rem 0 .2rem}
+.word{font-size:clamp(3.4rem,11vw,8.5rem);font-weight:700;line-height:.95;letter-spacing:-.02em}
+.word-note{margin-top:.8rem;max-width:40rem;font-size:1rem}
+.band svg{width:clamp(7rem,22vw,17rem);height:auto;display:block}
+.band svg path{fill:currentColor;fill-opacity:.25;stroke:currentColor;stroke-width:1.5;vector-effect:non-scaling-stroke}
+.body{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(1.5rem,3vw,3.5rem);padding:2rem clamp(1rem,3vw,2.5rem) 3rem}
+.body h2{font-size:1.35rem;margin-bottom:.9rem}
+.body section+section{margin-top:2.25rem}
+.alert{border-left:.45rem solid;background:var(--land);padding:1rem 1.1rem;margin-bottom:.8rem}
+.alert h3{font-size:1.15rem;margin:.25rem 0 .4rem}
+.alert p+p{margin-top:.25rem}
+.meta{color:var(--soft);font-size:.92rem;display:block}
+.calm{background:var(--land);padding:1rem 1.1rem;border-left:.45rem solid var(--rule)}
+.calm p+p{margin-top:.35rem}
+.haz li{display:grid;grid-template-columns:.4rem minmax(0,1fr);gap:.85rem;padding:.75rem 0;border-bottom:1px solid var(--line)}
+.bar{border-radius:2px}
+.note{color:var(--soft);font-size:.92rem;max-width:44rem;margin-top:.8rem}
+.src{margin-top:.8rem}
+.src li{padding:.5rem 0;border-bottom:1px solid var(--line)}
+.phones{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem}
+.phones a{display:block;background:var(--land);padding:.8rem;text-decoration:none;text-align:center;font-size:.92rem}
+.phones strong{display:block;font-size:2rem;line-height:1.1}
+.links li{padding:.55rem 0;border-bottom:1px solid var(--line)}
+.links a{font-weight:700}
+.foot{padding:1.5rem clamp(1rem,3vw,2.5rem) 2.5rem;border-top:1px solid var(--rule);color:var(--soft);font-size:.9rem}
+@media (max-width:900px){
+.region{grid-template-columns:1fr}
+.mapwrap{position:relative;height:62vh}
+.list{border-left:0}
+.body,.band{grid-template-columns:1fr}
+.band svg{width:9rem}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 """
 
 
@@ -92,17 +144,21 @@ def format_time(value) -> str:
     if moment.tzinfo is None:
         moment = moment.replace(tzinfo=UTC)
     local = moment.astimezone(CHILE)
-    return f"{local:%d-%m-%Y, %H:%M} hora de Chile ({moment.astimezone(UTC):%H:%M} UTC)"
+    return f"{local.day} de {MONTHS[local.month - 1]}, {local:%H:%M} hora de Chile ({moment.astimezone(UTC):%H:%M} UTC)"
 
 
 def generated_label(moment: datetime) -> str:
     local = moment.astimezone(CHILE)
-    return f"{local.day} de {MONTHS[local.month - 1]} de {local.year}, {local:%H:%M} (hora de Chile)"
+    return f"{local.day} de {MONTHS[local.month - 1]} de {local.year} a las {local:%H:%M}"
 
 
-def level_badge(level: str, label: str | None = None) -> str:
-    background, foreground, icon, default_label = LEVELS.get(level, LEVELS["SIN_DATOS"])
-    return f'<span class="badge" style="background:{background};color:{foreground}"><span aria-hidden="true">{escape(icon)}</span>{escape(label or default_label)}</span>'
+def level_style(level: str) -> tuple[str, str, str]:
+    return LEVELS.get(level, LEVELS["SIN_DATOS"])
+
+
+def level_mark(level: str, label: str | None = None) -> str:
+    background, _, default_label = level_style(level)
+    return f'<span class="lvl"><span class="sw" style="background:{background}" aria-hidden="true"></span>{escape(label or default_label)}</span>'
 
 
 def page(title: str, body: str) -> str:
@@ -113,6 +169,9 @@ def page(title: str, body: str) -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>{escape(title)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="{FONT}">
 <style>{STYLE}</style>
 </head>
 <body>
@@ -122,35 +181,33 @@ def page(title: str, body: str) -> str:
 """
 
 
-def snapshot_notice(generated: str) -> str:
+def snapshot_strip(generated: str) -> str:
     return (
-        '<div class="snapshot" role="note"><p><strong>Copia estática temporal.</strong> '
-        f"Esta página es una copia fija generada el {escape(generated)} y no se actualiza sola. "
-        "Las alertas oficiales deben confirmarse en "
-        '<a href="https://senapred.cl">senapred.cl</a>, <a href="https://www.shoa.cl">shoa.cl</a> '
-        "y los canales de su municipalidad.</p></div>"
+        '<div class="brand"><p class="brand-line">Una iniciativa de la oficina de la senadora Paulina Vodanovic</p>'
+        f'<p class="snap">Última actualización: {escape(generated)}.</p></div>'
     )
 
 
 def alerts_html(summary: dict) -> str:
     if not summary["alerts"]:
         return (
-            '<div class="notice"><p><strong>No hay avisos ni alertas oficiales registrados para la comuna en este momento.</strong></p>'
-            '<p class="muted">Que no aparezca una alerta no significa que no exista peligro. Confirme en senapred.cl.</p></div>'
+            '<div class="calm"><p><strong>No hay avisos ni alertas oficiales registrados para la comuna en este momento.</strong></p>'
+            '<p class="meta">Que no aparezca una alerta no significa que no exista peligro. Confirme en senapred.cl.</p></div>'
         )
     items = []
     for alert in summary["alerts"]:
         border = WARNING_BORDER.get(alert["level"], "#b42318")
-        timing = f"{'desde' if alert['in_force'] else 'comienza'} {format_time(alert['starts_at'])}"
+        state = "vigente" if alert["in_force"] else "próxima"
+        timing = f"{'Desde el' if alert['in_force'] else 'Comienza el'} {format_time(alert['starts_at'])}"
         if alert["ends_at"]:
-            timing += f" · hasta {format_time(alert['ends_at'])}"
+            timing += f", hasta el {format_time(alert['ends_at'])}"
         link = f'<p><a href="{escape(alert["source_url"])}" rel="noreferrer">Ver el anuncio oficial</a></p>' if alert["source_url"] else ""
         items.append(
-            f'<li class="alert" style="border-left-color:{border}">'
-            f'<p><strong>{escape(alert["level"])}</strong> · {"Vigente" if alert["in_force"] else "Próximo"} · Alerta oficial</p>'
-            f'<p><strong>{escape(alert["title"])}</strong></p>'
-            f'<p class="small">{escape(alert["issuer"])} · {escape(timing)}</p>'
-            f'<p class="small">Origen: {escape(alert["origin"])}.</p>{link}</li>'
+            f'<li class="alert" style="border-color:{border}">'
+            f'<p class="meta"><strong>{escape(alert["level"])}</strong>, {state}</p>'
+            f'<h3>{escape(alert["title"])}</h3>'
+            f'<p class="meta">{escape(alert["issuer"])}. {escape(timing)}.</p>'
+            f'<p class="meta">Origen: {escape(alert["origin"])}.</p>{link}</li>'
         )
     return f'<ul>{"".join(items)}</ul>'
 
@@ -169,55 +226,70 @@ def sources_html(sources: list[dict]) -> str:
         return ", ".join(s["name"] for s in group)
 
     out = [
-        "<h3>Estado de las fuentes</h3>",
-        '<p class="muted">La plataforma lee varias fuentes independientes. Si una falla, las demás siguen funcionando y se muestra el último dato recibido de cada una.</p>',
+        '<section aria-labelledby="fuentes"><h2 id="fuentes">Estado de las fuentes</h2>',
+        '<p class="note">La plataforma lee varias fuentes independientes. Si una falla, las demás siguen funcionando y se muestra el último dato recibido de cada una.</p>',
     ]
     if alert_down:
         tail = f"Siguen funcionando: {names(alert_up)}." if alert_up else "Ninguna fuente de alertas responde ahora; consulte senapred.cl y los canales de su municipalidad."
-        out.append(f'<p class="notice small">Sin respuesta reciente: {escape(names(alert_down))}. {escape(tail)}</p>')
-    out.append('<ul class="list small">')
+        out.append(f'<p class="calm note">Sin respuesta reciente: {escape(names(alert_down))}. {escape(tail)}</p>')
+    out.append('<ul class="src">')
     for source in alert_sources:
         label, colour = SOURCE_STATE[source["state"]]
         out.append(
-            f'<li><strong>{escape(source["name"])}</strong> <strong style="color:{colour}">{escape(label)}</strong><br>'
-            f'<span class="muted">{escape(source["organization"])} · último dato recibido: {escape(last_data(source))}</span></li>'
+            f'<li><strong>{escape(source["name"])}</strong>: <strong style="color:{colour}">{escape(label)}</strong>'
+            f'<span class="meta">{escape(source["organization"])}. Último dato recibido: {escape(last_data(source))}.</span></li>'
         )
-    out.append(f"<li><strong>Otras fuentes de datos:</strong> {len(data_sources) - len(data_down)} de {len(data_sources)} funcionando.")
-    if data_down:
-        out.append('<ul class="muted">')
-        for source in data_down:
-            label, colour = SOURCE_STATE[source["state"]]
-            out.append(f'<li><strong style="color:{colour}">{escape(label)}</strong>: {escape(source["name"])}, último dato {escape(last_data(source))}</li>')
-        out.append("</ul>")
-    out.append("</li></ul>")
+    out.append(f"<li><strong>Otras fuentes de datos</strong>: {len(data_sources) - len(data_down)} de {len(data_sources)} funcionando.")
+    for source in data_down:
+        label, colour = SOURCE_STATE[source["state"]]
+        out.append(f'<span class="meta"><strong style="color:{colour}">{escape(label)}</strong>: {escape(source["name"])}, último dato {escape(last_data(source))}.</span>')
+    out.append("</li></ul></section>")
     return "".join(out)
 
 
-def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str) -> str:
+def view_box(x0: float, y0: float, x1: float, y1: float, pad: float) -> str:
+    return f"{x0 - pad} {-y1 - pad} {x1 - x0 + 2 * pad} {y1 - y0 + 2 * pad}"
+
+
+def silhouette(shape: dict) -> str:
+    pad = max(shape["x1"] - shape["x0"], shape["y1"] - shape["y0"]) * 0.04
+    return f'<svg viewBox="{view_box(shape["x0"], shape["y0"], shape["x1"], shape["y1"], pad)}" aria-hidden="true" focusable="false"><path d="{shape["d"]}"/></svg>'
+
+
+def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str, shape: dict) -> str:
+    background, foreground, _ = level_style(summary["overall_level"])
     hazards = "".join(
-        f'<li>{level_badge(item["level"], item["level_label"])} <strong>{escape(item["hazard"])}.</strong> {escape(item["headline"])}</li>' for item in summary["items"]
+        f'<li><span class="bar" style="background:{level_style(item["level"])[0]}" aria-hidden="true"></span>'
+        f'<div><strong>{escape(item["hazard"])}: {escape(item["level_label"])}</strong><span class="meta">{escape(item["headline"])}</span></div></li>'
+        for item in summary["items"]
     )
-    phones = "".join(f'<li><a href="tel:{n}"><strong>{n}</strong><span class="muted">{escape(label)}</span></a></li>' for n, label in EMERGENCY_PHONES)
-    links = "".join(f'<li><a href="{escape(href)}" rel="noreferrer"><strong>{escape(label)}</strong></a><br><span class="muted">{escape(detail)}</span></li>' for label, detail, href in OFFICIAL_LINKS)
-    body = f"""<header><div>
-<p class="small"><a href="../index.html">Todas las comunas del Maule</a></p>
-<h1>{escape(comuna["display_name"])}</h1>
-<p>Información sobre riesgos de desastre para la comunidad de {escape(comuna["name"])}</p>
-</div></header>
-<main>
-{snapshot_notice(generated)}
-<p class="notice">Esta página reúne información oficial de varias fuentes independientes, entre ellas SENAPRED y la Dirección Meteorológica de Chile, y un cálculo de referencia hecho por la plataforma. No reemplaza las instrucciones de la autoridad. <strong>En una emergencia, siga las indicaciones de SENAPRED y de su municipalidad.</strong></p>
-<section aria-labelledby="ahora">
-<h2 id="ahora">Qué está pasando ahora</h2>
-<p class="overall">Nivel general de la comuna: {level_badge(summary["overall_level"], summary["overall_level_label"])}</p>
+    phones = "".join(f'<li><a href="tel:{n}"><strong>{n}</strong>{escape(label)}</a></li>' for n, label in EMERGENCY_PHONES)
+    links = "".join(f'<li><a href="{escape(href)}" rel="noreferrer">{escape(label)}</a><span class="meta">{escape(detail)}</span></li>' for label, detail, href in OFFICIAL_LINKS)
+    body = f"""{snapshot_strip(generated)}
+<header class="band" style="background:{background};color:{foreground}">
+<div>
+<nav><a href="../index.html">Todas las comunas del Maule</a></nav>
+<h1>{escape(comuna["name"])}, nivel general</h1>
+<p class="word">{escape(summary["overall_level_label"])}</p>
+<p class="word-note">Cálculo de referencia con información oficial. En una emergencia, siga las indicaciones de SENAPRED y de su municipalidad.</p>
+</div>
+{silhouette(shape)}
+</header>
+<main class="body">
+<div>
+<section aria-labelledby="alertas">
+<h2 id="alertas">Alertas oficiales</h2>
 {alerts_html(summary)}
-<p class="muted">{escape(summary["alert_feed_note"])}</p>
-<h3>Resumen por amenaza <span class="muted">(cálculo de la plataforma)</span></h3>
-<ul class="list">{hazards}</ul>
-<p class="muted">{escape(summary["notice"])}</p>
-<p class="muted">Actualizado: {escape(format_time(summary["computed_at"]))}.</p>
-<p class="muted">{escape(summary["official_information"])}</p>
+<p class="note">{escape(summary["alert_feed_note"])}</p>
+</section>
 {sources_html(sources)}
+</div>
+<div>
+<section aria-labelledby="amenazas">
+<h2 id="amenazas">Por amenaza</h2>
+<ul class="haz">{hazards}</ul>
+<p class="note">{escape(summary["notice"])}</p>
+<p class="note">Calculado el {escape(format_time(summary["computed_at"]))}.</p>
 </section>
 <section aria-labelledby="telefonos">
 <h2 id="telefonos">Teléfonos de emergencia</h2>
@@ -225,28 +297,49 @@ def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str
 </section>
 <section aria-labelledby="enlaces">
 <h2 id="enlaces">Información oficial</h2>
-<ul class="list">{links}</ul>
+<ul class="links">{links}</ul>
+<p class="note">{escape(summary["official_information"])}</p>
 </section>
+</div>
 </main>
-<footer class="muted small"><p>Fuentes: SENAPRED, Dirección Meteorológica de Chile, CONAF.</p></footer>"""
-    return page(f"Riesgo en {comuna['name']}", body)
+<footer class="foot"><p>Fuentes: SENAPRED, SHOA, Dirección Meteorológica de Chile, CONAF, INE y las demás fuentes listadas en Estado de las fuentes.</p></footer>"""
+    return page(f"{comuna['name']}: {summary['overall_level_label']}", body)
 
 
-def index_page(entries: list[tuple[str, str, dict]], generated: str) -> str:
-    items = "".join(f'<li><a href="{escape(slug)}/index.html">{escape(name)}</a> {level_badge(s["overall_level"], s["overall_level_label"])}</li>' for slug, name, s in entries)
-    body = f"""<header><div>
-<h1>Riesgo en mi comuna: Región del Maule</h1>
-<p>Información sobre riesgos de desastre para las comunas del Maule</p>
-</div></header>
-<main>
-{snapshot_notice(generated)}
-<section aria-labelledby="comunas">
-<h2 id="comunas">Comunas</h2>
-<p class="muted">Nivel general de cada comuna según el cálculo de la plataforma al momento de generar esta copia.</p>
-<ul class="list index">{items}</ul>
-</section>
+def region_map(entries: list[tuple[str, str, dict]], shapes: dict) -> str:
+    x0 = min(s["x0"] for s in shapes.values())
+    y0 = min(s["y0"] for s in shapes.values())
+    x1 = max(s["x1"] for s in shapes.values())
+    y1 = max(s["y1"] for s in shapes.values())
+    paths = "".join(
+        f'<a href="{escape(slug)}/index.html" tabindex="-1"><title>{escape(name)}: {escape(s["overall_level_label"])}</title>'
+        f'<path d="{shapes[slug]["d"]}" fill="{level_style(s["overall_level"])[0]}"/></a>'
+        for slug, name, s in entries
+    )
+    present = [level for level in LEVELS if any(s["overall_level"] == level for _, _, s in entries)]
+    legend = "".join(f"<li>{level_mark(level)}</li>" for level in present)
+    return (
+        f'<div class="mapwrap"><svg class="map" viewBox="{view_box(x0, y0, x1, y1, (x1 - x0) * 0.03)}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">{paths}</svg>'
+        f'<ul class="legend" aria-label="Leyenda del mapa">{legend}</ul></div>'
+    )
+
+
+def index_page(entries: list[tuple[str, str, dict]], generated: str, shapes: dict) -> str:
+    groups = []
+    for prefix, province in PROVINCES.items():
+        members = [(slug, name, s) for slug, name, s in entries if shapes[slug]["cut"].startswith(prefix)]
+        items = "".join(f'<li><a href="{escape(slug)}/index.html"><strong>{escape(name)}</strong>{level_mark(s["overall_level"], s["overall_level_label"])}</a></li>' for slug, name, s in members)
+        groups.append(f'<section class="prov" aria-labelledby="p{prefix}"><h2 id="p{prefix}">{escape(province)}</h2><ul>{items}</ul></section>')
+    body = f"""{snapshot_strip(generated)}
+<header class="top"><h1>Riesgo en mi comuna, Región del Maule</h1><p>{len(entries)} comunas</p></header>
+<main class="region">
+{region_map(entries, shapes)}
+<div class="list">
+<p class="intro">Nivel general de cada comuna según el cálculo de la plataforma, que reúne información de SENAPRED, SHOA, la Dirección Meteorológica de Chile y otras fuentes oficiales. Elija su comuna para ver las alertas y el detalle por amenaza.</p>
+{"".join(groups)}
+</div>
 </main>"""
-    return page("Riesgo en el Maule", body)
+    return page("Riesgo en mi comuna, Región del Maule", body)
 
 
 def main() -> int:
@@ -257,16 +350,17 @@ def main() -> int:
     entries = []
     with get_engine().connect() as conn:
         slugs = [r["slug"] for r in rows(conn, "select slug from municipality where cut_code like '07%' order by name")]
+        shapes = {r["slug"]: r for r in rows(conn, SHAPES_SQL)}
         for slug in slugs:
             comuna = public_comuna(slug, conn)
             summary = public_summary(slug, conn)
             sources = public_sources(slug, conn)
             target = args.out / slug
             target.mkdir(parents=True, exist_ok=True)
-            (target / "index.html").write_text(comuna_page(comuna, summary, sources, generated), encoding="utf-8")
+            (target / "index.html").write_text(comuna_page(comuna, summary, sources, generated, shapes[slug]), encoding="utf-8")
             entries.append((slug, comuna["name"], summary))
         conn.rollback()
-    (args.out / "index.html").write_text(index_page(entries, generated), encoding="utf-8")
+    (args.out / "index.html").write_text(index_page(entries, generated, shapes), encoding="utf-8")
     (args.out / ".nojekyll").write_text("", encoding="utf-8")
     print(f"{len(entries)} comuna pages and index written to {args.out}")
     return 0
