@@ -36,6 +36,8 @@ Measured with `docker compose` on a clean clone (one tenant, all sources ingeste
 | OS | Any 64-bit Linux with Docker Engine 24+ and Compose v2 | Ubuntu Server 24.04 LTS |
 | Network | Outbound HTTPS to the sources in `data-sources.md`; inbound 80/443 | Static IP and DNS name |
 
+Maule region install (31 tenants: the 30 Maule comunas plus Lota), measured natively on the local dev database, not in Docker: `create-region --region 07` takes 81 s including the national boundary download; the first full ingestion takes about 4.5 min (slowest sources MOP Vialidad 67 s, INE census 49 s for 84,769 blocks, SENAPRED layers 45 s); database 211 MB with 30,271 features and 15,580 analysis cells. Risk evaluation per request grows with comuna size: San Clemente (2,154 analysis cells) takes 1.9 s for the comuna level and 9.1 s for the per-sector level, against 0.8 s and 0.6 s for Lota. Container memory for 31 tenants is not measured yet (no Docker on the measuring machine).
+
 A local LLM needs its own sizing (a 7-8B model quantised to 4 bits needs roughly 6 GB RAM and runs slowly on CPU).
 
 ## Hosting options
