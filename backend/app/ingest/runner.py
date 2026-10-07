@@ -134,6 +134,20 @@ def store_batches(
     return total, warnings
 
 
+def _solid_rings(polygon: list) -> list:
+    rings = [ring for ring in polygon if len({tuple(point) for point in ring}) >= 3]
+    return rings if rings and rings[0] is polygon[0] else []
+
+
+def drop_collapsed_parts(geometry: dict | None) -> dict | None:
+    if not geometry or geometry.get("type") not in ("Polygon", "MultiPolygon"):
+        return geometry
+    if geometry["type"] == "Polygon":
+        return {**geometry, "coordinates": _solid_rings(geometry["coordinates"])}
+    parts = [rings for rings in map(_solid_rings, geometry["coordinates"]) if rings]
+    return {**geometry, "coordinates": parts}
+
+
 def store_record(conn: Connection, source_key: str, dataset: str, record, provenance_id: int) -> None:
     if isinstance(record, FeatureRecord):
         conn.execute(
@@ -156,7 +170,7 @@ def store_record(conn: Connection, source_key: str, dataset: str, record, proven
                 "n": record.name,
                 "c": record.category,
                 "p": json.dumps(record.properties, ensure_ascii=False, default=str),
-                "g": json.dumps(record.geometry),
+                "g": json.dumps(drop_collapsed_parts(record.geometry)),
                 "dc": record.data_class,
                 "su": record.source_updated_at,
                 "pid": provenance_id,

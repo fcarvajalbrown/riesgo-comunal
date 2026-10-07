@@ -361,3 +361,16 @@ def test_slugify_comuna_names():
     assert slugify("RÍO CLARO") == "rio-claro"
     assert slugify("Hualañé") == "hualane"
     assert slugify("Yerbas Buenas") == "yerbas-buenas"
+
+
+def test_collapsed_polygon_parts_are_dropped():
+    from app.ingest.runner import drop_collapsed_parts
+
+    collapsed = [[[-71.3, -35.0]] * 4]
+    square = [[[-71.3, -35.0], [-71.31, -35.0], [-71.31, -35.01], [-71.3, -35.0]]]
+    multi = {"type": "MultiPolygon", "coordinates": [collapsed, square]}
+    assert drop_collapsed_parts(multi)["coordinates"] == [square]
+    holed = {"type": "Polygon", "coordinates": [square[0], collapsed[0]]}
+    assert drop_collapsed_parts(holed)["coordinates"] == square
+    point = {"type": "Point", "coordinates": [-71.3, -35.0]}
+    assert drop_collapsed_parts(point) == point
