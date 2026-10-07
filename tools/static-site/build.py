@@ -92,9 +92,12 @@ body.fit{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:
 .intro{color:var(--soft);max-width:36rem;margin-bottom:1.5rem}
 .prov{margin-bottom:1.75rem}
 .prov h2{font-size:1rem;color:var(--soft);font-weight:400;padding-bottom:.4rem;border-bottom:1px solid var(--rule)}
-.prov a{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.55rem .25rem;border-bottom:1px solid var(--line);text-decoration:none}
-.prov a:hover{background:#dde5eb}
-.prov a strong{font-size:1.1rem}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(13rem,1fr));gap:.6rem;margin-top:.75rem}
+.tile{display:flex;flex-direction:column;gap:.3rem;height:100%;background:var(--land);border-top:.4rem solid;padding:.7rem .85rem .85rem;text-decoration:none}
+.tile:hover{outline:2px solid var(--ink)}
+.tile strong{font-size:1.1rem;line-height:1.2}
+.tile .count{font-size:.88rem;color:var(--soft)}
+.tile .first{font-size:.85rem;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .lvl{display:inline-flex;align-items:center;gap:.45rem;font-weight:700;font-size:.95rem;white-space:nowrap}
 .band{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1.5rem;align-items:center;padding:1rem clamp(1rem,3vw,2.5rem)}
 .band nav a{font-size:.9rem}
@@ -112,8 +115,9 @@ body.fit{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:
 .meta{color:var(--soft);font-size:.92rem;display:block}
 .calm{background:var(--land);padding:1rem 1.1rem;border-left:.45rem solid var(--rule)}
 .calm p+p{margin-top:.35rem}
-.haz li{display:grid;grid-template-columns:.4rem minmax(0,1fr);gap:.85rem;padding:.75rem 0;border-bottom:1px solid var(--line)}
-.bar{border-radius:2px}
+.haz{display:grid;grid-template-columns:repeat(auto-fill,minmax(14rem,1fr));gap:.6rem}
+.haz li{background:var(--land);border-top:.4rem solid;padding:.7rem .85rem}
+.haz strong{display:block;line-height:1.25;margin-bottom:.2rem}
 .note{color:var(--soft);font-size:.92rem;max-width:44rem;margin-top:.8rem}
 .src{margin-top:.8rem}
 .src li{padding:.5rem 0;border-bottom:1px solid var(--line)}
@@ -264,8 +268,8 @@ def silhouette(shape: dict) -> str:
 def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str, shape: dict) -> str:
     background, foreground, _ = level_style(summary["overall_level"])
     hazards = "".join(
-        f'<li><span class="bar" style="background:{level_style(item["level"])[0]}" aria-hidden="true"></span>'
-        f'<div><strong>{escape(item["hazard"])}: {escape(item["level_label"])}</strong><span class="meta">{escape(item["headline"])}</span></div></li>'
+        f'<li style="border-color:{level_style(item["level"])[0]}">'
+        f'<strong>{escape(item["hazard"])}: {escape(item["level_label"])}</strong><span class="meta">{escape(item["headline"])}</span></li>'
         for item in summary["items"]
     )
     phones = "".join(f'<li><a href="tel:{n}"><strong>{n}</strong>{escape(label)}</a></li>' for n, label in EMERGENCY_PHONES)
@@ -328,12 +332,23 @@ def region_map(entries: list[tuple[str, str, dict]], shapes: dict) -> str:
     )
 
 
+def tile(slug: str, name: str, summary: dict) -> str:
+    in_force = [a for a in summary["alerts"] if a["in_force"]]
+    count = f"{len(in_force)} alerta vigente" if len(in_force) == 1 else f"{len(in_force)} alertas vigentes" if in_force else "Sin alertas vigentes"
+    first = f'<span class="first">{escape(in_force[0]["title"])}</span>' if in_force else ""
+    return (
+        f'<li><a class="tile" href="{escape(slug)}/index.html" style="border-color:{level_style(summary["overall_level"])[0]}">'
+        f'<strong>{escape(name)}</strong>{level_mark(summary["overall_level"], summary["overall_level_label"])}'
+        f'<span class="count">{count}</span>{first}</a></li>'
+    )
+
+
 def index_page(entries: list[tuple[str, str, dict]], generated: str, shapes: dict) -> str:
     groups = []
     for prefix, province in PROVINCES.items():
         members = [(slug, name, s) for slug, name, s in entries if shapes[slug]["cut"].startswith(prefix)]
-        items = "".join(f'<li><a href="{escape(slug)}/index.html"><strong>{escape(name)}</strong>{level_mark(s["overall_level"], s["overall_level_label"])}</a></li>' for slug, name, s in members)
-        groups.append(f'<section class="prov" aria-labelledby="p{prefix}"><h2 id="p{prefix}">{escape(province)}</h2><ul>{items}</ul></section>')
+        items = "".join(tile(slug, name, s) for slug, name, s in members)
+        groups.append(f'<section class="prov" aria-labelledby="p{prefix}"><h2 id="p{prefix}">{escape(province)}</h2><ul class="tiles">{items}</ul></section>')
     body = f"""{snapshot_strip(generated)}
 <header class="top"><h1>Riesgo en mi comuna, Región del Maule</h1><p>{len(entries)} comunas</p></header>
 <main class="region">
