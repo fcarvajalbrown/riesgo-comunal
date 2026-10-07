@@ -272,13 +272,18 @@ def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str
         f'<strong>{escape(item["hazard"])}: {escape(item["level_label"])}</strong><span class="meta">{escape(item["headline"])}</span></li>'
         for item in summary["items"]
     )
+    standing = "".join(
+        f'<li style="border-color:var(--rule)">'
+        f'<strong>{escape(item["hazard"])}</strong><span class="meta">{escape(item["headline"])}</span></li>'
+        for item in summary.get("standing_items", [])
+    )
     phones = "".join(f'<li><a href="tel:{n}"><strong>{n}</strong>{escape(label)}</a></li>' for n, label in EMERGENCY_PHONES)
     links = "".join(f'<li><a href="{escape(href)}" rel="noreferrer">{escape(label)}</a><span class="meta">{escape(detail)}</span></li>' for label, detail, href in OFFICIAL_LINKS)
     body = f"""{snapshot_strip(generated)}
 <header class="band" style="background:{background};color:{foreground}">
 <div>
 <nav><a href="../index.html">Todas las comunas del Maule</a></nav>
-<h1>{escape(comuna["name"])}: nivel general <span class="word">{escape(summary["overall_level_label"])}</span></h1>
+<h1>{escape(comuna["name"])}, situación ahora: <span class="word">{escape(summary["overall_level_label"])}</span></h1>
 <p class="word-note">Cálculo de referencia con información oficial. En una emergencia, siga las indicaciones de SENAPRED y de su municipalidad.</p>
 </div>
 {silhouette(shape)}
@@ -294,8 +299,13 @@ def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str
 </div>
 <div>
 <section aria-labelledby="amenazas">
-<h2 id="amenazas">Por amenaza</h2>
+<h2 id="amenazas">Qué está pasando ahora</h2>
 <ul class="haz">{hazards}</ul>
+</section>
+<section aria-labelledby="permanentes">
+<h2 id="permanentes">Peligros permanentes del territorio</h2>
+<p class="note" style="margin:0 0 .8rem">Zonas de la comuna expuestas a tsunami, incendios forestales o inundaciones según los mapas oficiales. Sirven para prepararse y no indican una emergencia en curso.</p>
+<ul class="haz">{standing}</ul>
 <p class="note">{escape(summary["notice"])}</p>
 <p class="note">Calculado el {escape(format_time(summary["computed_at"]))}.</p>
 </section>
