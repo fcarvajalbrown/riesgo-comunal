@@ -1,5 +1,6 @@
 import argparse
 import json
+import unicodedata
 
 import httpx
 import shutil
@@ -64,7 +65,8 @@ LIVE_LAYERS = [
     ("viento", "Viento ahora: flechas con su dirección y velocidad", "Open-Meteo", '<span class="sq" style="background:#0f172a;clip-path:polygon(50% 0,100% 50%,62% 50%,62% 100%,38% 100%,38% 50%,0 50%)"></span>'),
 ]
 
-WIND_STEP = 0.3
+WIND_STEP = 0.1
+WIND_BATCH = 100
 
 EMERGENCY_PHONES = [("131", "Ambulancia (SAMU)"), ("132", "Bomberos"), ("133", "Carabineros")]
 
@@ -107,6 +109,9 @@ ul{list-style:none;margin:0;padding:0}
 .muni nav{margin-left:auto;font-size:.9rem}
 .wrap{max-width:72rem;margin:0 auto;padding:1rem}
 .notice{border:1px solid var(--border);background:var(--surface);color:var(--muted);border-radius:.75rem;padding:.6rem .75rem;font-size:.88rem}
+.rain{border:2px solid #1d4ed8}
+.rain h2{color:#1d4ed8}
+.outlook{font-size:.95rem;margin-bottom:.6rem}
 .down{background:var(--fg);color:#fff;border-radius:.75rem;padding:.8rem 1rem;margin-bottom:.75rem;font-size:.95rem}
 .grid{display:grid;gap:1rem;margin-top:1rem;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);align-items:start}
 .grid2{display:grid;gap:1rem;margin-top:1rem;grid-template-columns:1fr 1fr}
@@ -170,7 +175,16 @@ ul{list-style:none;margin:0;padding:0}
 .tile strong{font-size:1rem;font-weight:600}
 .tile .count{font-size:.8rem;color:var(--muted)}
 .tile .first{font-size:.78rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+body.fit{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+.region{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,3fr) minmax(22rem,2fr);gap:1rem;padding:1rem}
+.region .mapcard{position:relative;top:0;height:100%;min-height:0}
+.side{overflow-y:auto;min-height:0;padding-right:.25rem}
+.side .card+.card,.side .card+.notice,.side .down+.card{margin-top:1rem}
 @media (max-width:960px){
+body.fit{height:auto;overflow:visible}
+.region{grid-template-columns:1fr}
+.region .mapcard{height:70vh}
+.side{overflow:visible}
 .grid,.grid2{grid-template-columns:1fr}
 .mapcard{position:relative;top:0;height:70vh}
 .muni nav{display:none}
@@ -247,17 +261,40 @@ def page(title: str, body: str, body_class: str = "", head: str = "") -> str:
 """
 
 
-def senapred_down(sources: list[dict], summaries: list[dict]) -> bool:
-    feed_down = any(s["key"] == "senapred_alertas" and s["state"] in ("failed", "stale", "pending") for s in sources)
-    page_down = any(a.get("official_page_unavailable") for summary in summaries for a in summary["alerts"])
-    return feed_down or page_down
+EL_NINO_SOURCE = "https://www.emol.com/noticias/Nacional/2026/07/28/1206898/lluvias-primavera-efecto-el-nino.html"
+RAIN_WORDS = ("precipit", "lluvi", "temporal", "crecida", "inundac", "desborde", "sistema frontal", "aguacero")
 
 
-def down_banner(down: bool) -> str:
-    if not down:
+def plain(value: str) -> str:
+    return "".join(c for c in unicodedata.normalize("NFKD", value or "") if not unicodedata.combining(c)).lower()
+
+
+def is_rain(alert: dict) -> bool:
+    return any(word in plain(alert["title"]) for word in RAIN_WORDS)
+
+
+def rain_card(alerts_html_text: str, outlook: str | None, title: str) -> str:
+    forecast = f'<p class="outlook"><strong>Pronóstico:</strong> {escape(outlook)}</p>' if outlook else ""
+    season = (
+        '<p class="note" style="margin:.6rem 0 0"><strong>Temporada de El Niño:</strong> la Dirección Meteorológica de Chile proyecta lluvias sobre lo normal en el centro-sur del país. '
+        f'<a href="{EL_NINO_SOURCE}" rel="noreferrer">Fuente</a></p>'
+    )
+    return f'<section class="card rain" aria-labelledby="lluvia"><h2 id="lluvia">{escape(title)}</h2>{forecast}{alerts_html_text}{season}</section>'
+
+
+def senapred_status(sources: list[dict], summaries: list[dict]) -> str | None:
+    if any(s["key"] == "senapred_alertas" and s["state"] in ("failed", "stale", "pending") for s in sources):
+        return "La página de alertas de SENAPRED no está respondiendo."
+    if any(a.get("official_page_unavailable") for summary in summaries for a in summary["alerts"]):
+        return "La página oficial de una alerta vigente de SENAPRED no está respondiendo."
+    return None
+
+
+def down_banner(headline: str | None) -> str:
+    if not headline:
         return ""
     return (
-        '<p class="down" role="status"><strong>La página de alertas de SENAPRED no está respondiendo.</strong> '
+        f'<p class="down" role="status"><strong>{escape(headline)}</strong> '
         "La información no puede esperar: aquí está nuestra evaluación del riesgo, calculada con todas las fuentes que sí responden.</p>"
     )
 
@@ -376,23 +413,27 @@ def wind_grid(extent: dict) -> dict:
             points.append((round(lat, 3), round(lon, 3)))
             lon += WIND_STEP
         lat += WIND_STEP
+    body: list[dict] = []
     try:
-        response = httpx.get(
-            "https://api.open-meteo.com/v1/forecast",
-            params={
-                "latitude": ",".join(str(a) for a, _ in points),
-                "longitude": ",".join(str(b) for _, b in points),
-                "current": "wind_speed_10m,wind_direction_10m,wind_gusts_10m",
-                "timezone": "GMT",
-            },
-            timeout=60,
-        )
-        response.raise_for_status()
-        body = response.json()
+        for i in range(0, len(points), WIND_BATCH):
+            chunk = points[i : i + WIND_BATCH]
+            response = httpx.get(
+                "https://api.open-meteo.com/v1/forecast",
+                params={
+                    "latitude": ",".join(str(a) for a, _ in chunk),
+                    "longitude": ",".join(str(b) for _, b in chunk),
+                    "current": "wind_speed_10m,wind_direction_10m,wind_gusts_10m",
+                    "timezone": "GMT",
+                },
+                timeout=60,
+            )
+            response.raise_for_status()
+            data = response.json()
+            body.extend(data if isinstance(data, list) else [data])
     except (httpx.HTTPError, ValueError):
         return {"type": "FeatureCollection", "features": []}
     features = []
-    for (lat, lon), item in zip(points, body if isinstance(body, list) else [body]):
+    for (lat, lon), item in zip(points, body):
         current = item.get("current") or {}
         if current.get("wind_speed_10m") is None or current.get("wind_direction_10m") is None:
             continue
@@ -428,6 +469,11 @@ def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str
 <p class="notice">Reunimos la información de SENAPRED, el SHOA, la Dirección Meteorológica de Chile y otras fuentes, y calculamos el riesgo de cada comuna. En una emergencia, siga las indicaciones de la autoridad.</p>
 <div class="grid">
 <div>
+{rain_card(
+    f'<ul class="alerts">{"".join(alert_item(a) for a in summary["alerts"] if is_rain(a))}</ul>' if any(is_rain(a) for a in summary["alerts"]) else '<p class="note" style="margin:0">No hay alertas de lluvia ni de crecidas vigentes para la comuna.</p>',
+    next((i["headline"] for i in summary["items"] if i["hazard"] == "Pronóstico del tiempo"), None),
+    "Lluvia y crecidas",
+)}
 <section class="card" aria-labelledby="ahora">
 <h2 id="ahora">Qué está pasando ahora</h2>
 <p class="now">Nuestra evaluación del riesgo {level_pill(summary["overall_level"], summary["overall_level_label"])}</p>
@@ -473,40 +519,39 @@ def index_page(entries: list[tuple[str, str, dict]], generated: str, region: dic
         groups.append(f'<section class="prov" aria-labelledby="p{prefix}"><h3 id="p{prefix}">{escape(province)}</h3><ul class="tiles">{items}</ul></section>')
     present = [level for level in LEVELS if any(s["overall_level"] == level for _, _, s in entries)]
     legend = "".join(f'<li><span class="sq" style="background:{level_style(level)[0]}"></span>{escape(level_style(level)[2])}</li>' for level in present)
+    rain = rain_card(region_alerts_html([(slug, name, {**s, "alerts": [a for a in s["alerts"] if is_rain(a)]}) for slug, name, s in entries]), None, "Lluvia y crecidas en el Maule")
+    phones = "".join(f'<li><a href="tel:{n}"><strong>{n}</strong><span>{escape(label)}</span></a></li>' for n, label in EMERGENCY_PHONES)
+    links = "".join(f'<li><a href="{escape(href)}" rel="noreferrer">{escape(label)}</a><span>{escape(detail)}</span></li>' for label, detail, href in OFFICIAL_LINKS)
+    wind = ' data-wind="assets/viento.json"' if has_wind else ""
     body = f"""{senator_bar(generated)}
 <header class="muni"><div class="in">
 <span class="initials" aria-hidden="true">VII</span>
-<div><h1>Riesgo en mi comuna, Región del Maule</h1><p>Información sobre riesgos de desastre para las {len(entries)} comunas de la región</p></div>
+<div><h1>Riesgo en mi comuna, Región del Maule</h1><p>Toque su comuna en el mapa o elíjala en la lista</p></div>
 </div></header>
-<main class="wrap">
+<main class="region">
+<div class="card mapcard"><div class="map" data-map data-region="assets/comunas.json" data-layers="assets/region/"{wind} data-bbox="{escape(json.dumps(region["bbox"]))}" role="region" aria-label="Mapa de las comunas del Maule por situación"></div>
+<ul class="legend" aria-label="Situación de cada comuna"><li><strong>Situación:</strong></li>{legend}</ul>{toggles_html(counts, has_wind)}</div>
+<div class="side">
 {banner}
-<p class="notice">Reunimos la información de SENAPRED, el SHOA, la Dirección Meteorológica de Chile y otras fuentes, y calculamos el riesgo de cada comuna. En una emergencia, siga las indicaciones de la autoridad.</p>
-<div class="grid">
-<div>
-<section class="card" aria-labelledby="ahora">
-<h2 id="ahora">Qué está pasando ahora en el Maule</h2>
-<p class="intro">Alertas oficiales vigentes y próximas en la región, con las comunas que alcanzan.</p>
-{region_alerts_html(entries)}
-</section>
 <section class="card" aria-labelledby="comunas">
 <h2 id="comunas">Elija su comuna</h2>
-<p class="intro">Situación de cada comuna según el cálculo de la plataforma. Cada página muestra sus alertas, su mapa y el detalle por amenaza.</p>
 {"".join(groups)}
 </section>
-</div>
-<div class="card mapcard"><div class="map" data-map data-region="assets/comunas.json" data-layers="assets/region/"{' data-wind="assets/viento.json"' if has_wind else ""} data-bbox="{escape(json.dumps(region["bbox"]))}" role="region" aria-label="Mapa de las comunas del Maule por situación"></div>
-<ul class="legend" aria-label="Situación de cada comuna">{legend}</ul>{toggles_html(counts, has_wind)}</div>
-</div>
-<div class="grid2">
-<section class="card" aria-labelledby="telefonos"><h2 id="telefonos">Teléfonos de emergencia</h2><ul class="phones">{"".join(f'<li><a href="tel:{n}"><strong>{n}</strong><span>{escape(label)}</span></a></li>' for n, label in EMERGENCY_PHONES)}</ul></section>
-<section class="card" aria-labelledby="enlaces"><h2 id="enlaces">Información oficial</h2><ul class="links">{"".join(f'<li><a href="{escape(href)}" rel="noreferrer">{escape(label)}</a><span>{escape(detail)}</span></li>' for label, detail, href in OFFICIAL_LINKS)}</ul></section>
+{rain}
+<section class="card" aria-labelledby="ahora">
+<h2 id="ahora">Alertas vigentes en el Maule</h2>
+{region_alerts_html(entries)}
+</section>
+<section class="card" aria-labelledby="telefonos"><h2 id="telefonos">Teléfonos de emergencia</h2><ul class="phones">{phones}</ul></section>
+<section class="card" aria-labelledby="enlaces"><h2 id="enlaces">Información oficial</h2><ul class="links">{links}</ul></section>
+<p class="notice">Reunimos la información de SENAPRED, el SHOA, la Dirección Meteorológica de Chile y otras fuentes, y calculamos el riesgo de cada comuna. En una emergencia, siga las indicaciones de la autoridad.</p>
+<p class="foot" style="padding:.75rem 0">Mapa base: OpenFreeMap, OpenMapTiles, datos de OpenStreetMap. Capas: SENAPRED, CONAF, Dirección Meteorológica de Chile. Lluvia por satélite: NASA GIBS (GPM IMERG). Viento y pronóstico: <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a> (CC BY 4.0).</p>
 </div>
 </main>
-<footer class="foot">Mapa base: OpenFreeMap, OpenMapTiles, datos de OpenStreetMap. Límites comunales y capas: SENAPRED, CONAF, Dirección Meteorológica de Chile. Lluvia por satélite: NASA GIBS (GPM IMERG). Viento y pronóstico: <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a> (CC BY 4.0).</footer>
 <script type="module" src="assets/map.js"></script>"""
     description = f"Alertas oficiales, mapa y pronóstico de las {len(entries)} comunas del Maule en un solo lugar. {INITIATIVE}"
     head = share_tags(base_url, "", SITE_NAME, description, "") + '<link rel="stylesheet" href="assets/maplibre-gl.css">\n'
-    return page(SITE_NAME, body, head=head)
+    return page(SITE_NAME, body, "fit", head=head)
 
 
 def main() -> int:
@@ -526,7 +571,7 @@ def main() -> int:
     with get_engine().connect() as conn:
         tenants = rows(conn, "select id, slug from municipality where cut_code like '07%' order by name")
         summaries = {t["slug"]: public_summary(t["slug"], conn) for t in tenants}
-        banner = down_banner(senapred_down(public_sources(tenants[0]["slug"], conn), list(summaries.values())))
+        banner = down_banner(senapred_status(public_sources(tenants[0]["slug"], conn), list(summaries.values())))
         extent = rows(conn, EXTENT_SQL)[0]
         wind = wind_grid(extent)
         has_wind = bool(wind["features"])

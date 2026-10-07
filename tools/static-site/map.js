@@ -8,18 +8,18 @@ const WILDFIRE = ["#fde68a", "#fdba74", "#fb923c", "#ea580c", "#9a3412"];
 
 const STYLES = {
   comuna: [{ type: "line", paint: { "line-color": "#1f4e79", "line-width": 2.5 } }],
-  lluvia: [{ type: "raster", paint: { "raster-opacity": 0.75 } }],
+  lluvia: [{ type: "raster", paint: { "raster-opacity": 0.5 } }],
   wildfire_hazard: [
     {
       type: "fill",
       paint: {
         "fill-color": ["match", ["to-string", ["get", "clase"]], "1", WILDFIRE[0], "2", WILDFIRE[1], "3", WILDFIRE[2], "4", WILDFIRE[3], "5", WILDFIRE[4], "#cccccc"],
-        "fill-opacity": 0.55,
+        "fill-opacity": 0.3,
       },
     },
   ],
   dmc_warning: [
-    { type: "fill", paint: { "fill-color": ["match", ["get", "level"], "Alarma", "#b91c1c", "Alerta", "#ea580c", "#eab308"], "fill-opacity": 0.18 } },
+    { type: "fill", paint: { "fill-color": ["match", ["get", "level"], "Alarma", "#b91c1c", "Alerta", "#ea580c", "#eab308"], "fill-opacity": 0.1 } },
     { type: "line", paint: { "line-color": "#a16207", "line-width": 1.5, "line-dasharray": [3, 2] } },
   ],
   tsunami_evacuation_area: [
@@ -37,18 +37,18 @@ const STYLES = {
         "icon-size": ["interpolate", ["linear"], ["get", "speed"], 0, 0.6, 60, 1.3],
         "icon-rotate": ["+", ["get", "dir"], 180],
         "icon-rotation-alignment": "map",
-        "icon-allow-overlap": true,
+        "icon-allow-overlap": false,
         "text-field": ["concat", ["to-string", ["round", ["get", "speed"]]], " km/h"],
         "text-size": 11,
         "text-offset": [0, 1.6],
-        "text-allow-overlap": true,
+        "text-allow-overlap": false,
       },
       paint: { "icon-color": "#0f172a", "text-color": "#0f172a", "text-halo-color": "#ffffff", "text-halo-width": 1.5 },
     },
   ],
 };
 
-const ORDER = ["lluvia", "wildfire_hazard", "dmc_warning", "tsunami_evacuation_area", "tsunami_meeting_point", "viento", "comuna"];
+const ORDER = ["wildfire_hazard", "dmc_warning", "tsunami_evacuation_area", "lluvia", "tsunami_meeting_point", "viento", "comuna"];
 
 function text(tag, value) {
   const node = document.createElement(tag);
@@ -142,7 +142,7 @@ function addPopups(map) {
 
 function regionLayers(map, url) {
   map.addSource("region", { type: "geojson", data: url });
-  map.addLayer({ id: "region-fill", type: "fill", source: "region", paint: { "fill-color": ["get", "color"], "fill-opacity": 0.45 } }, beforeId(map, "wildfire_hazard"));
+  map.addLayer({ id: "region-fill", type: "fill", source: "region", paint: { "fill-color": ["get", "color"], "fill-opacity": 0.72 } }, beforeId(map, "wildfire_hazard"));
   map.addLayer({ id: "region-line", type: "line", source: "region", paint: { "line-color": "#ffffff", "line-width": 1.2 } }, beforeId(map, "wildfire_hazard"));
   const hover = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
   map.on("mousemove", "region-fill", (event) => {
@@ -171,7 +171,7 @@ for (const element of document.querySelectorAll("[data-map]")) {
     container: element,
     style: BASEMAP,
     bounds: JSON.parse(element.dataset.bbox),
-    fitBoundsOptions: { padding: 24 },
+    fitBoundsOptions: { padding: element.dataset.region ? 8 : 24 },
     attributionControl: { compact: true },
   });
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
