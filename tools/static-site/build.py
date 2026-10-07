@@ -106,7 +106,8 @@ ul{list-style:none;margin:0;padding:0}
 .muni p{font-size:.9rem;opacity:.9}
 .muni nav{margin-left:auto;font-size:.9rem}
 .wrap{max-width:72rem;margin:0 auto;padding:1rem}
-.notice{border:1px solid #fcd34d;background:#fffbeb;color:#451a03;border-radius:.75rem;padding:.75rem;font-size:.9rem}
+.notice{border:1px solid var(--border);background:var(--surface);color:var(--muted);border-radius:.75rem;padding:.6rem .75rem;font-size:.88rem}
+.down{background:var(--fg);color:#fff;border-radius:.75rem;padding:.8rem 1rem;margin-bottom:.75rem;font-size:.95rem}
 .grid{display:grid;gap:1rem;margin-top:1rem;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);align-items:start}
 .grid2{display:grid;gap:1rem;margin-top:1rem;grid-template-columns:1fr 1fr}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:1rem;padding:1.1rem 1.25rem}
@@ -246,6 +247,21 @@ def page(title: str, body: str, body_class: str = "", head: str = "") -> str:
 """
 
 
+def senapred_down(sources: list[dict], summaries: list[dict]) -> bool:
+    feed_down = any(s["key"] == "senapred_alertas" and s["state"] in ("failed", "stale", "pending") for s in sources)
+    page_down = any(a.get("official_page_unavailable") for summary in summaries for a in summary["alerts"])
+    return feed_down or page_down
+
+
+def down_banner(down: bool) -> str:
+    if not down:
+        return ""
+    return (
+        '<p class="down" role="status"><strong>La página de alertas de SENAPRED no está respondiendo.</strong> '
+        "La información no puede esperar: aquí está nuestra evaluación del riesgo, calculada con todas las fuentes que sí responden.</p>"
+    )
+
+
 def senator_bar(generated: str) -> str:
     return f'<div class="senator"><div class="in"><strong>Una iniciativa de la oficina de la senadora Paulina Vodanovic</strong><span>Última actualización: {escape(generated)}</span></div></div>'
 
@@ -309,7 +325,7 @@ def sources_html(sources: list[dict]) -> str:
     def names(group: list[dict]) -> str:
         return ", ".join(s["name"] for s in group)
 
-    out = ['<h3>Estado de las fuentes</h3><p class="note" style="margin:0 0 .5rem">La plataforma lee varias fuentes independientes. Si una falla, las demás siguen funcionando.</p>']
+    out = ['<h3>Estado de las fuentes</h3>']
     if alert_down:
         tail = f"Siguen funcionando: {names(alert_up)}." if alert_up else "Ninguna fuente de alertas responde ahora; consulte senapred.cl y los canales de su municipalidad."
         out.append(f'<p class="calm" style="margin-bottom:.5rem">Sin respuesta reciente: {escape(names(alert_down))}. {escape(tail)}</p>')
@@ -390,7 +406,7 @@ def wind_grid(extent: dict) -> dict:
     return {"type": "FeatureCollection", "features": features}
 
 
-def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str, counts: dict[str, int], base_url: str, slug: str, has_wind: bool) -> str:
+def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str, counts: dict[str, int], base_url: str, slug: str, has_wind: bool, banner: str) -> str:
     phones = "".join(f'<li><a href="tel:{n}"><strong>{n}</strong><span>{escape(label)}</span></a></li>' for n, label in EMERGENCY_PHONES)
     links = "".join(f'<li><a href="{escape(href)}" rel="noreferrer">{escape(label)}</a><span>{escape(detail)}</span></li>' for label, detail, href in OFFICIAL_LINKS)
     standing = summary.get("standing_items", [])
@@ -408,17 +424,16 @@ def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str
 <nav><a href="../index.html">Todas las comunas del Maule</a></nav>
 </div></header>
 <main class="wrap">
-<p class="notice">Esta página reúne información oficial de varias fuentes independientes, entre ellas SENAPRED y la Dirección Meteorológica de Chile, y un cálculo de referencia hecho por la plataforma. Si una fuente deja de responder, la página lo indica y sigue mostrando las demás. No reemplaza las instrucciones de la autoridad. <strong>En una emergencia, siga las indicaciones de SENAPRED y de su municipalidad.</strong></p>
+{banner}
+<p class="notice">Reunimos la información de SENAPRED, el SHOA, la Dirección Meteorológica de Chile y otras fuentes, y calculamos el riesgo de cada comuna. En una emergencia, siga las indicaciones de la autoridad.</p>
 <div class="grid">
 <div>
 <section class="card" aria-labelledby="ahora">
 <h2 id="ahora">Qué está pasando ahora</h2>
-<p class="now">Situación de la comuna {level_pill(summary["overall_level"], summary["overall_level_label"])} <span class="tag">Cálculo de la plataforma</span></p>
+<p class="now">Nuestra evaluación del riesgo {level_pill(summary["overall_level"], summary["overall_level_label"])}</p>
 {alerts_html(summary)}
-<p class="note">{escape(summary["alert_feed_note"])}</p>
-<h3>Resumen por amenaza <span class="tag">Cálculo de la plataforma</span></h3>
+<h3>Por amenaza</h3>
 {items_html(summary["items"])}
-<p class="note">{escape(summary["notice"])}</p>
 <p class="note">Pronóstico: <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a>. Calculado el {escape(format_time(summary["computed_at"]))}.</p>
 {sources_html(sources)}
 </section>
@@ -428,7 +443,7 @@ def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str
 </div>
 <div class="grid2">
 <section class="card" aria-labelledby="telefonos"><h2 id="telefonos">Teléfonos de emergencia</h2><ul class="phones">{phones}</ul></section>
-<section class="card" aria-labelledby="enlaces"><h2 id="enlaces">Información oficial</h2><ul class="links">{links}</ul><p class="note">{escape(summary["official_information"])}</p></section>
+<section class="card" aria-labelledby="enlaces"><h2 id="enlaces">Información oficial</h2><ul class="links">{links}</ul></section>
 </div>
 </main>
 <footer class="foot">Mapa base: OpenFreeMap, OpenMapTiles, datos de OpenStreetMap. Capas: SENAPRED, CONAF, Dirección Meteorológica de Chile. Lluvia por satélite: NASA GIBS (GPM IMERG). Pronóstico: <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a> (CC BY 4.0).</footer>
@@ -450,7 +465,7 @@ def tile(slug: str, name: str, summary: dict) -> str:
     )
 
 
-def index_page(entries: list[tuple[str, str, dict]], generated: str, region: dict, base_url: str, counts: dict[str, int], has_wind: bool) -> str:
+def index_page(entries: list[tuple[str, str, dict]], generated: str, region: dict, base_url: str, counts: dict[str, int], has_wind: bool, banner: str) -> str:
     groups = []
     for prefix, province in PROVINCES.items():
         members = [(slug, name, s) for slug, name, s in entries if region["cuts"][slug].startswith(prefix)]
@@ -464,7 +479,8 @@ def index_page(entries: list[tuple[str, str, dict]], generated: str, region: dic
 <div><h1>Riesgo en mi comuna, Región del Maule</h1><p>Información sobre riesgos de desastre para las {len(entries)} comunas de la región</p></div>
 </div></header>
 <main class="wrap">
-<p class="notice">Esta página reúne información oficial de varias fuentes independientes, entre ellas SENAPRED y la Dirección Meteorológica de Chile, y un cálculo de referencia hecho por la plataforma. Si una fuente deja de responder, la página lo indica y sigue mostrando las demás. No reemplaza las instrucciones de la autoridad. <strong>En una emergencia, siga las indicaciones de SENAPRED y de su municipalidad.</strong></p>
+{banner}
+<p class="notice">Reunimos la información de SENAPRED, el SHOA, la Dirección Meteorológica de Chile y otras fuentes, y calculamos el riesgo de cada comuna. En una emergencia, siga las indicaciones de la autoridad.</p>
 <div class="grid">
 <div>
 <section class="card" aria-labelledby="ahora">
@@ -509,6 +525,8 @@ def main() -> int:
     regional: dict[str, dict[str, dict]] = {layer[0]: {} for layer in MAP_LAYERS}
     with get_engine().connect() as conn:
         tenants = rows(conn, "select id, slug from municipality where cut_code like '07%' order by name")
+        summaries = {t["slug"]: public_summary(t["slug"], conn) for t in tenants}
+        banner = down_banner(senapred_down(public_sources(tenants[0]["slug"], conn), list(summaries.values())))
         extent = rows(conn, EXTENT_SQL)[0]
         wind = wind_grid(extent)
         has_wind = bool(wind["features"])
@@ -517,7 +535,7 @@ def main() -> int:
         for tenant in tenants:
             slug = tenant["slug"]
             comuna = public_comuna(slug, conn)
-            summary = public_summary(slug, conn)
+            summary = summaries[slug]
             sources = public_sources(slug, conn)
             layers_dir = args.out / slug / "capas"
             layers_dir.mkdir(parents=True, exist_ok=True)
@@ -529,7 +547,7 @@ def main() -> int:
                     for feature in collection.get("features", []):
                         regional[key].setdefault(json.dumps(feature, sort_keys=True, default=str), feature)
                 (layers_dir / f"{key}.json").write_text(json.dumps(collection, ensure_ascii=False, default=str, separators=(",", ":")), encoding="utf-8")
-            (args.out / slug / "index.html").write_text(comuna_page(comuna, summary, sources, generated, counts, base_url, slug, has_wind), encoding="utf-8")
+            (args.out / slug / "index.html").write_text(comuna_page(comuna, summary, sources, generated, counts, base_url, slug, has_wind, banner), encoding="utf-8")
             entries.append((slug, comuna["name"], summary))
         conn.rollback()
     levels = {slug: summary for slug, _, summary in entries}
@@ -555,7 +573,7 @@ def main() -> int:
     for key, features in regional.items():
         region_counts[key] = len(features)
         (region_dir / f"{key}.json").write_text(json.dumps({"type": "FeatureCollection", "features": list(features.values())}, ensure_ascii=False, default=str, separators=(",", ":")), encoding="utf-8")
-    (args.out / "index.html").write_text(index_page(entries, generated, region, base_url, region_counts, has_wind), encoding="utf-8")
+    (args.out / "index.html").write_text(index_page(entries, generated, region, base_url, region_counts, has_wind, banner), encoding="utf-8")
     (args.out / ".nojekyll").write_text("", encoding="utf-8")
     print(f"{len(entries)} comuna pages, layers and index written to {args.out}")
     return 0
