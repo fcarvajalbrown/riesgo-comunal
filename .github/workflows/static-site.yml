@@ -1,0 +1,57 @@
+name: static-site
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: static-site
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    services:
+      db:
+        image: postgis/postgis:17-3.5
+        env:
+          POSTGRES_DB: riesgo
+          POSTGRES_USER: riesgo
+          POSTGRES_PASSWORD: riesgo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U riesgo -d riesgo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      DATABASE_URL: postgresql+psycopg://riesgo:riesgo@127.0.0.1:5432/riesgo
+      SENAPRED_ALERTS_ENABLED: "true"
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen --no-dev
+      - run: uv run playwright install --with-deps chromium-headless-shell
+      - run: uv run alembic upgrade head
+      - run: uv run python -m app.cli create-region --region 07
+      - run: uv run python -m app.cli ingest --backfill
+      - run: uv run python ../tools/static-site/build.py --out ../site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
