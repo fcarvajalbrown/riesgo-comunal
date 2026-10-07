@@ -304,7 +304,8 @@ class SenapredAlertsAdapter(SourceAdapter):
                         """,
                     )
                 ]
-            checks = check_pages(urls)
+            card_links = {card["links"][0] for card in cards if card.get("links")}
+            checks = check_pages(sorted(set(urls) | card_links))
         return [RawPayload(dataset="senapred_alert", url=PAGE_URL, body=cards, options={"page_checks": checks})]
 
     def normalize(self, raw: RawPayload, parsed: Any) -> Batch:
