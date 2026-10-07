@@ -10,7 +10,7 @@ Phase-based. Scope and the reasoning behind the stack are in `docs/mvp.md` and `
 | Official SENAPRED alert feed | Blocked | Alerts are read automatically from the public page senapred.cl/alertas (working); an official feed or written OK from SENAPRED is still pending |
 | Licence confirmation for SENAPRED, IDE Chile (MINEDUC, MINSAL), SINCA (MMA), DGA, MOP Vialidad layers | Blocked | Written answer from each data owner, then review by a qualified lawyer (`docs/data-licensing.md`) |
 | CSN earthquake catalogue | Blocked | Written approval from CSN for non-academic use; USGS is used meanwhile |
-| Maule region install (30 tenants) on a VPS with an IONOS domain | In Progress | Region tenants created and ingested on the dev database; 100 backend tests pass; timings and database size in `docs/deployment.md`. Open: container RAM in Docker for 31 tenants (needs WSL and Docker on this PC, reboot pending); per-sector evaluation for San Clemente takes 9.1 s per request; then the VPS and the IONOS domain from Felipe |
+| Maule region install (30 tenants) on a VPS | In Progress | Code, backup alert sources, sector batching and deploy kit merged on main (113 tests pass). The existing IONOS VPS 74.208.35.90 was ruled out: it runs the VDP OOB responder on port 80 and has 1.8 GB RAM. A dedicated IONOS VPS L+ (4 vCores, 8 GB, Ubuntu 24.04) is being ordered. Domain at IONOS not bought yet; the site starts on plain HTTP at the new IP. Container RAM for 31 tenants still unmeasured |
 
 ## Full-spec gap list
 
