@@ -8,7 +8,11 @@ Alert sources currently read automatically:
 
 - SENAPRED public alerts page (`senapred.cl/alertas`), every 10 minutes
 - Dirección Meteorológica de Chile official CAP feed (warnings, alerts and alarms)
-- (list to be completed with the fallback alert sources being added)
+- SHOA tsunami bulletins from the SNAM public table (`snamchile.cl`), every 5 minutes
+- GDACS global disaster alerts (earthquakes, floods, wildfires, volcanoes) affecting Chile, as an international backup
+- NOAA Pacific and National Tsunami Warning Center messages (PTWC/NTWC) for the South American Pacific coast, as an international backup
+
+International backups are labelled as such and never replace SENAPRED or SHOA warnings.
 
 It collects official public data (SENAPRED, IDE Chile, SINCA, DGA, USGS, DMC, INE Censo 2024, MOP Vialidad), combines it with each municipality's own data, and answers three questions in Spanish: what is happening now (AHORA), which areas are vulnerable (RIESGO), and what history and priorities the comuna has (PLANIFICAR). Every figure links back to its source.
 
