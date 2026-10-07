@@ -67,11 +67,14 @@ class MeteoModule(HazardModule):
             obs = row(
                 ctx.conn,
                 """
+                with m as materialized (
+                    select st_centroid(boundary)::geography as center, boundary::geography as gg from municipality where id = :mid
+                )
                 select o.station_name, o.value, o.unit, o.observed_at, o.provenance_id,
-                       st_distance(o.geom::geography, st_centroid(m.boundary)::geography) / 1000 as km
-                from observation o, municipality m
-                where m.id = :mid and o.source_key = 'dmc' and o.parameter = 'aguaCaida24Horas'
-                  and st_dwithin(o.geom::geography, m.boundary::geography, :radius)
+                       st_distance(o.geom::geography, m.center) / 1000 as km
+                from observation o, m
+                where o.source_key = 'dmc' and o.parameter = 'aguaCaida24Horas'
+                  and st_dwithin(o.geom::geography, m.gg, :radius)
                 order by o.observed_at desc, km asc limit 1
                 """,
                 mid=ctx.municipality_id,
