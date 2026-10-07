@@ -130,6 +130,7 @@ def store_batches(
         total += len(batch.records)
         if batch.replace:
             remove_stale_features(conn, adapter.meta.key, batch, provenance_id, scope)
+            end_missing_alerts(conn, adapter.meta.key, batch.dataset, provenance_id)
         post_process(conn, adapter.meta.key, batch.dataset)
     return total, warnings
 
@@ -310,6 +311,20 @@ def store_alert(conn: Connection, source_key: str, record: AlertRecord, provenan
             "p": json.dumps(record.properties, ensure_ascii=False, default=str),
             "pid": provenance_id,
         },
+    )
+
+
+def end_missing_alerts(conn: Connection, source_key: str, dataset: str, provenance_id: int) -> None:
+    conn.execute(
+        text(
+            """
+            update alert a set ends_at = now()
+            from provenance p
+            where a.source_key = :s and a.provenance_id = p.id and p.dataset = :d and a.provenance_id <> :pid
+              and (a.ends_at is null or a.ends_at > now())
+            """
+        ),
+        {"s": source_key, "d": dataset, "pid": provenance_id},
     )
 
 
