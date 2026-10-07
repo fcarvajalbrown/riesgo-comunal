@@ -10,6 +10,23 @@ EVACUATION_SQL = """
     where f.dataset = 'tsunami_evacuation_area' and st_intersects(f.geom, (select g from area))
 """
 
+SECTOR_AREA_SQL = """
+    select s.id, coalesce(sum(st_area(st_intersection(f.geom, s.geom)::geography)) / 1e6, 0) as km2,
+           string_agg(distinct f.properties->>'sector', ', ') as sectores
+    from sector s
+    left join feature f on f.dataset = 'tsunami_evacuation_area' and st_intersects(f.geom, s.geom)
+    where s.id = any(:ids)
+    group by s.id
+"""
+
+SECTOR_MEETING_SQL = """
+    select s.id, count(f.id) as n
+    from sector s
+    left join feature f on f.dataset = 'tsunami_meeting_point' and st_dwithin(f.geom::geography, s.geom::geography, 1500)
+    where s.id = any(:ids)
+    group by s.id
+"""
+
 
 class TsunamiModule(HazardModule):
     key = "tsunami"
@@ -19,9 +36,8 @@ class TsunamiModule(HazardModule):
     default_thresholds = {"level_if_in_evacuation_area": "ALTO"}
     layers = ("tsunami_evacuation_area", "tsunami_meeting_point")
 
-    def assess(self, ctx: HazardContext, area: Area) -> Assessment:
-        t = self.thresholds(ctx.thresholds)
-        comuna_has_layer = bool(
+    def comuna_has_layer(self, ctx: HazardContext) -> bool:
+        return bool(
             scalar(
                 ctx.conn,
                 """
@@ -32,6 +48,8 @@ class TsunamiModule(HazardModule):
                 mid=ctx.municipality_id,
             )
         )
+
+    def assess(self, ctx: HazardContext, area: Area) -> Assessment:
         km2 = row(
             ctx.conn,
             f"""
@@ -43,8 +61,6 @@ class TsunamiModule(HazardModule):
             """,
             **area.params(),
         )
-        result = classify_tsunami(km2["km2"], comuna_has_layer, t)
-        prov = latest_provenance(ctx.conn, "senapred", "tsunami_evacuation_area")
         meeting = rows(
             ctx.conn,
             f"""
@@ -56,6 +72,20 @@ class TsunamiModule(HazardModule):
             """,
             **area.params(),
         )
+        prov = latest_provenance(ctx.conn, "senapred", "tsunami_evacuation_area")
+        return self.build(ctx, area, self.comuna_has_layer(ctx), km2, len(meeting), prov)
+
+    def assess_sectors(self, ctx: HazardContext, areas: list[Area]) -> list[Assessment]:
+        ids = [a.id for a in areas]
+        km2 = {r["id"]: r for r in rows(ctx.conn, SECTOR_AREA_SQL, ids=ids)}
+        meeting = {r["id"]: r["n"] for r in rows(ctx.conn, SECTOR_MEETING_SQL, ids=ids)}
+        has_layer = self.comuna_has_layer(ctx)
+        prov = latest_provenance(ctx.conn, "senapred", "tsunami_evacuation_area")
+        return [self.build(ctx, area, has_layer, km2[area.id], meeting[area.id], prov) for area in areas]
+
+    def build(self, ctx: HazardContext, area: Area, comuna_has_layer: bool, km2: dict, meeting_count: int, prov: dict) -> Assessment:
+        t = self.thresholds(ctx.thresholds)
+        result = classify_tsunami(km2["km2"], comuna_has_layer, t)
         evidence = [
             Evidence(
                 "Superficie dentro de área a evacuar",
@@ -68,7 +98,7 @@ class TsunamiModule(HazardModule):
             ),
             Evidence(
                 "Puntos de encuentro a menos de 1,5 km",
-                len(meeting),
+                meeting_count,
                 "official",
                 prov["attribution"],
                 prov["source_time"] or prov["ingested_at"],

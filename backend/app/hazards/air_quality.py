@@ -17,7 +17,7 @@ class AirQualityModule(HazardModule):
         return rows(
             ctx.conn,
             """
-            with m as (select boundary as g from municipality where id = :mid),
+            with m as materialized (select boundary as g, boundary::geography as gg from municipality where id = :mid),
             latest as (
                 select station_external_id, max(observed_at) as last_at
                 from observation where source_key = 'sinca' and parameter = 'PM25' group by 1
@@ -30,7 +30,7 @@ class AirQualityModule(HazardModule):
             from observation o join latest l using (station_external_id), m
             where o.source_key = 'sinca' and o.parameter = 'PM25'
               and o.observed_at > l.last_at - interval '24 hours'
-              and st_dwithin(o.geom::geography, m.g::geography, :radius)
+              and st_dwithin(o.geom::geography, m.gg, :radius)
             group by o.station_external_id
             order by mean_24h desc
             """,

@@ -57,15 +57,16 @@ def assess_sectors(conn: Connection, municipality_id: int, now: datetime | None 
         k=kind,
     )
     population = sector_population(conn, municipality_id, kind)
+    areas = [Area("sector", s["id"], s["name"]) for s in sectors]
+    by_module = {m.key: m.assess_sectors(context(conn, municipality, m.key, now, detail=False), areas) for m in modules}
     result = []
-    for sector in sectors:
+    for index, sector in enumerate(sectors):
         sector = {**sector, "population_estimate": population.get(sector["id"])}
-        area = Area("sector", sector["id"], sector["name"])
         levels = {}
         reasons = []
         uses_demo = False
         for module in modules:
-            assessment = module.assess(context(conn, municipality, module.key, now, detail=False), area)
+            assessment = by_module[module.key][index]
             levels[module.key] = assessment.level
             uses_demo = uses_demo or assessment.uses_demo_data
             if assessment.level in ("MODERADO", "ALTO", "CRITICO"):

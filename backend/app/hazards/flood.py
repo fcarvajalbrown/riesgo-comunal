@@ -1,10 +1,28 @@
-from datetime import timedelta
+from datetime import date, timedelta
 
 from app.db import row, rows
 from app.hazards.base import Area, Assessment, Evidence, Exposure, HazardContext, HazardModule
 from app.hazards.rules import classify_flood
 
 FLOOD_HAZARDS = ("inundacion", "anegamiento", "desborde")
+
+SECTOR_STATS_SQL = """
+    select s.id, count(i.id) as n, min(i.occurred_on) as first_on, max(i.occurred_on) as last_on,
+           coalesce(sum(i.affected_people), 0) as people
+    from sector s
+    left join municipal_incident i on i.municipality_id = :mid and i.hazard = any(:hz) and i.occurred_on >= :since
+        and i.geom is not null and st_intersects(i.geom, s.geom)
+    where s.id = any(:ids)
+    group by s.id
+"""
+
+SECTOR_POINTS_SQL = """
+    select s.id as sector_id, a.id, a.name, a.is_demo, st_x(st_pointonsurface(a.geom)) as lon, st_y(st_pointonsurface(a.geom)) as lat
+    from sector s
+    join municipal_asset a on a.municipality_id = :mid and a.category = 'punto_critico_inundacion' and st_intersects(a.geom, s.geom)
+    where s.id = any(:ids)
+    order by a.name
+"""
 
 
 class FloodModule(HazardModule):
@@ -15,10 +33,11 @@ class FloodModule(HazardModule):
     default_thresholds = {"years": 10, "incidents_moderado": 2, "incidents_alto": 5, "flood_point_buffer_m": 150.0}
     layers = ("municipal_incident", "municipal_asset")
 
-    def assess(self, ctx: HazardContext, area: Area) -> Assessment:
-        t = self.thresholds(ctx.thresholds)
-        since = (ctx.now - timedelta(days=365 * t["years"])).date()
-        has_data = row(
+    def since(self, ctx: HazardContext) -> date:
+        return (ctx.now - timedelta(days=365 * self.thresholds(ctx.thresholds)["years"])).date()
+
+    def has_data(self, ctx: HazardContext) -> dict:
+        return row(
             ctx.conn,
             """
             select exists(select 1 from municipal_incident where municipality_id = :mid and hazard = any(:hz))
@@ -31,6 +50,9 @@ class FloodModule(HazardModule):
             mid=ctx.municipality_id,
             hz=list(FLOOD_HAZARDS),
         )
+
+    def assess(self, ctx: HazardContext, area: Area) -> Assessment:
+        since = self.since(ctx)
         stats = row(
             ctx.conn,
             f"""
@@ -58,6 +80,21 @@ class FloodModule(HazardModule):
             mid=ctx.municipality_id,
             **area.params(),
         )
+        return self.build(ctx, area, self.has_data(ctx), stats, points)
+
+    def assess_sectors(self, ctx: HazardContext, areas: list[Area]) -> list[Assessment]:
+        ids = [a.id for a in areas]
+        params = {"ids": ids, "mid": ctx.municipality_id, "hz": list(FLOOD_HAZARDS)}
+        stats = {r["id"]: r for r in rows(ctx.conn, SECTOR_STATS_SQL, since=self.since(ctx), **params)}
+        points: dict[int, list[dict]] = {i: [] for i in ids}
+        for r in rows(ctx.conn, SECTOR_POINTS_SQL, **params):
+            points[r.pop("sector_id")].append(r)
+        has_data = self.has_data(ctx)
+        return [self.build(ctx, area, has_data, stats[area.id], points[area.id]) for area in areas]
+
+    def build(self, ctx: HazardContext, area: Area, has_data: dict, stats: dict, points: list[dict]) -> Assessment:
+        t = self.thresholds(ctx.thresholds)
+        since = self.since(ctx)
         result = classify_flood(stats["n"], bool(has_data["present"]), t)
         demo_note = "Incluye datos DEMO de ejemplo, no reales." if has_data["demo"] else None
         evidence = []
