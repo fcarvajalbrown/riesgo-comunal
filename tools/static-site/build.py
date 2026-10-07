@@ -63,7 +63,9 @@ PROVINCES = {"071": "Provincia de Talca", "073": "Provincia de Curicó", "074": 
 
 FAVICON = "data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%23e42827%27/%3E%3Cpath d=%27M16 5 29 27H3z%27 fill=%27%23ffffff%27/%3E%3Crect x=%2714.5%27 y=%2712%27 width=%273%27 height=%278%27 fill=%27%23e42827%27/%3E%3Crect x=%2714.5%27 y=%2722%27 width=%273%27 height=%273%27 fill=%27%23e42827%27/%3E%3C/svg%3E"
 
-ASSETS = ["maplibre-gl.js", "maplibre-gl-shared.js", "maplibre-gl-worker.js", "maplibre-gl.css", "MAPLIBRE-LICENSE.txt"]
+ASSETS = ["maplibre-gl.js", "maplibre-gl-shared.js", "maplibre-gl-worker.js", "maplibre-gl.css", "MAPLIBRE-LICENSE.txt", "og-maule.png", "icon-180.png", "icon-32.png"]
+SITE_NAME = "Riesgo en mi comuna, Región del Maule"
+INITIATIVE = "Una iniciativa de la oficina de la senadora Paulina Vodanovic."
 
 SHAPES_SQL = """
 with g as (
@@ -206,13 +208,34 @@ def level_pill(level: str, label: str | None = None) -> str:
     return f'<span class="pill" style="background:{background};color:{foreground}">{escape(label or default_label)}</span>'
 
 
+def share_tags(base_url: str, path: str, title: str, description: str, root: str) -> str:
+    tags = [
+        f'<meta name="description" content="{escape(description)}">',
+        '<meta property="og:type" content="website">',
+        f'<meta property="og:site_name" content="{escape(SITE_NAME)}">',
+        '<meta property="og:locale" content="es_CL">',
+        f'<meta property="og:title" content="{escape(title)}">',
+        f'<meta property="og:description" content="{escape(description)}">',
+        f'<meta property="og:url" content="{escape(base_url)}/{escape(path)}">',
+        f'<meta property="og:image" content="{escape(base_url)}/assets/og-maule.png">',
+        '<meta property="og:image:type" content="image/png">',
+        '<meta property="og:image:width" content="1200">',
+        '<meta property="og:image:height" content="630">',
+        f'<meta property="og:image:alt" content="{escape(SITE_NAME)}. {escape(INITIATIVE)}">',
+        '<meta name="twitter:card" content="summary_large_image">',
+        f'<link rel="icon" type="image/png" sizes="32x32" href="{root}assets/icon-32.png">',
+        f'<link rel="apple-touch-icon" href="{root}assets/icon-180.png">',
+        '<meta name="theme-color" content="#e42827">',
+    ]
+    return "".join(tag + "\n" for tag in tags)
+
+
 def page(title: str, body: str, body_class: str = "", head: str = "") -> str:
     return f"""<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
 <title>{escape(title)}</title>
 <link rel="icon" href="{FAVICON}">
 {head}<style>{STYLE}</style>
@@ -295,7 +318,7 @@ def map_html(bbox, counts: dict[str, int]) -> str:
     )
 
 
-def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str, counts: dict[str, int]) -> str:
+def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str, counts: dict[str, int], base_url: str, slug: str) -> str:
     phones = "".join(f'<li><a href="tel:{n}"><strong>{n}</strong><span>{escape(label)}</span></a></li>' for n, label in EMERGENCY_PHONES)
     links = "".join(f'<li><a href="{escape(href)}" rel="noreferrer">{escape(label)}</a><span>{escape(detail)}</span></li>' for label, detail, href in OFFICIAL_LINKS)
     standing = summary.get("standing_items", [])
@@ -338,8 +361,10 @@ def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str
 </main>
 <footer class="foot">Mapa base: OpenFreeMap, OpenMapTiles, datos de OpenStreetMap. Capas: SENAPRED, CONAF, Dirección Meteorológica de Chile. Pronóstico: <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a> (CC BY 4.0).</footer>
 <script type="module" src="../assets/map.js"></script>"""
-    head = '<link rel="stylesheet" href="../assets/maplibre-gl.css">\n'
-    return page(f"{comuna['name']}: {summary['overall_level_label']}", body, head=head)
+    title = f"Riesgo en {comuna['name']}: alertas y mapa de la comuna"
+    description = f"Alertas oficiales vigentes, mapa de peligros y pronóstico para {comuna['name']}, Región del Maule. {INITIATIVE}"
+    head = share_tags(base_url, f"{slug}/", title, description, "../") + '<link rel="stylesheet" href="../assets/maplibre-gl.css">\n'
+    return page(title, body, head=head)
 
 
 def view_box(x0: float, y0: float, x1: float, y1: float, pad: float) -> str:
@@ -375,7 +400,7 @@ def tile(slug: str, name: str, summary: dict) -> str:
     )
 
 
-def index_page(entries: list[tuple[str, str, dict]], generated: str, shapes: dict) -> str:
+def index_page(entries: list[tuple[str, str, dict]], generated: str, shapes: dict, base_url: str) -> str:
     groups = []
     for prefix, province in PROVINCES.items():
         members = [(slug, name, s) for slug, name, s in entries if shapes[slug]["cut"].startswith(prefix)]
@@ -393,13 +418,16 @@ def index_page(entries: list[tuple[str, str, dict]], generated: str, shapes: dic
 {"".join(groups)}
 </div>
 </main>"""
-    return page("Riesgo en mi comuna, Región del Maule", body, "fit")
+    description = f"Alertas oficiales, mapa y pronóstico de las {len(entries)} comunas del Maule en un solo lugar. {INITIATIVE}"
+    return page(SITE_NAME, body, "fit", head=share_tags(base_url, "", SITE_NAME, description, ""))
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build the static public snapshot for the Maule comunas")
     parser.add_argument("--out", required=True, type=Path)
+    parser.add_argument("--base-url", default="https://synterra.cl/maule")
     args = parser.parse_args()
+    base_url = args.base_url.rstrip("/")
     generated = generated_label(datetime.now(UTC))
     assets = args.out / "assets"
     assets.mkdir(parents=True, exist_ok=True)
@@ -422,10 +450,10 @@ def main() -> int:
                 collection = layer_geojson(conn, tenant["id"], key)
                 counts[key] = len(collection.get("features", []))
                 (layers_dir / f"{key}.json").write_text(json.dumps(collection, ensure_ascii=False, default=str, separators=(",", ":")), encoding="utf-8")
-            (args.out / slug / "index.html").write_text(comuna_page(comuna, summary, sources, generated, counts), encoding="utf-8")
+            (args.out / slug / "index.html").write_text(comuna_page(comuna, summary, sources, generated, counts, base_url, slug), encoding="utf-8")
             entries.append((slug, comuna["name"], summary))
         conn.rollback()
-    (args.out / "index.html").write_text(index_page(entries, generated, shapes), encoding="utf-8")
+    (args.out / "index.html").write_text(index_page(entries, generated, shapes, base_url), encoding="utf-8")
     (args.out / ".nojekyll").write_text("", encoding="utf-8")
     print(f"{len(entries)} comuna pages, layers and index written to {args.out}")
     return 0
