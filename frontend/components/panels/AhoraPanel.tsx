@@ -7,7 +7,8 @@ import type { MapFocus } from "@/components/MapView";
 import { ProvenanceButton } from "@/components/Provenance";
 import { apiGet } from "@/lib/api";
 import { WARNING_TONE, formatTime } from "@/lib/format";
-import type { AhoraResponse } from "@/lib/types";
+import { SourceStatus } from "@/components/SourceStatus";
+import type { AhoraResponse, SourceStatusRow } from "@/lib/types";
 
 const ALERT_ORIGIN: Record<string, string> = {
   dmc_cap: "Recibido automáticamente desde el canal oficial CAP de la Dirección Meteorológica de Chile.",
@@ -16,6 +17,7 @@ const ALERT_ORIGIN: Record<string, string> = {
 
 export function AhoraPanel({ onFocus, compact }: { onFocus: (f: MapFocus) => void; compact?: boolean }) {
   const { data, isLoading, error } = useQuery({ queryKey: ["ahora"], queryFn: () => apiGet<AhoraResponse>("/ahora"), refetchInterval: 300_000 });
+  const sources = useQuery({ queryKey: ["sources"], queryFn: () => apiGet<SourceStatusRow[]>("/sources"), refetchInterval: 60_000 });
   if (isLoading) return <p className="text-sm text-muted">Cargando situación actual...</p>;
   if (error || !data) return <p className="text-sm text-red-700">{(error as Error)?.message ?? "Sin datos"}</p>;
   return (
@@ -71,6 +73,12 @@ export function AhoraPanel({ onFocus, compact }: { onFocus: (f: MapFocus) => voi
           </a>
         </p>
       </section>
+
+      {sources.data && (
+        <section className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
+          <SourceStatus sources={sources.data} showErrors />
+        </section>
+      )}
 
       {data.exposure_summary.length > 0 && (
         <section className="rounded-2xl border border-border bg-surface p-4 shadow-sm">

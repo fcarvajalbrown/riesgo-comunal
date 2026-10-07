@@ -1,5 +1,16 @@
 export type Level = "SIN_DATOS" | "INFORMATIVO" | "BAJO" | "MODERADO" | "ALTO" | "CRITICO";
 export type DataClass = "official" | "observed" | "forecast" | "official_warning" | "historical" | "municipal" | "derived" | "estimated" | "modelled";
+export type SourceState = "live" | "stale" | "failed" | "pending" | "unconfigured";
+
+export interface SourceStatusRow {
+  key: string;
+  name: string;
+  organization: string;
+  state: SourceState;
+  alert: boolean;
+  last_success_at: string | null;
+  last_error?: string | null;
+}
 
 export interface Evidence {
   label: string;

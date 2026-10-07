@@ -7,7 +7,8 @@ import { PublicMap } from "@/components/public/PublicMap";
 import { ApiError } from "@/lib/api";
 import { WARNING_TONE, formatTime } from "@/lib/format";
 import { publicGet } from "@/lib/publicApi";
-import type { GeocodeResult, PlaceReport, PublicComuna, PublicSummary } from "@/lib/types";
+import { SourceStatus } from "@/components/SourceStatus";
+import type { GeocodeResult, PlaceReport, PublicComuna, PublicSummary, SourceStatusRow } from "@/lib/types";
 
 const OFFICIAL_LINKS = [
   { label: "SENAPRED", detail: "Servicio Nacional de Prevención y Respuesta ante Desastres", href: "https://senapred.cl" },
@@ -255,6 +256,12 @@ export function PublicPortal({ slug }: { slug: string }) {
     refetchInterval: 300_000,
     enabled: comuna.isSuccess,
   });
+  const sources = useQuery({
+    queryKey: ["public-sources", slug],
+    queryFn: () => publicGet<SourceStatusRow[]>(`/${slug}/fuentes`),
+    refetchInterval: 120_000,
+    enabled: comuna.isSuccess,
+  });
   const [point, setPoint] = useState<{ lon: number; lat: number; label?: string } | null>(null);
   const pick = useCallback((lon: number, lat: number) => setPoint({ lon, lat }), []);
   const place = useQuery({
@@ -291,8 +298,8 @@ export function PublicPortal({ slug }: { slug: string }) {
 
       <div className="mx-auto max-w-6xl px-4 py-4">
         <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
-          Esta página reúne información oficial de SENAPRED y de la Dirección Meteorológica de Chile, y un cálculo de referencia hecho por la plataforma.
-          No reemplaza las instrucciones de la autoridad. <span className="font-semibold">En una emergencia, siga las indicaciones de SENAPRED y de su municipalidad.</span>
+          Esta página reúne información oficial de varias fuentes independientes, entre ellas SENAPRED y la Dirección Meteorológica de Chile, y un cálculo de referencia hecho por la plataforma.
+          Si una fuente deja de responder, la página lo indica y sigue mostrando las demás y el último dato recibido de cada una. No reemplaza las instrucciones de la autoridad. <span className="font-semibold">En una emergencia, siga las indicaciones de SENAPRED y de su municipalidad.</span>
         </p>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
@@ -301,6 +308,11 @@ export function PublicPortal({ slug }: { slug: string }) {
               {summary.isLoading && <p className="text-sm text-muted">Cargando situación actual...</p>}
               {summary.error && <p className="text-sm text-red-700">{(summary.error as Error).message}</p>}
               {summary.data && <CurrentSituation summary={summary.data} />}
+              {sources.data && (
+                <div className="mt-4 border-t border-border pt-4">
+                  <SourceStatus sources={sources.data} />
+                </div>
+              )}
             </Section>
 
             <Section title="¿Mi casa está en una zona de riesgo?" id="lugar">
