@@ -49,6 +49,7 @@ jobs:
       - run: uv run alembic upgrade head
       - run: uv run python -m app.cli create-region --region 07
       - run: uv run python -m app.cli ingest --backfill
+      - run: psql postgresql://riesgo:riesgo@127.0.0.1:5432/riesgo -c analyze
       - run: uv run python ../tools/static-site/build.py --out ../site
       - uses: actions/upload-pages-artifact@v3
         with:
