@@ -1,5 +1,6 @@
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import httpx
 
@@ -7,6 +8,10 @@ from app.sources.base import Batch, IngestScope, ObservationRecord, RawPayload, 
 
 URL = "https://api.open-meteo.com/v1/forecast"
 HORIZON_HOURS = 48
+OUTLOOK_DAYS = 3
+CHILE = ZoneInfo("America/Santiago")
+PERIODS = (("madrugada", 0, 6), ("manana", 6, 12), ("tarde", 12, 19), ("noche", 19, 24))
+PERIOD_NAMES = {"madrugada": "la madrugada", "manana": "la mañana", "tarde": "la tarde", "noche": "la noche"}
 PARAMETERS = {
     "om_rain_24h_max": ("Lluvia máxima en 24 horas pronosticada para las próximas 48 horas", "mm"),
     "om_gust_max": ("Ráfaga máxima pronosticada para las próximas 48 horas", "km/h"),
@@ -42,6 +47,40 @@ def summarize(hourly: dict[str, list], now: datetime) -> dict[str, float | None]
     }
 
 
+def daily_outlook(hourly: dict[str, list], now: datetime) -> dict[str, float]:
+    start = now.replace(minute=0, second=0, microsecond=0)
+    first_day = start.astimezone(CHILE).date()
+    rain = hourly.get("precipitation") or []
+    temps = hourly.get("temperature_2m") or []
+    out: dict[str, float] = {}
+    for i, stamp in enumerate(hourly.get("time", [])):
+        moment = datetime.fromisoformat(stamp).replace(tzinfo=UTC)
+        if moment < start:
+            continue
+        local = moment.astimezone(CHILE)
+        day = (local.date() - first_day).days
+        if day >= OUTLOOK_DAYS:
+            continue
+        period = next(name for name, lo, hi in PERIODS if lo <= local.hour < hi)
+        if i < len(rain) and rain[i] is not None:
+            key = f"om_d{day}_rain_{period}"
+            out[key] = round(out.get(key, 0.0) + rain[i], 1)
+        if i < len(temps) and temps[i] is not None:
+            key = f"om_d{day}_tmax"
+            out[key] = max(out.get(key, temps[i]), temps[i])
+    return out
+
+
+def parameter_label(parameter: str) -> tuple[str, str]:
+    if parameter in PARAMETERS:
+        return PARAMETERS[parameter]
+    day = int(parameter[4])
+    when = "hoy" if day == 0 else "mañana" if day == 1 else "pasado mañana"
+    if parameter.endswith("_tmax"):
+        return f"Temperatura máxima pronosticada para {when}", "°C"
+    return f"Lluvia pronosticada para {when} durante {PERIOD_NAMES[parameter.rsplit('_', 1)[1]]}", "mm"
+
+
 class OpenMeteoAdapter(SourceAdapter):
     meta = SourceMeta(
         key="open_meteo",
@@ -64,7 +103,7 @@ class OpenMeteoAdapter(SourceAdapter):
             "latitude": ",".join(str(lat) for lat, _ in points),
             "longitude": ",".join(str(lon) for _, lon in points),
             "hourly": "precipitation,wind_gusts_10m,temperature_2m",
-            "forecast_days": 3,
+            "forecast_days": 4,
             "timezone": "GMT",
         }
         response = client.get(URL, params=params)
@@ -86,10 +125,11 @@ class OpenMeteoAdapter(SourceAdapter):
 def forecast_records(parsed: list[dict], points: list[tuple[float, float]], issued: datetime) -> list[ObservationRecord]:
     records = []
     for (lat, lon), item in zip(points, parsed):
-        for parameter, value in summarize(item.get("hourly") or {}, issued).items():
+        hourly = item.get("hourly") or {}
+        for parameter, value in {**summarize(hourly, issued), **daily_outlook(hourly, issued)}.items():
             if value is None:
                 continue
-            name, unit = PARAMETERS[parameter]
+            name, unit = parameter_label(parameter)
             records.append(
                 ObservationRecord(
                     station_external_id=f"{lat:.3f},{lon:.3f}",

@@ -30,7 +30,7 @@ def test_summary_takes_maxima_inside_the_window():
 def test_records_from_real_response():
     issued = datetime.fromisoformat(FIXTURE[0]["hourly"]["time"][0]).replace(tzinfo=UTC)
     records = forecast_records(FIXTURE, [(-35.43, -71.67), (-35.33, -72.41)], issued)
-    assert {r.parameter for r in records} == {"om_rain_24h_max", "om_gust_max", "om_temp_max"}
+    assert {"om_rain_24h_max", "om_gust_max", "om_temp_max", "om_d0_tmax"} <= {r.parameter for r in records}
     assert {r.station_external_id for r in records} == {"-35.430,-71.670", "-35.330,-72.410"}
     assert all(r.validation_status == "forecast" and r.value is not None for r in records)
 
@@ -42,3 +42,27 @@ def test_forecast_rule_levels():
     assert classify_forecast(70.0, 40.0, 25.0, THRESHOLDS).level == "ALTO"
     assert classify_forecast(None, 90.0, 36.0, THRESHOLDS).level == "INFORMATIVO"
     assert "ráfagas de hasta 90 km/h" in classify_forecast(None, 90.0, 36.0, THRESHOLDS).reason
+
+
+def test_plain_outlook_says_when_it_rains():
+    from datetime import date
+
+    from app.hazards.rules import plain_outlook
+
+    values = {"om_d0_rain_tarde": 3.2, "om_d0_rain_noche": 0.4, "om_d0_tmax": 18.4, "om_d1_rain_manana": 0.0, "om_d1_tmax": 22.0, "om_d2_rain_madrugada": 1.0, "om_d2_rain_noche": 6.0, "om_d2_tmax": 15.0}
+    lines = plain_outlook(values, date(2026, 10, 7))
+    assert lines == [
+        "Hoy: lluvia durante la tarde, máxima de 18 grados.",
+        "Mañana: sin lluvia, máxima de 22 grados.",
+        "El viernes: lluvia durante la madrugada y la noche, máxima de 15 grados.",
+    ]
+
+
+def test_daily_outlook_splits_local_periods():
+    from app.sources.open_meteo import daily_outlook
+
+    hourly = {"time": ["2026-10-07T18:00", "2026-10-07T19:00", "2026-10-07T23:00"], "precipitation": [2.0, 1.5, 4.0], "temperature_2m": [15.0, 16.0, 12.0]}
+    out = daily_outlook(hourly, datetime(2026, 10, 7, 18, tzinfo=UTC))
+    assert out["om_d0_rain_tarde"] == 3.5
+    assert out["om_d0_rain_noche"] == 4.0
+    assert out["om_d0_tmax"] == 16.0
