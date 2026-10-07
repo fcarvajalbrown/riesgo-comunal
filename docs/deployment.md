@@ -20,7 +20,7 @@ docker compose up -d --build
 docker compose logs -f bootstrap   # wait for it to exit 0
 ```
 
-`TENANT_CUT` is the 5-digit CUT code (Lota is `08106`). With `SITE_ADDRESS` set to a public domain whose DNS points to the server, Caddy obtains a Let's Encrypt certificate automatically. With `localhost` or an internal name, Caddy uses its own local CA (browsers warn until that CA is trusted). Set `SEED_DEMO=true` only on demonstration installs; DEMO records are labelled in every screen and the generated user passwords are printed in the bootstrap log.
+`TENANT_CUT` is the 5-digit CUT code (Lota is `08106`). To install a whole region instead, set `TENANT_REGION` to the 2-digit region code (Maule is `07`) and leave `TENANT_CUT` and `TENANT_SLUG` empty: bootstrap creates one tenant per comuna whose CUT starts with that code (30 for Maule), with slugs taken from the comuna names (`constitucion`, `rio-claro`), and `ADMIN_EMAIL` becomes a `SUPER_ADMIN` that can switch between them. `python -m app.cli create-region --region 07` does the same on a running install and skips comunas that already exist. With `SITE_ADDRESS` set to a public domain whose DNS points to the server, Caddy obtains a Let's Encrypt certificate automatically. With `localhost` or an internal name, Caddy uses its own local CA (browsers warn until that CA is trusted). Set `SEED_DEMO=true` only on demonstration installs; DEMO records are labelled in every screen and the generated user passwords are printed in the bootstrap log.
 
 The first worker run downloads all sources and the USGS backfill since 2000 (about 22,000 events for Chile), which takes a few minutes.
 
@@ -41,8 +41,12 @@ A local LLM needs its own sizing (a 7-8B model quantised to 4 bits needs roughly
 ## Hosting options
 
 - **Municipal server or VM**: the compose stack as is.
-- **VPS (including Hostinger VPS plans)**: same stack; Docker must be installable, so a KVM VPS is required.
+- **VPS (including Hostinger or IONOS VPS plans)**: same stack; Docker must be installable, so a KVM VPS is required. This is the target for the Maule install.
 - **Shared web hosting (including Hostinger shared/Business web hosting)**: not supported. It does not run Docker, PostgreSQL with PostGIS, or long-running workers.
+
+## Domain (IONOS)
+
+For a domain registered at IONOS and a VPS anywhere: in the domain's DNS settings at IONOS, point an `A` record for the domain (and `www` if used) to the VPS public IPv4 address, plus an `AAAA` record if the VPS has IPv6. Remove any default IONOS records that point the same names elsewhere. Then set `SITE_ADDRESS` to the domain and `PUBLIC_URL` to `https://` plus the domain in `.env`, open ports 80 and 443 on the VPS firewall, and start the stack; Caddy obtains the certificate once DNS resolves to the VPS (`dig +short <domain>` should return the VPS address).
 
 ## Backups
 

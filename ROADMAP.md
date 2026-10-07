@@ -10,6 +10,7 @@ Phase-based. Scope and the reasoning behind the stack are in `docs/mvp.md` and `
 | Official SENAPRED alert feed | Blocked | Alerts are read automatically from the public page senapred.cl/alertas (working); an official feed or written OK from SENAPRED is still pending |
 | Licence confirmation for SENAPRED, IDE Chile (MINEDUC, MINSAL), SINCA (MMA), DGA, MOP Vialidad layers | Blocked | Written answer from each data owner, then review by a qualified lawyer (`docs/data-licensing.md`) |
 | CSN earthquake catalogue | Blocked | Written approval from CSN for non-academic use; USGS is used meanwhile |
+| Maule region install (30 tenants) on a VPS with an IONOS domain | In Progress | `TENANT_REGION=07` / `create-region` written, slug test added; not yet run against a database. Needs a machine with uv and Docker to run the tests and measure ingestion time, RAM and disk for 30 tenants (current sizing in `docs/deployment.md` is for one to five), then the VPS and the IONOS domain from Felipe |
 
 ## Full-spec gap list
 
