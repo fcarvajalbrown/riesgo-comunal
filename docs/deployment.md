@@ -50,6 +50,16 @@ A local LLM needs its own sizing (a 7-8B model quantised to 4 bits needs roughly
 
 For a domain registered at IONOS and a VPS anywhere: in the domain's DNS settings at IONOS, point an `A` record for the domain (and `www` if used) to the VPS public IPv4 address, plus an `AAAA` record if the VPS has IPv6. Remove any default IONOS records that point the same names elsewhere. Then set `SITE_ADDRESS` to the domain and `PUBLIC_URL` to `https://` plus the domain in `.env`, open ports 80 and 443 on the VPS firewall, and start the stack; Caddy obtains the certificate once DNS resolves to the VPS (`dig +short <domain>` should return the VPS address).
 
+## Go-live checklist (Maule VPS)
+
+1. Buy a KVM VPS with Ubuntu 24.04 (at least the recommended column above; 31 tenants have not been measured in Docker yet, so prefer 8 GB RAM) and note its public IPv4.
+2. At IONOS, add an `A` record for the domain pointing to that IPv4 (and `AAAA` if the VPS has IPv6), removing default records for the same name. Check with `dig +short <domain>`.
+3. Run `tools/vps-deploy/deploy.sh` as root on the VPS (see `tools/vps-deploy/README.md`). It installs Docker, opens 22/80/443, writes `.env` with `TENANT_REGION=07`, starts the stack, adds Lota and installs the daily backup.
+4. Verify HTTPS: `curl -sS https://<domain>/api/health` returns `{"status":"ok",...}` and the browser shows a valid certificate.
+5. Verify the public pages: `https://<domain>/c/lota` and a few Maule comunas such as `https://<domain>/c/talca` load, and their "Estado de las fuentes" box lists the sources as working once the first ingestion has finished (a few minutes after start).
+6. Log in at `https://<domain>/` with `ADMIN_EMAIL` and the `ADMIN_PASSWORD` from `/opt/riesgo-comunal/.env`.
+7. Copy `/var/backups/riesgo-comunal` off the server on a schedule.
+
 ## Backups
 
 ```bash
