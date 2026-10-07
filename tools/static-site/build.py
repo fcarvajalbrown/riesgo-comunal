@@ -301,6 +301,7 @@ def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str
 <section aria-labelledby="amenazas">
 <h2 id="amenazas">Qué está pasando ahora</h2>
 <ul class="haz">{hazards}</ul>
+<p class="note">El pronóstico de lluvia, viento y calor usa <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a>.</p>
 </section>
 <section aria-labelledby="permanentes">
 <h2 id="permanentes">Peligros permanentes del territorio</h2>
@@ -320,7 +321,7 @@ def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str
 </section>
 </div>
 </main>
-<footer class="foot"><p>Fuentes: SENAPRED, SHOA, Dirección Meteorológica de Chile, CONAF, INE y las demás fuentes listadas en Estado de las fuentes.</p></footer>"""
+<footer class="foot"><p>Fuentes: SENAPRED, SHOA, Dirección Meteorológica de Chile, CONAF, INE y las demás fuentes listadas en Estado de las fuentes. Pronóstico: <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a> (CC BY 4.0).</p></footer>"""
     return page(f"{comuna['name']}: {summary['overall_level_label']}", body)
 
 

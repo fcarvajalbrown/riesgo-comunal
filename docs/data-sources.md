@@ -137,9 +137,9 @@ Fallback alert inputs for AHORA when the SENAPRED reading (`senapred_alertas`) f
 - **WMO Severe Weather**: the aggregated JSON held 1,517 items on 2026-10-06, none from Chile: no `capURL` prefix for a Chilean member and no item text mentioning Chile or the DMC, while the DMC's own CAP RSS (ingested as `dmc_cap`) listed 10 bulletins at the same time. It therefore adds nothing for Chile today, neither as a mirror nor as a fallback, and no adapter was written. If Chile appears in it later, its items would mirror the DMC CAP feed already ingested.
 - The PTWC text bulletin is fetched only from the link the Atom entry publishes. No undocumented API is called.
 
-## Coordinate-based global sources (candidates, not built)
+## Coordinate-based global sources
 
-Researched to reduce dependence on SENAPRED: sources that answer for any latitude and longitude, so a comuna gets a value from its centroid or sample points even when no Chilean feed covers it. Values are model or satellite estimates, not official warnings, and must be labelled as such. None is built yet.
+Researched to reduce dependence on SENAPRED: sources that answer for any latitude and longitude, so a comuna gets a value from its centroid or sample points even when no Chilean feed covers it. Values are model or satellite estimates, not official warnings, and must be labelled as such. Built so far: the Open-Meteo forecast (source `open_meteo`, module `weather_forecast`). Open-Meteo data is CC BY 4.0 and requires the visible link "Weather data by Open-Meteo.com" next to the data.
 
 | Source | What it gives by coordinates | Access | Terms as published | Notes |
 |---|---|---|---|---|
