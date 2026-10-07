@@ -1,3 +1,4 @@
+import logging
 import re
 import unicodedata
 from dataclasses import dataclass
@@ -9,6 +10,7 @@ import httpx
 
 from app.sources.base import AlertRecord, Batch, IngestScope, RawPayload, SourceAdapter, SourceError, SourceMeta
 
+log = logging.getLogger("senapred_alerts")
 PAGE_URL = "https://senapred.cl/alertas"
 CHILE = ZoneInfo("America/Santiago")
 MAX_PAGES = 5
@@ -306,6 +308,7 @@ class SenapredAlertsAdapter(SourceAdapter):
                 ]
             card_links = {card["links"][0] for card in cards if card.get("links")}
             checks = check_pages(sorted(set(urls) | card_links))
+            log.info("official pages checked: %d, not responding: %s", len(checks), [u for u, missing in checks.items() if missing])
         return [RawPayload(dataset="senapred_alert", url=PAGE_URL, body=cards, options={"page_checks": checks})]
 
     def normalize(self, raw: RawPayload, parsed: Any) -> Batch:
