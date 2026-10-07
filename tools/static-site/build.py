@@ -50,6 +50,8 @@ EMERGENCY_PHONES = [("131", "Ambulancia (SAMU)"), ("132", "Bomberos"), ("133", "
 
 PROVINCES = {"071": "Provincia de Talca", "073": "Provincia de Curicó", "074": "Provincia de Linares", "072": "Provincia de Cauquenes"}
 
+FAVICON = "data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%2314212c%27/%3E%3Cpath d=%27M16 5 29 27H3z%27 fill=%27%23e3b505%27/%3E%3Crect x=%2714.5%27 y=%2712%27 width=%273%27 height=%278%27 fill=%27%2314212c%27/%3E%3Crect x=%2714.5%27 y=%2722%27 width=%273%27 height=%273%27 fill=%27%2314212c%27/%3E%3C/svg%3E"
+
 FONT = "https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap"
 
 SHAPES_SQL = """
@@ -171,6 +173,7 @@ def page(title: str, body: str, body_class: str = "") -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>{escape(title)}</title>
+<link rel="icon" href="{FAVICON}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="{FONT}">
