@@ -5,11 +5,11 @@ import secrets
 import sys
 
 from app.auth import ROLES, hash_password
-from app.db import scalar, transaction
+from app.db import rows, scalar, transaction
 from app.ingest.runner import mark_all_sources_due, run_source
 from app.sources.registry import ADAPTERS
 from app.sources.senapred import LAYERS, SenapredAdapter
-from app.tenants import create_municipality, refresh_analysis_cells
+from app.tenants import create_municipality, refresh_analysis_cells, slugify
 
 
 def cmd_migrate(_args) -> None:
@@ -26,20 +26,44 @@ def cmd_ingest(args) -> None:
         print(json.dumps(run_source(key, **options), ensure_ascii=False))
 
 
-def cmd_create_tenant(args) -> None:
+def ensure_boundaries(cut_prefix: str) -> None:
     boundary_only = tuple(layer for layer in LAYERS if layer.dataset == "comuna_boundary")
     with transaction() as conn:
-        present = scalar(conn, "select 1 from feature where dataset = 'comuna_boundary' and external_id = :c", c=args.cut)
+        present = scalar(
+            conn, "select 1 from feature where dataset = 'comuna_boundary' and external_id like :p limit 1", p=f"{cut_prefix}%"
+        )
     if not present:
         result = run_source("senapred", adapter=SenapredAdapter(layers=boundary_only))
         print(json.dumps(result, ensure_ascii=False))
         if result["status"] != "success":
             sys.exit("no se pudieron descargar los límites comunales")
+
+
+def cmd_create_tenant(args) -> None:
+    ensure_boundaries(args.cut)
     with transaction() as conn:
         municipality_id = create_municipality(conn, args.cut, args.slug, args.name)
         cells = refresh_analysis_cells(conn, municipality_id)
         mark_all_sources_due(conn)
     print(json.dumps({"municipality_id": municipality_id, "analysis_cells": cells}))
+
+
+def cmd_create_region(args) -> None:
+    ensure_boundaries(args.region)
+    with transaction() as conn:
+        comunas = rows(
+            conn,
+            "select external_id as cut, name from feature where dataset = 'comuna_boundary' and external_id like :p order by external_id",
+            p=f"{args.region}%",
+        )
+        if not comunas:
+            sys.exit(f"no hay comunas con CUT que empiece por {args.region}")
+        for comuna in comunas:
+            municipality_id = create_municipality(conn, comuna["cut"], slugify(comuna["name"]))
+            if not scalar(conn, "select 1 from sector where municipality_id = :m limit 1", m=municipality_id):
+                refresh_analysis_cells(conn, municipality_id)
+        mark_all_sources_due(conn)
+    print(json.dumps({"region": args.region, "municipalities": len(comunas)}))
 
 
 def cmd_create_user(args) -> None:
@@ -82,7 +106,11 @@ def cmd_bootstrap(_args) -> None:
     cmd_migrate(_args)
     cut = os.environ.get("TENANT_CUT")
     slug = os.environ.get("TENANT_SLUG")
-    if cut and slug:
+    region = os.environ.get("TENANT_REGION")
+    if region:
+        cmd_create_region(argparse.Namespace(region=region))
+        slug = None
+    elif cut and slug:
         with transaction() as conn:
             exists = scalar(conn, "select 1 from municipality where cut_code = :c", c=cut)
         if not exists:
@@ -147,6 +175,10 @@ def main(argv: list[str] | None = None) -> None:
     p = sub.add_parser("seed-demo")
     p.add_argument("--tenant", required=True)
     p.set_defaults(func=cmd_seed_demo)
+
+    p = sub.add_parser("create-region")
+    p.add_argument("--region", required=True)
+    p.set_defaults(func=cmd_create_region)
 
     sub.add_parser("bootstrap").set_defaults(func=cmd_bootstrap)
 

@@ -1,4 +1,6 @@
 import json
+import re
+import unicodedata
 from typing import Any
 
 from sqlalchemy import Connection, text
@@ -29,6 +31,11 @@ def merge_config(base: dict[str, Any], override: dict[str, Any]) -> dict[str, An
         else:
             merged[key] = value
     return merged
+
+
+def slugify(name: str) -> str:
+    ascii_name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]+", "-", ascii_name.lower()).strip("-")
 
 
 def get_municipality(conn: Connection, municipality_id: int) -> dict[str, Any] | None:

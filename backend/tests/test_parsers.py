@@ -352,3 +352,12 @@ def test_mop_roads_and_bridges_become_geojson_records():
     )
     assert bridge.external_id == "7" and bridge.category is None
     assert bridge.properties["cauce"] == "LIA" and bridge.properties["anio_construccion"] is None
+
+
+def test_slugify_comuna_names():
+    from app.tenants import slugify
+
+    assert slugify("Constitución") == "constitucion"
+    assert slugify("RÍO CLARO") == "rio-claro"
+    assert slugify("Hualañé") == "hualane"
+    assert slugify("Yerbas Buenas") == "yerbas-buenas"
