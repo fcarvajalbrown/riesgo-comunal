@@ -78,6 +78,10 @@ docker compose up -d --build
 
 The `bootstrap` service re-runs migrations on every start; it is idempotent.
 
+## Temporary static site
+
+Until the VPS is live, a static snapshot of the public residents page for the 30 Maule comunas is published to the `gh-pages` branch by `tools/static-site/publish.sh` (see `tools/static-site/README.md`). It is generated from the local dev database, does not update by itself, says so at the top of every page, and has no map or address check. Re-run the script to refresh it. GitHub Pages on a private repo needs a paid GitHub plan.
+
 ## Local development (no Docker)
 
 `tools/dev-db/setup.sh` copies a local PostgreSQL 18 installation into `%LOCALAPPDATA%\riesgo-comunal`, adds the PostGIS bundle and initialises a database on port 5440 without administrator rights; `tools/dev-db/start.sh` runs it. Then `cd backend && uv run alembic upgrade head`, `uv run python -m app.cli create-tenant --cut 08106 --slug lota`, `uv run python -m app.cli ingest`, `uv run uvicorn app.main:app --timeout-keep-alive 75`, and `cd frontend && pnpm dev` (port 3100). The longer keep-alive matters only here, where Next.js proxies `/api`: with uvicorn's default of 5 s, Node can reuse a connection uvicorn has just closed and the request fails with "socket hang up". In Docker, Caddy sends `/api` straight to the API. pgvector is not available in this setup; document search uses full-text search.
