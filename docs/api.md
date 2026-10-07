@@ -34,7 +34,7 @@ Every assessment carries `level`, `level_label`, `data_class`, `headline`, `reas
 
 | Method | Path | Permission | Purpose |
 |---|---|---|---|
-| GET | `/sources` | any | registry with status, last run, record counts, licence flags |
+| GET | `/sources` | any | registry with status, last run, record counts, licence flags, plus the same `state` and `alert` fields as `/public/{slug}/fuentes` and the last error text |
 | POST | `/sources/{key}/run` | `source:run` | run an adapter now |
 | GET | `/hazards` | any | modules, enabled flag, default and effective thresholds |
 | PUT | `/municipality/config` | `configure` | branding and hazard settings; unknown thresholds rejected |
@@ -78,6 +78,7 @@ Every assessment carries `level`, `level_label`, `data_class`, `headline`, `reas
 | GET | `/public/{slug}/geocode?q=` | address search within the comuna through the configured Nominatim server; 20/min per IP, cached, one upstream request per second |
 | GET | `/public/{slug}/lugar?lon=&lat=` | place check: tsunami evacuation area and nearest meeting point, wildfire recurrence class, DMC warnings over the point, municipal alerts; 422 beyond 5 km of the comuna; 60/min per IP |
 | GET | `/public/{slug}/capas/{key}` | GeoJSON for the public layers only (`comuna`, `tsunami_evacuation_area`, `tsunami_meeting_point`, `wildfire_hazard`, `dmc_warning`); 120/min per IP |
+| GET | `/public/{slug}/fuentes` | enabled sources with `state` (`live`, `stale` when no success for 3 intervals or 30 min, `failed`, `pending`, `unconfigured`), `alert` (alert feed or not) and last success time; no error text; 60/min per IP |
 | GET | `/public/{slug}/logo` | the comuna's logo |
 
 The residents' page at `/c/{slug}` (for example `/c/lota`) is built only on these endpoints. It needs no login and never shows municipal assets, incidents, contacts or uploads.

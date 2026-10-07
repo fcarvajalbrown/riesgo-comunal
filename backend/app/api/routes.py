@@ -167,16 +167,27 @@ def provenance(provenance_id: int, principal: Principal = Depends(current_princi
     return data
 
 
+SOURCE_STATE = """
+    case when s.last_error like 'falta configurar%' then 'unconfigured'
+         when s.last_error is not null then 'failed'
+         when s.last_success_at is null then 'pending'
+         when s.last_success_at < now() - make_interval(mins => greatest(s.interval_minutes * 3, 30)) then 'stale'
+         else 'live' end as state,
+    s.key = any(:alert_keys) as alert
+"""
+
+
 @router.get("/sources")
 def sources(principal: Principal = Depends(current_principal), conn: Connection = Depends(get_conn)) -> list[dict[str, Any]]:
     data = rows(
         conn,
-        """
-        select s.*, (select json_agg(j order by j.started_at desc) from
+        f"""
+        select s.*, {SOURCE_STATE}, (select json_agg(j order by j.started_at desc) from
             (select id, started_at, finished_at, status, record_count, error from ingestion_job
              where source_key = s.key order by started_at desc limit 5) j) as recent_jobs
         from source s order by s.key
         """,
+        alert_keys=list(ALERT_ORIGIN),
     )
     return data
 
@@ -626,6 +637,16 @@ def public_comuna(slug: str, conn: Connection = Depends(get_conn)) -> dict[str, 
         "primary_color": config["branding"].get("primary_color"),
         "logo_url": config["branding"].get("logo_url"),
     }
+
+
+@router.get("/public/{slug}/fuentes", dependencies=[Depends(rate_limit("public_sources", 60, 60))])
+def public_sources(slug: str, conn: Connection = Depends(get_conn)) -> list[dict[str, Any]]:
+    _public_municipality(conn, slug)
+    return rows(
+        conn,
+        f"select s.key, s.name, s.organization, s.interval_minutes, s.last_attempt_at, s.last_success_at, {SOURCE_STATE} from source s where s.enabled order by s.name",
+        alert_keys=list(ALERT_ORIGIN),
+    )
 
 
 @router.get("/public/{slug}/resumen")

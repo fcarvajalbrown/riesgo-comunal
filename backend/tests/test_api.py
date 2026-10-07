@@ -175,6 +175,25 @@ def test_public_summary_has_notice(env):
     assert client.get("/api/public/no-existe/resumen").status_code == 404
 
 
+def test_source_status_marks_failures_and_hides_errors_publicly(env):
+    client, tokens, *_ = env
+    with transaction() as conn:
+        saved = conn.execute(text("select last_error from source where key = 'senapred_alertas'")).scalar()
+        conn.execute(text("update source set last_error = 'Traceback secreto' where key = 'senapred_alertas'"))
+    try:
+        public = client.get(f"/api/public/{TEST_SLUG}/fuentes").json()
+        staff = client.get("/api/sources", headers=tokens["lota_alcalde"]).json()
+    finally:
+        with transaction() as conn:
+            conn.execute(text("update source set last_error = :e where key = 'senapred_alertas'"), {"e": saved})
+    senapred = next(s for s in public if s["key"] == "senapred_alertas")
+    assert senapred["state"] == "failed" and senapred["alert"] is True
+    assert all(s["state"] in {"live", "stale", "failed", "pending", "unconfigured"} for s in public)
+    assert all("last_error" not in s for s in public) and "Traceback" not in json.dumps(public)
+    assert next(s for s in staff if s["key"] == "senapred_alertas")["last_error"] == "Traceback secreto"
+    assert client.get("/api/public/no-existe/fuentes").status_code == 404
+
+
 def test_manual_alert_requires_source_url(env):
     client, tokens, *_ = env
     response = client.post(
