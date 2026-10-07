@@ -8,11 +8,13 @@ from app.db import rows
 ALERT_ORIGIN = {
     "dmc_cap": "canal oficial CAP de la DMC",
     "senapred_alertas": "leída de la página pública senapred.cl/alertas",
+    "shoa_snam": "leída de la tabla pública de boletines del SNAM (snamchile.cl)",
 }
 ALERT_FEED_NOTE = (
     "Los avisos, alertas y alarmas meteorológicas de la Dirección Meteorológica de Chile se reciben automáticamente desde su canal oficial CAP. "
     "Las alertas de SENAPRED (temprana preventiva, amarilla, roja) se leen automáticamente cada 10 minutos desde la página pública senapred.cl/alertas, "
-    "que no es un servicio oficial de datos: confirme siempre en senapred.cl. El municipio también puede ingresar alertas con su enlace oficial."
+    "que no es un servicio oficial de datos: confirme siempre en senapred.cl. "
+    "Los boletines de tsunami del SHOA se leen cada 5 minutos desde la tabla pública del SNAM (snamchile.cl), que tampoco es un servicio oficial de datos. El municipio también puede ingresar alertas con su enlace oficial."
 )
 
 
