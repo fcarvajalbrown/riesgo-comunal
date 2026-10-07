@@ -151,3 +151,8 @@ Researched to reduce dependence on SENAPRED: sources that answer for any latitud
 | USGS ShakeMap and PAGER | Estimated shaking intensity and exposure for significant earthquakes | Event products in the USGS feed already ingested | USGS public domain | Gives "felt here" intensity per comuna instead of distance only |
 | Smithsonian GVP Weekly Volcanic Activity Report | Weekly volcano activity notes, including SERNAGEOMIN level changes | RSS | UNVERIFIED | Weekly cadence only; complements G5 |
 | Copernicus GWIS fire weather index | Fire danger index (FWI) | Climate Data Store, 0.25 degree grid | Copernicus licence | No simple coordinate API found yet |
+
+### Map layers on the public static site
+
+- Rain measured by satellite: NASA GIBS WMTS layer `IMERG_Precipitation_Rate_30min` (GPM IMERG, 30-minute precipitation rate), tiles `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/IMERG_Precipitation_Rate_30min/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png`, no key, CORS open. The newest image lags real time by roughly four to five hours (latest default observed: 2026-10-06 22:30 UTC at 2026-10-07 04:45 UTC). Credited as "NASA GIBS, GPM IMERG".
+- Wind now: Open-Meteo current `wind_speed_10m`, `wind_direction_10m`, `wind_gusts_10m` on a 0.3 degree grid over the Maule extent, fetched at each static-site build (`assets/viento.json`). Credited "Weather data by Open-Meteo.com".

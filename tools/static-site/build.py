@@ -1,5 +1,7 @@
 import argparse
 import json
+
+import httpx
 import shutil
 import sys
 from datetime import UTC, datetime
@@ -46,8 +48,8 @@ SOURCE_STATE = {
 MAP_LAYERS = [
     ("tsunami_evacuation_area", "Área de evacuación por tsunami", "SENAPRED", True, '<span class="sq" style="background:rgba(37,99,235,.3);border:1px solid #1d4ed8"></span>'),
     ("tsunami_meeting_point", "Puntos de encuentro por tsunami", "SENAPRED", True, '<span class="dot" style="background:#059669"></span>'),
-    ("dmc_warning", "Avisos y alertas meteorológicas vigentes", "Dirección Meteorológica de Chile", False, '<span class="sq" style="background:#eab308"></span>'),
-    ("wildfire_hazard", "Recurrencia de incendios forestales", "SENAPRED con datos de CONAF", False, '<span class="sq" style="background:linear-gradient(90deg,#fde68a,#9a3412)"></span>'),
+    ("dmc_warning", "Avisos y alertas meteorológicas vigentes", "Dirección Meteorológica de Chile", True, '<span class="sq" style="background:#eab308"></span>'),
+    ("wildfire_hazard", "Recurrencia de incendios forestales", "SENAPRED con datos de CONAF", True, '<span class="sq" style="background:linear-gradient(90deg,#fde68a,#9a3412)"></span>'),
 ]
 
 OFFICIAL_LINKS = [
@@ -56,6 +58,13 @@ OFFICIAL_LINKS = [
     ("SHOA", "Servicio Hidrográfico y Oceanográfico de la Armada, alertas de tsunami", "https://www.shoa.cl"),
     ("Dirección Meteorológica de Chile", "Pronósticos, avisos, alertas y alarmas meteorológicas", "https://www.meteochile.gob.cl"),
 ]
+
+LIVE_LAYERS = [
+    ("lluvia", "Lluvia medida por satélite, último dato con unas 4 horas de retraso", "NASA, GPM IMERG", '<span class="sq" style="background:linear-gradient(90deg,#9bd5ff,#1f5bff,#b000c8)"></span>'),
+    ("viento", "Viento ahora: flechas con su dirección y velocidad", "Open-Meteo", '<span class="sq" style="background:#0f172a;clip-path:polygon(50% 0,100% 50%,62% 50%,62% 100%,38% 100%,38% 50%,0 50%)"></span>'),
+]
+
+WIND_STEP = 0.3
 
 EMERGENCY_PHONES = [("131", "Ambulancia (SAMU)"), ("132", "Bomberos"), ("133", "Carabineros")]
 
@@ -67,14 +76,14 @@ ASSETS = ["maplibre-gl.js", "maplibre-gl-shared.js", "maplibre-gl-worker.js", "m
 SITE_NAME = "Riesgo en mi comuna, Región del Maule"
 INITIATIVE = "Una iniciativa de la oficina de la senadora Paulina Vodanovic."
 
-SHAPES_SQL = """
-with g as (
-    select slug, cut_code, st_scale(st_simplifypreservetopology(boundary, 0.0015), 0.82, 1) as geom
-    from municipality where cut_code like '07%'
-)
-select slug, cut_code as cut, st_assvg(geom, 0, 4) as d,
-       st_xmin(geom) as x0, st_ymin(geom) as y0, st_xmax(geom) as x1, st_ymax(geom) as y1
-from g
+REGION_SQL = """
+select slug, name, cut_code as cut, st_asgeojson(st_simplifypreservetopology(boundary, 0.001), 5) as g
+from municipality where cut_code like '07%'
+"""
+
+EXTENT_SQL = """
+select st_xmin(e) as x0, st_ymin(e) as y0, st_xmax(e) as x1, st_ymax(e) as y1
+from (select st_extent(boundary) as e from municipality where cut_code like '07%') t
 """
 
 STYLE = """
@@ -148,17 +157,11 @@ ul{list-style:none;margin:0;padding:0}
 .src-list li:first-child{border-top:0}
 .src-list span{display:block;font-size:.75rem;color:var(--muted)}
 .foot{max-width:72rem;margin:0 auto;padding:1rem 1rem 2.5rem;font-size:.78rem;color:var(--muted)}
-body.fit{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
-.region{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,3fr) minmax(20rem,2fr);gap:1rem;padding:1rem;max-width:90rem;width:100%;margin:0 auto}
-.regionmap{background:#cfe0ee;border:1px solid var(--border);border-radius:1rem;display:flex;flex-direction:column;min-height:0;overflow:hidden}
-.regionmap svg{flex:1;min-height:0;width:100%;display:block}
-.regionmap path{stroke:#fff;stroke-width:1.2;vector-effect:non-scaling-stroke}
-.regionmap a:hover path{filter:brightness(.85);stroke:var(--fg);stroke-width:2.2}
-.legend{display:flex;flex-wrap:wrap;gap:.3rem 1rem;padding:.6rem 1rem;background:var(--surface);border-top:1px solid var(--border);font-size:.82rem}
+.legend{display:flex;flex-wrap:wrap;gap:.3rem 1rem;padding:.6rem 1rem;border-top:1px solid var(--border);font-size:.82rem}
+.intro{font-size:.9rem;color:var(--muted);margin-bottom:.75rem}
+.comunas-line{font-size:.78rem;margin-top:.2rem}
 .legend li{display:flex;align-items:center;gap:.35rem}
-.side{overflow-y:auto;min-height:0;padding-right:.25rem}
-.side>p{font-size:.9rem;color:var(--muted);margin-bottom:1rem}
-.prov{margin-bottom:1.25rem}
+.prov{margin-top:1rem}
 .prov h2{font-size:.95rem;font-weight:600;color:var(--muted);margin-bottom:.5rem}
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(12.5rem,1fr));gap:.5rem}
 .tile{display:flex;flex-direction:column;gap:.35rem;height:100%;background:var(--surface);border:1px solid var(--border);border-radius:.75rem;padding:.7rem .8rem;text-decoration:none}
@@ -169,10 +172,6 @@ body.fit{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:
 @media (max-width:960px){
 .grid,.grid2{grid-template-columns:1fr}
 .mapcard{position:relative;top:0;height:70vh}
-body.fit{height:auto;overflow:visible}
-.region{grid-template-columns:1fr}
-.regionmap{height:60vh}
-.side{overflow:visible}
 .muni nav{display:none}
 }
 """
@@ -251,26 +250,50 @@ def senator_bar(generated: str) -> str:
     return f'<div class="senator"><div class="in"><strong>Una iniciativa de la oficina de la senadora Paulina Vodanovic</strong><span>Última actualización: {escape(generated)}</span></div></div>'
 
 
+def alert_item(alert: dict, comunas: list[str] | None = None) -> str:
+    timing = f"{'desde' if alert['in_force'] else 'comienza'} {format_time(alert['starts_at'])}"
+    if alert["ends_at"]:
+        timing += f", hasta {format_time(alert['ends_at'])}"
+    unavailable = alert.get("official_page_unavailable")
+    label = "Intentar abrir el anuncio oficial" if unavailable else "Ver el anuncio oficial"
+    link = f'<a href="{escape(alert["source_url"])}" rel="noreferrer">{label}</a>' if alert["source_url"] else ""
+    if unavailable:
+        link = '<p class="comunas-line"><strong>La página oficial de esta alerta no responde en senapred.cl.</strong> Se mantiene vigente hasta que SENAPRED publique un nuevo boletín.</p>' + link
+    where = ""
+    if comunas is not None:
+        where = f'<p class="comunas-line"><strong>Comunas:</strong> {escape("todas las comunas de la región" if len(comunas) >= 30 else ", ".join(comunas))}</p>'
+    return (
+        f'<li class="{WARNING_TONE.get(alert["level"], "tone-red")}">'
+        f'<p class="head"><span class="pill pill-out">{escape(alert["level"])}</span><span class="small">{"Vigente" if alert["in_force"] else "Próximo"}</span><span class="tag tag-official">Alerta oficial</span></p>'
+        f'<p class="title">{escape(alert["title"])}</p>'
+        f'<p class="small">{escape(alert["issuer"])}, {escape(timing)}</p>{where}'
+        f'<p class="origin">Origen: {escape(alert["origin"])}.</p>{link}</li>'
+    )
+
+
+def no_alerts_html() -> str:
+    return (
+        '<div class="calm"><p><strong>No hay avisos ni alertas oficiales registrados en este momento.</strong></p>'
+        "<p>Que no aparezca una alerta no significa que no exista peligro. Confirme en senapred.cl.</p></div>"
+    )
+
+
 def alerts_html(summary: dict) -> str:
     if not summary["alerts"]:
-        return (
-            '<div class="calm"><p><strong>No hay avisos ni alertas oficiales registrados para la comuna en este momento.</strong></p>'
-            "<p>Que no aparezca una alerta no significa que no exista peligro. Confirme en senapred.cl.</p></div>"
-        )
-    items = []
-    for alert in summary["alerts"]:
-        timing = f"{'desde' if alert['in_force'] else 'comienza'} {format_time(alert['starts_at'])}"
-        if alert["ends_at"]:
-            timing += f", hasta {format_time(alert['ends_at'])}"
-        link = f'<a href="{escape(alert["source_url"])}" rel="noreferrer">Ver el anuncio oficial</a>' if alert["source_url"] else ""
-        items.append(
-            f'<li class="{WARNING_TONE.get(alert["level"], "tone-red")}">'
-            f'<p class="head"><span class="pill pill-out">{escape(alert["level"])}</span><span class="small">{"Vigente" if alert["in_force"] else "Próximo"}</span><span class="tag tag-official">Alerta oficial</span></p>'
-            f'<p class="title">{escape(alert["title"])}</p>'
-            f'<p class="small">{escape(alert["issuer"])}, {escape(timing)}</p>'
-            f'<p class="origin">Origen: {escape(alert["origin"])}.</p>{link}</li>'
-        )
-    return f'<ul class="alerts">{"".join(items)}</ul>'
+        return no_alerts_html()
+    return f'<ul class="alerts">{"".join(alert_item(a) for a in summary["alerts"])}</ul>'
+
+
+def region_alerts_html(entries: list[tuple[str, str, dict]]) -> str:
+    grouped: dict[tuple, tuple[dict, list[str]]] = {}
+    for _, name, summary in entries:
+        for alert in summary["alerts"]:
+            key = (alert["title"], alert["issuer"], alert["level"], str(alert["starts_at"]))
+            grouped.setdefault(key, (alert, []))[1].append(name)
+    if not grouped:
+        return no_alerts_html()
+    ordered = sorted(grouped.values(), key=lambda pair: (not pair[0]["in_force"], -len(pair[1])))
+    return f'<ul class="alerts">{"".join(alert_item(alert, names) for alert, names in ordered)}</ul>'
 
 
 def sources_html(sources: list[dict]) -> str:
@@ -306,19 +329,68 @@ def items_html(items: list[dict], with_level: bool = True) -> str:
     return f'<ul class="rows">{rows_html}</ul>'
 
 
-def map_html(bbox, counts: dict[str, int]) -> str:
-    toggles = "".join(
+def toggles_html(counts: dict[str, int], has_wind: bool) -> str:
+    live = "".join(
+        f'<label><input type="checkbox" data-layer="{key}" checked>{swatch}<span>{escape(name)}<span class="src"> ({escape(source)})</span></span></label>'
+        for key, name, source, swatch in LIVE_LAYERS
+        if key != "viento" or has_wind
+    )
+    data = "".join(
         f'<label><input type="checkbox" data-layer="{key}"{" checked" if on else ""}>{swatch}<span>{escape(name)}<span class="src"> ({escape(source)})</span></span></label>'
         for key, name, source, on, swatch in MAP_LAYERS
         if counts.get(key)
     )
+    return f'<div class="toggles">{live}{data}<span class="src">Toque un punto o una zona del mapa para ver qué es.</span></div>'
+
+
+def map_html(bbox, counts: dict[str, int], has_wind: bool) -> str:
+    wind = ' data-wind="../assets/viento.json"' if has_wind else ""
     return (
-        f'<div class="card mapcard"><div class="map" data-map data-layers="capas/" data-bbox="{escape(json.dumps(list(bbox)))}" role="region" aria-label="Mapa de la comuna"></div>'
-        f'<div class="toggles">{toggles or "<span class=src>Sin capas oficiales con datos para esta comuna.</span>"}</div></div>'
+        f'<div class="card mapcard"><div class="map" data-map data-layers="capas/"{wind} data-bbox="{escape(json.dumps(list(bbox)))}" role="region" aria-label="Mapa de la comuna"></div>'
+        f"{toggles_html(counts, has_wind)}</div>"
     )
 
 
-def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str, counts: dict[str, int], base_url: str, slug: str) -> str:
+def wind_grid(extent: dict) -> dict:
+    points = []
+    lat = extent["y0"]
+    while lat <= extent["y1"] + 1e-9:
+        lon = extent["x0"]
+        while lon <= extent["x1"] + 1e-9:
+            points.append((round(lat, 3), round(lon, 3)))
+            lon += WIND_STEP
+        lat += WIND_STEP
+    try:
+        response = httpx.get(
+            "https://api.open-meteo.com/v1/forecast",
+            params={
+                "latitude": ",".join(str(a) for a, _ in points),
+                "longitude": ",".join(str(b) for _, b in points),
+                "current": "wind_speed_10m,wind_direction_10m,wind_gusts_10m",
+                "timezone": "GMT",
+            },
+            timeout=60,
+        )
+        response.raise_for_status()
+        body = response.json()
+    except (httpx.HTTPError, ValueError):
+        return {"type": "FeatureCollection", "features": []}
+    features = []
+    for (lat, lon), item in zip(points, body if isinstance(body, list) else [body]):
+        current = item.get("current") or {}
+        if current.get("wind_speed_10m") is None or current.get("wind_direction_10m") is None:
+            continue
+        features.append(
+            {
+                "type": "Feature",
+                "geometry": {"type": "Point", "coordinates": [lon, lat]},
+                "properties": {"speed": current["wind_speed_10m"], "dir": current["wind_direction_10m"], "gust": current.get("wind_gusts_10m") or current["wind_speed_10m"]},
+            }
+        )
+    return {"type": "FeatureCollection", "features": features}
+
+
+def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str, counts: dict[str, int], base_url: str, slug: str, has_wind: bool) -> str:
     phones = "".join(f'<li><a href="tel:{n}"><strong>{n}</strong><span>{escape(label)}</span></a></li>' for n, label in EMERGENCY_PHONES)
     links = "".join(f'<li><a href="{escape(href)}" rel="noreferrer">{escape(label)}</a><span>{escape(detail)}</span></li>' for label, detail, href in OFFICIAL_LINKS)
     standing = summary.get("standing_items", [])
@@ -352,41 +424,19 @@ def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str
 </section>
 {standing_html}
 </div>
-{map_html(comuna["bbox"], counts)}
+{map_html(comuna["bbox"], counts, has_wind)}
 </div>
 <div class="grid2">
 <section class="card" aria-labelledby="telefonos"><h2 id="telefonos">Teléfonos de emergencia</h2><ul class="phones">{phones}</ul></section>
 <section class="card" aria-labelledby="enlaces"><h2 id="enlaces">Información oficial</h2><ul class="links">{links}</ul><p class="note">{escape(summary["official_information"])}</p></section>
 </div>
 </main>
-<footer class="foot">Mapa base: OpenFreeMap, OpenMapTiles, datos de OpenStreetMap. Capas: SENAPRED, CONAF, Dirección Meteorológica de Chile. Pronóstico: <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a> (CC BY 4.0).</footer>
+<footer class="foot">Mapa base: OpenFreeMap, OpenMapTiles, datos de OpenStreetMap. Capas: SENAPRED, CONAF, Dirección Meteorológica de Chile. Lluvia por satélite: NASA GIBS (GPM IMERG). Pronóstico: <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a> (CC BY 4.0).</footer>
 <script type="module" src="../assets/map.js"></script>"""
     title = f"Riesgo en {comuna['name']}: alertas y mapa de la comuna"
     description = f"Alertas oficiales vigentes, mapa de peligros y pronóstico para {comuna['name']}, Región del Maule. {INITIATIVE}"
     head = share_tags(base_url, f"{slug}/", title, description, "../") + '<link rel="stylesheet" href="../assets/maplibre-gl.css">\n'
     return page(title, body, head=head)
-
-
-def view_box(x0: float, y0: float, x1: float, y1: float, pad: float) -> str:
-    return f"{x0 - pad} {-y1 - pad} {x1 - x0 + 2 * pad} {y1 - y0 + 2 * pad}"
-
-
-def region_map(entries: list[tuple[str, str, dict]], shapes: dict) -> str:
-    x0 = min(s["x0"] for s in shapes.values())
-    y0 = min(s["y0"] for s in shapes.values())
-    x1 = max(s["x1"] for s in shapes.values())
-    y1 = max(s["y1"] for s in shapes.values())
-    paths = "".join(
-        f'<a href="{escape(slug)}/index.html" tabindex="-1"><title>{escape(name)}: {escape(s["overall_level_label"])}</title>'
-        f'<path d="{shapes[slug]["d"]}" fill="{level_style(s["overall_level"])[0]}"/></a>'
-        for slug, name, s in entries
-    )
-    present = [level for level in LEVELS if any(s["overall_level"] == level for _, _, s in entries)]
-    legend = "".join(f'<li><span class="sq" style="background:{level_style(level)[0]}"></span>{escape(level_style(level)[2])}</li>' for level in present)
-    return (
-        f'<div class="regionmap"><svg viewBox="{view_box(x0, y0, x1, y1, (x1 - x0) * 0.03)}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">{paths}</svg>'
-        f'<ul class="legend" aria-label="Leyenda del mapa">{legend}</ul></div>'
-    )
 
 
 def tile(slug: str, name: str, summary: dict) -> str:
@@ -400,26 +450,47 @@ def tile(slug: str, name: str, summary: dict) -> str:
     )
 
 
-def index_page(entries: list[tuple[str, str, dict]], generated: str, shapes: dict, base_url: str) -> str:
+def index_page(entries: list[tuple[str, str, dict]], generated: str, region: dict, base_url: str, counts: dict[str, int], has_wind: bool) -> str:
     groups = []
     for prefix, province in PROVINCES.items():
-        members = [(slug, name, s) for slug, name, s in entries if shapes[slug]["cut"].startswith(prefix)]
+        members = [(slug, name, s) for slug, name, s in entries if region["cuts"][slug].startswith(prefix)]
         items = "".join(tile(slug, name, s) for slug, name, s in members)
-        groups.append(f'<section class="prov" aria-labelledby="p{prefix}"><h2 id="p{prefix}">{escape(province)}</h2><ul class="tiles">{items}</ul></section>')
+        groups.append(f'<section class="prov" aria-labelledby="p{prefix}"><h3 id="p{prefix}">{escape(province)}</h3><ul class="tiles">{items}</ul></section>')
+    present = [level for level in LEVELS if any(s["overall_level"] == level for _, _, s in entries)]
+    legend = "".join(f'<li><span class="sq" style="background:{level_style(level)[0]}"></span>{escape(level_style(level)[2])}</li>' for level in present)
     body = f"""{senator_bar(generated)}
 <header class="muni"><div class="in">
 <span class="initials" aria-hidden="true">VII</span>
-<div><h1>Riesgo en mi comuna, Región del Maule</h1><p>Situación ahora en las {len(entries)} comunas de la región</p></div>
+<div><h1>Riesgo en mi comuna, Región del Maule</h1><p>Información sobre riesgos de desastre para las {len(entries)} comunas de la región</p></div>
 </div></header>
-<main class="region">
-{region_map(entries, shapes)}
-<div class="side">
-<p>Situación de cada comuna según el cálculo de la plataforma, que reúne información de SENAPRED, SHOA, la Dirección Meteorológica de Chile y otras fuentes. Elija su comuna para ver las alertas, el mapa y el detalle por amenaza.</p>
+<main class="wrap">
+<p class="notice">Esta página reúne información oficial de varias fuentes independientes, entre ellas SENAPRED y la Dirección Meteorológica de Chile, y un cálculo de referencia hecho por la plataforma. Si una fuente deja de responder, la página lo indica y sigue mostrando las demás. No reemplaza las instrucciones de la autoridad. <strong>En una emergencia, siga las indicaciones de SENAPRED y de su municipalidad.</strong></p>
+<div class="grid">
+<div>
+<section class="card" aria-labelledby="ahora">
+<h2 id="ahora">Qué está pasando ahora en el Maule</h2>
+<p class="intro">Alertas oficiales vigentes y próximas en la región, con las comunas que alcanzan.</p>
+{region_alerts_html(entries)}
+</section>
+<section class="card" aria-labelledby="comunas">
+<h2 id="comunas">Elija su comuna</h2>
+<p class="intro">Situación de cada comuna según el cálculo de la plataforma. Cada página muestra sus alertas, su mapa y el detalle por amenaza.</p>
 {"".join(groups)}
+</section>
 </div>
-</main>"""
+<div class="card mapcard"><div class="map" data-map data-region="assets/comunas.json" data-layers="assets/region/"{' data-wind="assets/viento.json"' if has_wind else ""} data-bbox="{escape(json.dumps(region["bbox"]))}" role="region" aria-label="Mapa de las comunas del Maule por situación"></div>
+<ul class="legend" aria-label="Situación de cada comuna">{legend}</ul>{toggles_html(counts, has_wind)}</div>
+</div>
+<div class="grid2">
+<section class="card" aria-labelledby="telefonos"><h2 id="telefonos">Teléfonos de emergencia</h2><ul class="phones">{"".join(f'<li><a href="tel:{n}"><strong>{n}</strong><span>{escape(label)}</span></a></li>' for n, label in EMERGENCY_PHONES)}</ul></section>
+<section class="card" aria-labelledby="enlaces"><h2 id="enlaces">Información oficial</h2><ul class="links">{"".join(f'<li><a href="{escape(href)}" rel="noreferrer">{escape(label)}</a><span>{escape(detail)}</span></li>' for label, detail, href in OFFICIAL_LINKS)}</ul></section>
+</div>
+</main>
+<footer class="foot">Mapa base: OpenFreeMap, OpenMapTiles, datos de OpenStreetMap. Límites comunales y capas: SENAPRED, CONAF, Dirección Meteorológica de Chile. Lluvia por satélite: NASA GIBS (GPM IMERG). Viento y pronóstico: <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a> (CC BY 4.0).</footer>
+<script type="module" src="assets/map.js"></script>"""
     description = f"Alertas oficiales, mapa y pronóstico de las {len(entries)} comunas del Maule en un solo lugar. {INITIATIVE}"
-    return page(SITE_NAME, body, "fit", head=share_tags(base_url, "", SITE_NAME, description, ""))
+    head = share_tags(base_url, "", SITE_NAME, description, "") + '<link rel="stylesheet" href="assets/maplibre-gl.css">\n'
+    return page(SITE_NAME, body, head=head)
 
 
 def main() -> int:
@@ -435,9 +506,14 @@ def main() -> int:
         shutil.copyfile(HERE / "vendor" / name, assets / name)
     shutil.copyfile(HERE / "map.js", assets / "map.js")
     entries = []
+    regional: dict[str, dict[str, dict]] = {layer[0]: {} for layer in MAP_LAYERS}
     with get_engine().connect() as conn:
         tenants = rows(conn, "select id, slug from municipality where cut_code like '07%' order by name")
-        shapes = {r["slug"]: r for r in rows(conn, SHAPES_SQL)}
+        extent = rows(conn, EXTENT_SQL)[0]
+        wind = wind_grid(extent)
+        has_wind = bool(wind["features"])
+        (assets / "viento.json").write_text(json.dumps(wind, separators=(",", ":")), encoding="utf-8")
+        region_rows = rows(conn, REGION_SQL)
         for tenant in tenants:
             slug = tenant["slug"]
             comuna = public_comuna(slug, conn)
@@ -449,11 +525,37 @@ def main() -> int:
             for key in ["comuna", *[layer[0] for layer in MAP_LAYERS]]:
                 collection = layer_geojson(conn, tenant["id"], key)
                 counts[key] = len(collection.get("features", []))
+                if key in regional:
+                    for feature in collection.get("features", []):
+                        regional[key].setdefault(json.dumps(feature, sort_keys=True, default=str), feature)
                 (layers_dir / f"{key}.json").write_text(json.dumps(collection, ensure_ascii=False, default=str, separators=(",", ":")), encoding="utf-8")
-            (args.out / slug / "index.html").write_text(comuna_page(comuna, summary, sources, generated, counts, base_url, slug), encoding="utf-8")
+            (args.out / slug / "index.html").write_text(comuna_page(comuna, summary, sources, generated, counts, base_url, slug, has_wind), encoding="utf-8")
             entries.append((slug, comuna["name"], summary))
         conn.rollback()
-    (args.out / "index.html").write_text(index_page(entries, generated, shapes, base_url), encoding="utf-8")
+    levels = {slug: summary for slug, _, summary in entries}
+    features = [
+        {
+            "type": "Feature",
+            "geometry": json.loads(r["g"]),
+            "properties": {
+                "slug": r["slug"],
+                "name": r["name"],
+                "label": levels[r["slug"]]["overall_level_label"],
+                "color": level_style(levels[r["slug"]]["overall_level"])[0],
+            },
+        }
+        for r in region_rows
+        if r["slug"] in levels
+    ]
+    (assets / "comunas.json").write_text(json.dumps({"type": "FeatureCollection", "features": features}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    region = {"cuts": {r["slug"]: r["cut"] for r in region_rows}, "bbox": [extent["x0"], extent["y0"], extent["x1"], extent["y1"]]}
+    region_dir = assets / "region"
+    region_dir.mkdir(exist_ok=True)
+    region_counts = {}
+    for key, features in regional.items():
+        region_counts[key] = len(features)
+        (region_dir / f"{key}.json").write_text(json.dumps({"type": "FeatureCollection", "features": list(features.values())}, ensure_ascii=False, default=str, separators=(",", ":")), encoding="utf-8")
+    (args.out / "index.html").write_text(index_page(entries, generated, region, base_url, region_counts, has_wind), encoding="utf-8")
     (args.out / ".nojekyll").write_text("", encoding="utf-8")
     print(f"{len(entries)} comuna pages, layers and index written to {args.out}")
     return 0
