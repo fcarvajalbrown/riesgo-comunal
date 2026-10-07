@@ -1,6 +1,16 @@
 # Riesgo Comunal
 
-Municipal risk intelligence platform for Chilean comunas. It collects official public data (SENAPRED, IDE Chile, SINCA, DGA, USGS, DMC, INE Censo 2024, MOP Vialidad), combines it with each municipality's own data, and answers three questions in Spanish: what is happening now (AHORA), which areas are vulnerable (RIESGO), and what history and priorities the comuna has (PLANIFICAR). Every figure links back to its source.
+Municipal risk intelligence platform for Chilean comunas.
+
+**It keeps working when one source fails.** The platform reads alerts and data from several independent sources on its own schedule, stores what each one last delivered, and shows on the staff dashboard and on the public page which sources are working, which have failed and which have stopped sending new data, with the time of the last data received from each. If SENAPRED's page stops responding, the screen says so, keeps showing the alerts and data already received, and lists the sources that are still running.
+
+Alert sources currently read automatically:
+
+- SENAPRED public alerts page (`senapred.cl/alertas`), every 10 minutes
+- Dirección Meteorológica de Chile official CAP feed (warnings, alerts and alarms)
+- (list to be completed with the fallback alert sources being added)
+
+It collects official public data (SENAPRED, IDE Chile, SINCA, DGA, USGS, DMC, INE Censo 2024, MOP Vialidad), combines it with each municipality's own data, and answers three questions in Spanish: what is happening now (AHORA), which areas are vulnerable (RIESGO), and what history and priorities the comuna has (PLANIFICAR). Every figure links back to its source.
 
 It is a decision-support tool. Levels shown are platform calculations from official data, not official alerts or assessments. Official alerts come from SENAPRED and the competent authorities.
 
