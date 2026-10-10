@@ -99,7 +99,8 @@ from (select st_extent(boundary) as e from municipality where cut_code like '07%
 STYLE = """
 :root{--bg:#f4f5f7;--surface:#ffffff;--fg:#1b2430;--muted:#5b6573;--border:#dde1e7;--brand:#263d55;--brand-tint:#e9edf2;--senator:#263d55;--senator-deep:#1a2b3d}
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--fg);font-family:Inter,"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;font-size:16px;line-height:1.5}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:Inter,"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;font-size:1rem;line-height:1.55}
+html{font-size:112.5%}
 a{color:inherit}
 a:focus-visible,input:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
 h1,h2,h3,p{margin:0}
@@ -128,27 +129,27 @@ ul{list-style:none;margin:0;padding:0}
 .grid2{display:grid;gap:1rem;margin-top:1rem;grid-template-columns:1fr 1fr}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:1rem;padding:1.1rem 1.25rem}
 .card+.card{margin-top:1rem}
-.card h2{font-size:1.125rem;font-weight:600;margin-bottom:.75rem}
+.card h2{font-size:1.3rem;font-weight:600;margin-bottom:.75rem}
 .card h3{font-size:.9rem;font-weight:600;margin:1rem 0 .5rem;display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
 .now{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.75rem;font-size:.95rem}
-.pill{display:inline-block;border-radius:999px;padding:.1rem .65rem;font-size:.8rem;font-weight:600;white-space:nowrap}
+.pill{display:inline-block;border-radius:999px;padding:.1rem .65rem;font-size:.85rem;font-weight:600;white-space:nowrap}
 .pill-out{border:1px solid currentColor;background:transparent}
-.tag{display:inline-block;border-radius:.4rem;border:1px solid var(--border);background:#f8fafc;color:var(--muted);padding:.05rem .45rem;font-size:.72rem;font-weight:500}
+.tag{display:inline-block;border-radius:.4rem;border:1px solid var(--border);background:#f8fafc;color:var(--muted);padding:.05rem .45rem;font-size:.85rem;font-weight:500}
 .tag-official{border-color:#fecdd3;background:#fff1f2;color:#be123c}
 .tag-international{border-color:var(--border);background:var(--bg);color:var(--muted)}
 .alerts li{border:1px solid;border-radius:.75rem;padding:.75rem;font-size:.9rem;margin-bottom:.5rem}
 .alerts .head{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
 .alerts .title{font-weight:600;margin-top:.3rem}
-.alerts .small{font-size:.78rem}
-.alerts .origin{font-size:.78rem;opacity:.8;margin-top:.2rem}
-.alerts a{font-size:.78rem;font-weight:600;display:inline-block;margin-top:.25rem}
+.alerts .small{font-size:.85rem}
+.alerts .origin{font-size:.85rem;opacity:.8;margin-top:.2rem}
+.alerts a{font-size:.85rem;font-weight:600;display:inline-block;margin-top:.25rem}
 .tone-red{border-color:#fca5a5;background:#fef2f2;color:#450a0a}
 .tone-orange{border-color:#fdba74;background:#fff7ed;color:#431407}
 .tone-yellow{border-color:#fde047;background:#fefce8;color:#422006}
 .tone-green{border-color:#86efac;background:#f0fdf4;color:#052e16}
 .calm{border:1px solid var(--border);background:#f8fafc;border-radius:.75rem;padding:.75rem;font-size:.9rem}
 .calm p+p{color:var(--muted);margin-top:.25rem}
-.note{font-size:.78rem;color:var(--muted);margin-top:.6rem}
+.note{font-size:.85rem;color:var(--muted);margin-top:.6rem}
 .rows{border:1px solid var(--border);border-radius:.75rem;overflow:hidden}
 .hz{border:1px solid var(--border);border-radius:.75rem;background:var(--surface)}
 .hz+.hz{margin-top:.6rem}
@@ -156,8 +157,8 @@ ul{list-style:none;margin:0;padding:0}
 .hz summary::-webkit-details-marker{display:none}
 .hz summary h3{margin:0;font-size:1rem}
 .hz summary .line{grid-column:2;font-size:.9rem}
-.hz summary .agree{grid-column:2;font-size:.82rem;color:var(--muted)}
-.hz summary .more{grid-column:2;font-size:.82rem;color:var(--brand);text-decoration:underline}
+.hz summary .agree{grid-column:2;font-size:.85rem;color:var(--muted)}
+.hz summary .more{grid-column:2;font-size:.85rem;color:var(--brand);text-decoration:underline}
 .hz[open] summary .more{display:none}
 .hz summary:focus-visible{outline:3px solid var(--brand);outline-offset:2px;border-radius:.75rem}
 .hz .body{border-top:1px solid var(--border);padding:.7rem .85rem .85rem;font-size:.88rem}
@@ -165,7 +166,7 @@ ul{list-style:none;margin:0;padding:0}
 .hz .body h4:first-child{margin-top:0}
 .hz .body ul{list-style:disc;padding-left:1.1rem}
 .hz .body li+li{margin-top:.25rem}
-.hz .body .meta{color:var(--muted);font-size:.8rem}
+.hz .body .meta{color:var(--muted);font-size:.85rem}
 .rows li{display:flex;gap:.75rem;align-items:flex-start;padding:.7rem .8rem;font-size:.9rem;border-top:1px solid var(--border)}
 .rows li:first-child{border-top:0}
 .rows .pill{flex:none;min-width:6.5rem;text-align:center}
@@ -175,25 +176,25 @@ ul{list-style:none;margin:0;padding:0}
 .map-error::after{content:"No se pudo cargar el mapa base. Revise la conexión a internet.";display:block;padding:1rem;font-size:.9rem;color:#991b1b}
 .toggles{border-top:1px solid var(--border);padding:.7rem 1rem;display:grid;gap:.35rem;font-size:.85rem}
 .toggles label{display:flex;gap:.5rem;align-items:center;cursor:pointer}
-.toggles .src{color:var(--muted);font-size:.75rem}
+.toggles .src{color:var(--muted);font-size:.85rem}
 .sq{display:inline-block;width:.8rem;height:.8rem;border-radius:2px;flex:none}
 .dot{display:inline-block;width:.8rem;height:.8rem;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #059669;flex:none}
 .phones{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
 .phones a{display:flex;flex-direction:column;align-items:center;border:1px solid var(--border);border-radius:.75rem;padding:.75rem;text-decoration:none;text-align:center}
 .phones a:hover{background:#f8fafc}
 .phones strong{font-size:1.6rem;color:var(--brand);line-height:1.2}
-.phones span{font-size:.78rem;color:var(--muted)}
+.phones span{font-size:.85rem;color:var(--muted)}
 .links li{padding:.5rem 0;border-top:1px solid var(--border);font-size:.9rem}
 .links li:first-child{border-top:0}
 .links a{font-weight:600;color:var(--brand)}
-.links span{display:block;font-size:.78rem;color:var(--muted)}
+.links span{display:block;font-size:.85rem;color:var(--muted)}
 .src-list li{padding:.45rem 0;border-top:1px solid var(--border);font-size:.85rem}
 .src-list li:first-child{border-top:0}
-.src-list span{display:block;font-size:.75rem;color:var(--muted)}
-.foot{max-width:72rem;margin:0 auto;padding:1rem 1rem 2.5rem;font-size:.78rem;color:var(--muted)}
-.legend{display:flex;flex-wrap:wrap;gap:.3rem 1rem;padding:.6rem 1rem;border-top:1px solid var(--border);font-size:.82rem}
+.src-list span{display:block;font-size:.85rem;color:var(--muted)}
+.foot{max-width:72rem;margin:0 auto;padding:1rem 1rem 2.5rem;font-size:.85rem;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:.3rem 1rem;padding:.6rem 1rem;border-top:1px solid var(--border);font-size:.85rem}
 .intro{font-size:.9rem;color:var(--muted);margin-bottom:.75rem}
-.comunas-line{font-size:.78rem;margin-top:.2rem}
+.comunas-line{font-size:.85rem;margin-top:.2rem}
 .legend li{display:flex;align-items:center;gap:.35rem}
 .prov{margin-top:1rem}
 .prov h2{font-size:.95rem;font-weight:600;color:var(--muted);margin-bottom:.5rem}
@@ -201,13 +202,25 @@ ul{list-style:none;margin:0;padding:0}
 .tile{display:flex;flex-direction:column;gap:.35rem;height:100%;background:var(--surface);border:1px solid var(--border);border-radius:.75rem;padding:.7rem .8rem;text-decoration:none}
 .tile:hover{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
 .tile strong{font-size:1rem;font-weight:600}
-.tile .count{font-size:.8rem;color:var(--muted)}
-.tile .first{font-size:.78rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tile .count{font-size:.85rem;color:var(--muted)}
+.tile .first{font-size:.85rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 body.fit{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 .region{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,3fr) minmax(22rem,2fr);gap:1rem;padding:1rem}
 .region .mapcard{position:relative;top:0;height:100%;min-height:0}
 .side{overflow-y:auto;min-height:0;padding-right:.25rem}
 .side .card+.card,.side .card+.notice,.side .down+.card{margin-top:1rem}
+.hrow{border-top:1px solid var(--border);padding:1.1rem 0}
+.hrow:first-of-type{border-top:0;padding-top:.4rem}
+.card .hrow h3{font-size:1.15rem;margin:0 0 .6rem}
+.pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:1.25rem}
+.pair .ours{border-left:1px solid var(--border);padding-left:1.25rem}
+.side-label{font-size:.85rem;font-weight:600;color:var(--muted);margin-bottom:.4rem}
+.pair .alerts li:last-child{margin-bottom:0}
+.none,.gap{border:1px dashed var(--border);border-radius:.75rem;padding:.75rem;color:var(--muted)}
+.alerts a,.hz summary .more{padding:.35rem 0}
+.hz summary .name{font-weight:600;font-size:1.05rem}
+.mapwide{margin-top:1rem;height:75vh;min-height:24rem;display:flex;flex-direction:column;padding:0;overflow:hidden}
+@media (max-width:48rem){.pair{grid-template-columns:1fr;gap:.9rem}.pair .ours{border-left:0;padding-left:0}.mapwide{height:65vh;margin-inline:1.5rem}}
 @media (max-width:960px){
 body.fit{height:auto;overflow:visible}
 .region{grid-template-columns:1fr}
@@ -381,12 +394,6 @@ def official_alerts_only(summary: dict) -> dict:
     return {**summary, "alerts": [a for a in summary["alerts"] if not a.get("international")]}
 
 
-def alerts_html(summary: dict) -> str:
-    if not summary["alerts"]:
-        return no_alerts_html()
-    return f'<ul class="alerts">{"".join(alert_item(a) for a in summary["alerts"])}</ul>'
-
-
 def region_alerts_html(entries: list[tuple[str, str, dict]]) -> str:
     grouped: dict[tuple, tuple[dict, list[str]]] = {}
     for _, name, summary in entries:
@@ -465,14 +472,63 @@ def hazard_card(item: dict) -> str:
         parts.append("<h4>Lo que nos falta</h4><ul>" + "".join(f"<li>{escape(x)}</li>" for x in item["missing"]) + "</ul>")
     agree = f'<span class="agree">{escape(item["consensus"])}</span>' if item.get("consensus") else ""
     return (
-        f'<details class="hz"><summary>{level_pill(item["level"], item["level_label"])}<h3>{escape(item["hazard"])}</h3>'
+        f'<details class="hz"><summary>{level_pill(item["level"], item["level_label"])}<span class="name">{escape(item["hazard"])}</span>'
         f'<span class="line">{escape(item["headline"])}</span>{agree}<span class="more">Ver fuentes y datos</span></summary>'
         f'<div class="body">{"".join(parts)}</div></details>'
     )
 
 
-def hazard_cards(items: list[dict]) -> str:
-    return "".join(hazard_card(item) for item in items)
+HAZARD_ROWS = (
+    ("lluvia", "Lluvia, crecidas y aluviones", {"rain", "flood", "landslide"}, ("flood",)),
+    ("tiempo", "Tiempo", {"wind", "storm", "snow", "frost", "heat", "meteo"}, ("meteo", "weather_forecast")),
+    ("incendios", "Incendios", {"wildfire"}, ("wildfire", "active_fire")),
+    ("sismos", "Sismos", {"earthquake"}, ("earthquake",)),
+    ("mar", "Tsunami y mar", {"tsunami", "coastal"}, ("tsunami", "sea_level")),
+    ("aire", "Calidad del aire", set(), ("air_quality",)),
+)
+OTHER_ROW = ("otras", "Otras alertas oficiales")
+SEVERITY = ("CRITICO", "ALTO", "MODERADO", "BAJO", "INFORMATIVO", "SIN_DATOS")
+NO_ALERT = '<p class="none">Sin alerta oficial para esta amenaza.</p>'
+NO_ANALYSIS = '<p class="gap">Todavía no tenemos análisis propio para esta amenaza.</p>'
+
+
+def alert_row(alert: dict) -> str:
+    if is_rain(alert):
+        return "lluvia"
+    return next((key for key, _, hazards, _ in HAZARD_ROWS if alert.get("hazard") in hazards), OTHER_ROW[0])
+
+
+def severity(level: str) -> int:
+    return SEVERITY.index(level) if level in SEVERITY else len(SEVERITY)
+
+
+def hazard_row(key: str, title: str, alerts: list[dict], cards: list[dict]) -> str:
+    official = f'<ul class="alerts">{"".join(alert_item(a) for a in alerts)}</ul>' if alerts else NO_ALERT
+    ours = "".join(hazard_card(item) for item in cards) or NO_ANALYSIS
+    return (
+        f'<section class="hrow" aria-labelledby="fila-{key}"><h3 id="fila-{key}">{escape(title)}</h3><div class="pair">'
+        f'<div class="official"><p class="side-label">Aviso oficial</p>{official}</div>'
+        f'<div class="ours"><p class="side-label">Nuestro análisis</p>{ours}</div></div></section>'
+    )
+
+
+def hazard_rows(alerts: list[dict], items: list[dict]) -> str:
+    by_key = {item["key"]: item for item in items}
+    grouped: dict[str, list[dict]] = {}
+    for alert in alerts:
+        grouped.setdefault(alert_row(alert), []).append(alert)
+    rows = []
+    for key, title, _, card_keys in HAZARD_ROWS:
+        cards = [by_key[k] for k in card_keys if k in by_key]
+        row_alerts = grouped.get(key, [])
+        if cards or row_alerts:
+            rank = (0 if any(a["in_force"] for a in row_alerts) else 1 if row_alerts else 2, min((severity(c["level"]) for c in cards), default=len(SEVERITY)))
+            rows.append((rank, hazard_row(key, title, row_alerts, cards)))
+    ordered = [html for _, html in sorted(rows, key=lambda pair: pair[0])]
+    others = grouped.get(OTHER_ROW[0], [])
+    if others:
+        ordered.append(f'<section class="hrow" aria-labelledby="fila-otras"><h3 id="fila-otras">{OTHER_ROW[1]}</h3><ul class="alerts">{"".join(alert_item(a) for a in others)}</ul></section>')
+    return "".join(ordered)
 
 
 def items_html(items: list[dict], with_level: bool = True) -> str:
@@ -500,7 +556,7 @@ def toggles_html(counts: dict[str, int], has_wind: bool) -> str:
 def map_html(bbox, counts: dict[str, int], has_wind: bool) -> str:
     wind = ' data-wind="../assets/viento.json"' if has_wind else ""
     return (
-        f'<div class="card mapcard"><div class="map" data-map data-layers="capas/"{wind} data-bbox="{escape(json.dumps(list(bbox)))}" role="region" aria-label="Mapa de la comuna"></div>'
+        f'<div class="card mapwide"><div class="map" data-map data-layers="capas/"{wind} data-bbox="{escape(json.dumps(list(bbox)))}" role="region" aria-label="Mapa de la comuna"></div>'
         f"{toggles_html(counts, has_wind)}</div>"
     )
 
@@ -568,26 +624,16 @@ def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str
 <main class="wrap">
 {banner}
 <p class="notice"><strong>Cuando la información oficial no está disponible, la gente igual necesita saber:</strong> aquí está nuestra evaluación del riesgo, con SENAPRED, el SHOA, la Dirección Meteorológica de Chile y todas las fuentes que sí responden. En una emergencia, siga las indicaciones de la autoridad.</p>
-<div class="grid">
-<div>
-{rain_card(
-    f'<ul class="alerts">{"".join(alert_item(a) for a in summary["alerts"] if is_rain(a))}</ul>' if any(is_rain(a) for a in summary["alerts"]) else '<p class="note" style="margin:0">No hay alertas de lluvia ni de crecidas vigentes para la comuna.</p>',
-    next((i["headline"] for i in summary["items"] if i["hazard"] == "Pronóstico del tiempo"), None),
-    "Lluvia y crecidas",
-)}
-<section class="card" aria-labelledby="ahora">
+<section class="card" aria-labelledby="ahora" style="margin-top:1rem">
 <h2 id="ahora">Qué está pasando ahora</h2>
 <p class="now">Nuestra evaluación del riesgo {level_pill(summary["overall_level"], summary["overall_level_label"])}</p>
-{alerts_html(summary)}
-<h3>Nuestro análisis por amenaza</h3>
-{hazard_cards(shown_hazards(summary["items"], bool(counts.get("tsunami_evacuation_area")), datetime.now(UTC)))}
+{hazard_rows(summary["alerts"], shown_hazards(summary["items"], bool(counts.get("tsunami_evacuation_area")), datetime.now(UTC)))}
+<p class="note"><strong>Temporada de El Niño:</strong> la Dirección Meteorológica de Chile proyecta lluvias sobre lo normal en el centro-sur del país. <a href="{EL_NINO_SOURCE}" rel="noreferrer">Fuente</a></p>
 <p class="note">Pronóstico: <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a>. Calculado el {escape(format_time(summary["computed_at"]))}.</p>
 {sources_html(sources)}
 </section>
-{standing_html}
-</div>
 {map_html(comuna["bbox"], counts, has_wind)}
-</div>
+{standing_html}
 <div class="grid2">
 <section class="card" aria-labelledby="telefonos"><h2 id="telefonos">Teléfonos de emergencia</h2><ul class="phones">{phones}</ul></section>
 <section class="card" aria-labelledby="enlaces"><h2 id="enlaces">Información oficial</h2><ul class="links">{links}</ul></section>
