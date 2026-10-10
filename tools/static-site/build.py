@@ -377,6 +377,10 @@ def no_alerts_html() -> str:
     )
 
 
+def official_alerts_only(summary: dict) -> dict:
+    return {**summary, "alerts": [a for a in summary["alerts"] if not a.get("international")]}
+
+
 def alerts_html(summary: dict) -> str:
     if not summary["alerts"]:
         return no_alerts_html()
@@ -421,7 +425,7 @@ def sources_html(sources: list[dict]) -> str:
     return "".join(out)
 
 
-ALERT_MODULES = ("senapred_alert", "international_alert")
+ALERT_MODULES = ("senapred_alert",)
 AIR_QUALITY_SEASON = range(4, 10)
 
 
@@ -667,7 +671,7 @@ def main() -> int:
     regional: dict[str, dict[str, dict]] = {layer[0]: {} for layer in MAP_LAYERS}
     with get_engine().connect() as conn:
         tenants = rows(conn, "select id, slug from municipality where cut_code like '07%' order by name")
-        summaries = {t["slug"]: public_summary(t["slug"], conn) for t in tenants}
+        summaries = {t["slug"]: official_alerts_only(public_summary(t["slug"], conn)) for t in tenants}
         banner = down_banner(senapred_status(public_sources(tenants[0]["slug"], conn), list(summaries.values())))
         extent = rows(conn, EXTENT_SQL)[0]
         wind = wind_grid(extent)
