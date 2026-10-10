@@ -12,10 +12,12 @@ from zoneinfo import ZoneInfo
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[1] / "backend"))
+sys.path.insert(0, str(HERE))
 
 from app.api.layers import layer_geojson
 from app.api.routes import public_comuna, public_sources, public_summary
 from app.db import get_engine, rows
+from info_pages import ABOUT_DESCRIPTION, ABOUT_HTML, ABOUT_LEAD, ABOUT_SLUG, ABOUT_TITLE, METHOD_DESCRIPTION, METHOD_HTML, METHOD_LEAD, METHOD_SLUG, METHOD_TITLE, PRESS_ASSETS, PRESS_DESCRIPTION, PRESS_LEAD, PRESS_SLUG, PRESS_TITLE, press_html
 
 CHILE = ZoneInfo("America/Santiago")
 MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
@@ -108,6 +110,8 @@ FAVICON = "data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 view
 ASSETS = ["maplibre-gl.js", "maplibre-gl-shared.js", "maplibre-gl-worker.js", "maplibre-gl.css", "MAPLIBRE-LICENSE.txt", "og-maule.jpg", "icon-180.png", "icon-32.png", "senator-logo.png", "senator-banner.webp"]
 SITE_NAME = "Riesgo en mi comuna, Región del Maule"
 INITIATIVE = "Una iniciativa de la oficina de la senadora Paulina Vodanovic."
+FOOTER_LINKS = (("", "Todas las comunas"), (METHOD_SLUG, METHOD_TITLE), (ABOUT_SLUG, ABOUT_TITLE), (PRESS_SLUG, PRESS_TITLE))
+CREDITS = "Mapa base: OpenFreeMap, OpenMapTiles, datos de OpenStreetMap. Capas: SENAPRED, CONAF, Dirección Meteorológica de Chile. Lluvia por satélite: NASA GIBS (GPM IMERG). Viento y pronóstico: <a href=\"https://open-meteo.com/\">Weather data by Open-Meteo.com</a> (CC BY 4.0)."
 
 REGION_SQL = """
 select slug, name, cut_code as cut, st_asgeojson(st_simplifypreservetopology(boundary, 0.001), 5) as g
@@ -216,7 +220,31 @@ ul{list-style:none;margin:0;padding:0}
 .src-list li{padding:.45rem 0;border-top:1px solid var(--border);font-size:.85rem}
 .src-list li:first-child{border-top:0}
 .src-list span{display:block;font-size:.85rem;color:var(--muted)}
-.foot{max-width:72rem;margin:0 auto;padding:1rem 1rem 2.5rem;font-size:.85rem;color:var(--muted)}
+.foot{margin-top:1.5rem;border-top:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:.9rem}
+.foot .in{padding:1.1rem 1rem 2.5rem;display:grid;gap:.6rem}
+.foot ul{display:flex;flex-wrap:wrap;gap:0 1.5rem}
+.foot nav a{display:inline-block;padding:.45rem 0;color:var(--brand);font-weight:600}
+.foot nav a[aria-current]{color:var(--fg);text-decoration:none}
+.foot .credits{font-size:.85rem}
+.side .foot{background:transparent;margin-top:1rem}
+.side .foot .in{padding:1rem 0 1.5rem}
+.prose>*{max-width:46rem}
+.prose .notice{margin-bottom:1rem}
+.prose .card h2{font-size:1.25rem}
+.prose .card h3{font-size:1rem;margin:1rem 0 .4rem}
+.prose .card p+p,.prose .card p+ul,.prose .card ul+p,.prose .card p+ol,.prose .card ol+h3{margin-top:.6rem}
+.prose .dots,.prose .steps{padding-left:1.3rem}
+.prose .dots{list-style:disc}
+.prose .steps{list-style:decimal;margin:0}
+.prose .dots li+li,.prose .steps li+li,.prose .facts li+li{margin-top:.4rem}
+.prose .card a{color:var(--brand);overflow-wrap:anywhere}
+.prose .meta{color:var(--muted);font-size:.9rem}
+.assets li{display:grid;grid-template-columns:minmax(0,9rem) minmax(0,1fr);gap:1rem;align-items:start;padding:1rem 0;border-top:1px solid var(--border)}
+.assets li:first-child{border-top:0;padding-top:0}
+.thumb{border:1px solid var(--border);border-radius:.5rem;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.thumb img{display:block;max-width:100%;height:auto}
+.thumb-logo{background:var(--senator);padding:.6rem}
+@media (max-width:34rem){.assets li{grid-template-columns:1fr}.thumb{max-width:14rem}}
 .legend{display:flex;flex-wrap:wrap;gap:.3rem 1rem;padding:.6rem 1rem;border-top:1px solid var(--border);font-size:.85rem}
 .intro{font-size:.9rem;color:var(--muted);margin-bottom:.75rem}
 .comunas-line{font-size:.85rem;margin-top:.2rem}
@@ -380,6 +408,42 @@ def senator_bar(generated: str, root: str) -> str:
         f'<p class="by"><strong>Una iniciativa de la oficina de la senadora Paulina Vodanovic</strong><span>Última actualización: {escape(generated)}</span></p>'
         "</div></div>"
     )
+
+
+def footer_link(root: str, slug: str, label: str, current: str | None) -> str:
+    href = f"{root}{slug}/index.html" if slug else f"{root}index.html"
+    marker = ' aria-current="page"' if slug == current else ""
+    return f'<li><a href="{href}"{marker}>{escape(label)}</a></li>'
+
+
+def site_footer(root: str, current: str | None = None) -> str:
+    links = "".join(footer_link(root, slug, label, current) for slug, label in FOOTER_LINKS)
+    return (
+        f'<footer class="foot"><div class="in"><nav aria-label="Sobre este sitio"><ul>{links}</ul></nav>'
+        f"<p>{escape(INITIATIVE)} No es un sistema oficial de alertas: en una emergencia, siga las indicaciones de SENAPRED y de la autoridad.</p>"
+        f'<p class="credits">{CREDITS}</p></div></footer>'
+    )
+
+
+def info_page(slug: str, title: str, lead: str, description: str, content: str, generated: str, base_url: str) -> str:
+    body = f"""{senator_bar(generated, "../")}
+<header class="muni"><div class="in">
+<div><h1>{escape(title)}</h1><p>{escape(lead)}</p></div>
+<nav><a href="../index.html">Todas las comunas del Maule</a></nav>
+</div></header>
+<main class="wrap prose">
+{content}
+</main>
+{site_footer("../", slug)}"""
+    full_title = f"{title}: {SITE_NAME}"
+    return page(full_title, body, head=share_tags(base_url, f"{slug}/", full_title, description, "../"))
+
+
+def press_assets(assets: Path) -> list[tuple[str, str, str, str, str]]:
+    return [
+        (name, label, detail, kind, f"{dims}, {max(1, round((assets / name).stat().st_size / 1024))} KB.")
+        for name, label, detail, kind, dims in PRESS_ASSETS
+    ]
 
 
 def alert_item(alert: dict, comunas: list[str] | None = None) -> str:
@@ -708,7 +772,7 @@ def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str
 <section class="card" aria-labelledby="enlaces"><h2 id="enlaces">Información oficial</h2><ul class="links">{links}</ul></section>
 </div>
 </main>
-<footer class="foot">Mapa base: OpenFreeMap, OpenMapTiles, datos de OpenStreetMap. Capas: SENAPRED, CONAF, Dirección Meteorológica de Chile. Lluvia por satélite: NASA GIBS (GPM IMERG). Pronóstico: <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a> (CC BY 4.0).</footer>
+{site_footer("../")}
 <script type="module" src="../assets/map.js"></script>"""
     title = f"Riesgo en {comuna['name']}: alertas y mapa de la comuna"
     description = f"Alertas oficiales vigentes, mapa de peligros y pronóstico para {comuna['name']}, Región del Maule. {INITIATIVE}"
@@ -772,7 +836,7 @@ def index_page(entries: list[tuple[str, str, dict]], generated: str, region: dic
 <section class="card" aria-labelledby="telefonos"><h2 id="telefonos">Teléfonos de emergencia</h2><ul class="phones">{phones}</ul></section>
 <section class="card" aria-labelledby="enlaces"><h2 id="enlaces">Información oficial</h2><ul class="links">{links}</ul></section>
 <p class="notice"><strong>Cuando la información oficial no está disponible, la gente igual necesita saber:</strong> aquí está nuestra evaluación del riesgo, con SENAPRED, el SHOA, la Dirección Meteorológica de Chile y todas las fuentes que sí responden. En una emergencia, siga las indicaciones de la autoridad.</p>
-<p class="foot" style="padding:.75rem 0">Mapa base: OpenFreeMap, OpenMapTiles, datos de OpenStreetMap. Capas: SENAPRED, CONAF, Dirección Meteorológica de Chile. Lluvia por satélite: NASA GIBS (GPM IMERG). Viento y pronóstico: <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a> (CC BY 4.0).</p>
+{site_footer("")}
 </div>
 </main>
 <script type="module" src="assets/map.js"></script>"""
@@ -850,8 +914,16 @@ def main() -> int:
         region_counts[key] = len(features)
         (region_dir / f"{key}.json").write_text(json.dumps({"type": "FeatureCollection", "features": list(features.values())}, ensure_ascii=False, default=str, separators=(",", ":")), encoding="utf-8")
     (args.out / "index.html").write_text(index_page(entries, generated, region, base_url, region_counts, has_wind, banner), encoding="utf-8")
+    pages = (
+        (METHOD_SLUG, METHOD_TITLE, METHOD_LEAD, METHOD_DESCRIPTION, METHOD_HTML),
+        (ABOUT_SLUG, ABOUT_TITLE, ABOUT_LEAD, ABOUT_DESCRIPTION, ABOUT_HTML),
+        (PRESS_SLUG, PRESS_TITLE, PRESS_LEAD, PRESS_DESCRIPTION, press_html(base_url, press_assets(assets))),
+    )
+    for slug, title, lead, description, content in pages:
+        (args.out / slug).mkdir(exist_ok=True)
+        (args.out / slug / "index.html").write_text(info_page(slug, title, lead, description, content, generated, base_url), encoding="utf-8")
     (args.out / ".nojekyll").write_text("", encoding="utf-8")
-    print(f"{len(entries)} comuna pages, layers and index written to {args.out}")
+    print(f"{len(entries)} comuna pages, {len(pages)} information pages, layers and index written to {args.out}")
     return 0
 
 
