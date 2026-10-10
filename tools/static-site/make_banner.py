@@ -13,6 +13,7 @@ LOGO_HEIGHT = 168
 BANNER_SIZE = (1600, 200)
 SILHOUETTE_SHARE = 0.86
 SILHOUETTE_CUTOFF = 12
+LOGO_FLOOR = 24
 
 
 def render_svg(path: Path, size: int) -> Image.Image:
@@ -29,9 +30,10 @@ def render_svg(path: Path, size: int) -> Image.Image:
 
 def make_logo(source: Path) -> Image.Image:
     luminance = render_svg(source, RENDER_SIZE).convert("L")
+    alpha = luminance.point(lambda v: max(0, v - LOGO_FLOOR) * 255 // (255 - LOGO_FLOOR))
     logo = Image.new("RGBA", luminance.size, (255, 255, 255, 0))
-    logo.putalpha(luminance)
-    logo = logo.crop(luminance.point(lambda v: 255 if v > 24 else 0).getbbox())
+    logo.putalpha(alpha)
+    logo = logo.crop(alpha.getbbox())
     width = round(logo.width * LOGO_HEIGHT / logo.height)
     return logo.resize((width, LOGO_HEIGHT), Image.LANCZOS)
 
