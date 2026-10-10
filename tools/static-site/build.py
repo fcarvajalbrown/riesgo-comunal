@@ -482,7 +482,7 @@ def hazard_card(item: dict) -> str:
 
 
 HAZARD_ROWS = (
-    ("lluvia", "Lluvia, crecidas y aluviones", {"rain", "flood", "landslide"}, ("flood",)),
+    ("lluvia", "Lluvia, crecidas y aluviones", {"rain", "flood", "landslide"}, ("river_flood",)),
     ("tiempo", "Tiempo", {"wind", "storm", "snow", "frost", "heat", "meteo"}, ("meteo", "weather_forecast")),
     ("incendios", "Incendios", {"wildfire"}, ("wildfire", "active_fire")),
     ("sismos", "Sismos", {"earthquake"}, ("earthquake",)),
@@ -704,6 +704,17 @@ def tile(slug: str, name: str, summary: dict) -> str:
     )
 
 
+def river_outlook(entries: list[tuple[str, str, dict]]) -> str | None:
+    rivers = [(name, item) for _, name, s in entries for item in s["items"] if item["key"] == "river_flood"]
+    if not rivers:
+        return None
+    rising = [(name, item) for name, item in rivers if item["level"] in ("MODERADO", "ALTO")]
+    if not rising:
+        return f"ningún río principal de las {len(rivers)} comunas debería salirse de lo habitual en los próximos 7 días, según los 51 escenarios del modelo GloFAS de Copernicus."
+    listed = ", ".join(f"{name} ({item['level_label'].lower()})" for name, item in sorted(rising, key=lambda pair: severity(pair[1]["level"])))
+    return f"el río principal podría crecer en los próximos 7 días en {listed}, según los 51 escenarios del modelo GloFAS de Copernicus. Vea el detalle en cada comuna."
+
+
 def index_page(entries: list[tuple[str, str, dict]], generated: str, region: dict, base_url: str, counts: dict[str, int], has_wind: bool, banner: str) -> str:
     groups = []
     for prefix, province in PROVINCES.items():
@@ -712,7 +723,7 @@ def index_page(entries: list[tuple[str, str, dict]], generated: str, region: dic
         groups.append(f'<section class="prov" aria-labelledby="p{prefix}"><h3 id="p{prefix}">{escape(province)}</h3><ul class="tiles">{items}</ul></section>')
     present = [level for level in LEVELS if any(s["overall_level"] == level for _, _, s in entries)]
     legend = "".join(f'<li><span class="sq" style="background:{level_style(level)[0]}"></span>{escape(level_style(level)[2])}</li>' for level in present)
-    rain = rain_card(region_alerts_html([(slug, name, {**s, "alerts": [a for a in s["alerts"] if is_rain(a)]}) for slug, name, s in entries]), None, "Lluvia y crecidas en el Maule")
+    rain = rain_card(region_alerts_html([(slug, name, {**s, "alerts": [a for a in s["alerts"] if is_rain(a)]}) for slug, name, s in entries]), river_outlook(entries), "Lluvia y crecidas en el Maule")
     phones = "".join(f'<li><a href="tel:{n}"><strong>{n}</strong><span>{escape(label)}</span></a></li>' for n, label in EMERGENCY_PHONES)
     links = "".join(f'<li><a href="{escape(href)}" rel="noreferrer">{escape(label)}</a><span>{escape(detail)}</span></li>' for label, detail, href in OFFICIAL_LINKS)
     wind = ' data-wind="assets/viento.json"' if has_wind else ""
