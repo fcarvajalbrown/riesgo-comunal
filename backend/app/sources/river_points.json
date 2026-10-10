@@ -1,0 +1,637 @@
+{
+ "source": "GloFAS river discharge via the Open-Meteo Flood API",
+ "method": "Main river = GloFAS 0.05 degree cell inside the comuna with the largest mean discharge over the last 31 days. Annual maxima from 1997, where the GloFAS history served by Open-Meteo begins; Mann-Kendall trend test at 5%; if significant, maxima moved to the present year with Sen's slope; Gumbel fit by L-moments; 2, 5 and 20-year return levels.",
+ "cells_sampled": 1205,
+ "points": {
+  "07101": {
+   "name": "Talca",
+   "lat": -35.425,
+   "lon": -71.625,
+   "recent_mean_m3s": 63.83,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.3678,
+    "trend_m3s_per_year": 0.0,
+    "nonstationary": false,
+    "present_year": 2026,
+    "gumbel_location": 212.38,
+    "gumbel_scale": 102.68,
+    "levels": {
+     "2": 250.02,
+     "5": 366.4,
+     "20": 517.38
+    }
+   }
+  },
+  "07102": {
+   "name": "Constitución",
+   "lat": -35.325,
+   "lon": -72.425,
+   "recent_mean_m3s": 946.57,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.2088,
+    "trend_m3s_per_year": 0.0,
+    "nonstationary": false,
+    "present_year": 2026,
+    "gumbel_location": 2077.79,
+    "gumbel_scale": 1125.86,
+    "levels": {
+     "2": 2490.43,
+     "5": 3766.5,
+     "20": 5421.8
+    }
+   }
+  },
+  "07103": {
+   "name": "Curepto",
+   "lat": -35.075,
+   "lon": -72.175,
+   "recent_mean_m3s": 286.51,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.0268,
+    "trend_m3s_per_year": -18.513,
+    "nonstationary": true,
+    "present_year": 2026,
+    "gumbel_location": 428.05,
+    "gumbel_scale": 332.38,
+    "levels": {
+     "2": 549.87,
+     "5": 926.6,
+     "20": 1415.29
+    }
+   }
+  },
+  "07104": {
+   "name": "Empedrado",
+   "lat": -35.675,
+   "lon": -72.075,
+   "recent_mean_m3s": 11.89,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.5609,
+    "trend_m3s_per_year": 0.0,
+    "nonstationary": false,
+    "present_year": 2026,
+    "gumbel_location": 41.62,
+    "gumbel_scale": 23.82,
+    "levels": {
+     "2": 50.35,
+     "5": 77.34,
+     "20": 112.36
+    }
+   }
+  },
+  "07105": {
+   "name": "Maule",
+   "lat": -35.475,
+   "lon": -71.875,
+   "recent_mean_m3s": 151.11,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.358,
+    "trend_m3s_per_year": 0.0,
+    "nonstationary": false,
+    "present_year": 2026,
+    "gumbel_location": 490.14,
+    "gumbel_scale": 245.92,
+    "levels": {
+     "2": 580.27,
+     "5": 859.01,
+     "20": 1220.57
+    }
+   }
+  },
+  "07106": {
+   "name": "Pelarco",
+   "lat": -35.425,
+   "lon": -71.425,
+   "recent_mean_m3s": 41.35,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.2765,
+    "trend_m3s_per_year": 0.0,
+    "nonstationary": false,
+    "present_year": 2026,
+    "gumbel_location": 122.12,
+    "gumbel_scale": 69.19,
+    "levels": {
+     "2": 147.48,
+     "5": 225.91,
+     "20": 327.64
+    }
+   }
+  },
+  "07107": {
+   "name": "Pencahue",
+   "lat": -35.425,
+   "lon": -71.775,
+   "recent_mean_m3s": 148.26,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.3482,
+    "trend_m3s_per_year": 0.0,
+    "nonstationary": false,
+    "present_year": 2026,
+    "gumbel_location": 490.39,
+    "gumbel_scale": 242.5,
+    "levels": {
+     "2": 579.28,
+     "5": 854.14,
+     "20": 1210.68
+    }
+   }
+  },
+  "07108": {
+   "name": "Río Claro",
+   "lat": -35.175,
+   "lon": -71.325,
+   "recent_mean_m3s": 48.12,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.2088,
+    "trend_m3s_per_year": 0.0,
+    "nonstationary": false,
+    "present_year": 2026,
+    "gumbel_location": 138.94,
+    "gumbel_scale": 84.02,
+    "levels": {
+     "2": 169.74,
+     "5": 264.97,
+     "20": 388.5
+    }
+   }
+  },
+  "07109": {
+   "name": "San Clemente",
+   "lat": -35.575,
+   "lon": -71.575,
+   "recent_mean_m3s": 195.33,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.0069,
+    "trend_m3s_per_year": -17.553,
+    "nonstationary": true,
+    "present_year": 2026,
+    "gumbel_location": 207.72,
+    "gumbel_scale": 219.8,
+    "levels": {
+     "2": 288.28,
+     "5": 537.4,
+     "20": 860.56
+    }
+   }
+  },
+  "07110": {
+   "name": "San Rafael",
+   "lat": -35.325,
+   "lon": -71.625,
+   "recent_mean_m3s": 61.28,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.285,
+    "trend_m3s_per_year": 0.0,
+    "nonstationary": false,
+    "present_year": 2026,
+    "gumbel_location": 191.39,
+    "gumbel_scale": 105.78,
+    "levels": {
+     "2": 230.16,
+     "5": 350.06,
+     "20": 505.58
+    }
+   }
+  },
+  "07201": {
+   "name": "Cauquenes",
+   "lat": -35.825,
+   "lon": -72.025,
+   "recent_mean_m3s": 238.08,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.5359,
+    "trend_m3s_per_year": 0.0,
+    "nonstationary": false,
+    "present_year": 2026,
+    "gumbel_location": 566.9,
+    "gumbel_scale": 305.5,
+    "levels": {
+     "2": 678.87,
+     "5": 1025.13,
+     "20": 1474.29
+    }
+   }
+  },
+  "07202": {
+   "name": "Chanco",
+   "lat": -35.625,
+   "lon": -72.575,
+   "recent_mean_m3s": 13.3,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.378,
+    "trend_m3s_per_year": 0.0,
+    "nonstationary": false,
+    "present_year": 2026,
+    "gumbel_location": 47.03,
+    "gumbel_scale": 30.58,
+    "levels": {
+     "2": 58.24,
+     "5": 92.89,
+     "20": 137.85
+    }
+   }
+  },
+  "07203": {
+   "name": "Pelluhue",
+   "lat": -35.925,
+   "lon": -72.675,
+   "recent_mean_m3s": 5.09,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.3678,
+    "trend_m3s_per_year": 0.0,
+    "nonstationary": false,
+    "present_year": 2026,
+    "gumbel_location": 11.03,
+    "gumbel_scale": 10.7,
+    "levels": {
+     "2": 14.95,
+     "5": 27.08,
+     "20": 42.81
+    }
+   }
+  },
+  "07301": {
+   "name": "Curicó",
+   "lat": -34.975,
+   "lon": -71.325,
+   "recent_mean_m3s": 136.47,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.0155,
+    "trend_m3s_per_year": -11.251,
+    "nonstationary": true,
+    "present_year": 2026,
+    "gumbel_location": 219.97,
+    "gumbel_scale": 179.89,
+    "levels": {
+     "2": 285.9,
+     "5": 489.79,
+     "20": 754.27
+    }
+   }
+  },
+  "07302": {
+   "name": "Hualañé",
+   "lat": -35.075,
+   "lon": -71.675,
+   "recent_mean_m3s": 259.88,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.019,
+    "trend_m3s_per_year": -17.676,
+    "nonstationary": true,
+    "present_year": 2026,
+    "gumbel_location": 398.61,
+    "gumbel_scale": 323.83,
+    "levels": {
+     "2": 517.3,
+     "5": 884.34,
+     "20": 1360.46
+    }
+   }
+  },
+  "07303": {
+   "name": "Licantén",
+   "lat": -35.025,
+   "lon": -72.175,
+   "recent_mean_m3s": 285.96,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.0221,
+    "trend_m3s_per_year": -18.468,
+    "nonstationary": true,
+    "present_year": 2026,
+    "gumbel_location": 426.98,
+    "gumbel_scale": 334.31,
+    "levels": {
+     "2": 549.51,
+     "5": 928.43,
+     "20": 1419.95
+    }
+   }
+  },
+  "07304": {
+   "name": "Molina",
+   "lat": -35.075,
+   "lon": -71.275,
+   "recent_mean_m3s": 110.34,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.0107,
+    "trend_m3s_per_year": -9.613,
+    "nonstationary": true,
+    "present_year": 2026,
+    "gumbel_location": 195.45,
+    "gumbel_scale": 143.01,
+    "levels": {
+     "2": 247.87,
+     "5": 409.96,
+     "20": 620.23
+    }
+   }
+  },
+  "07305": {
+   "name": "Rauco",
+   "lat": -35.025,
+   "lon": -71.575,
+   "recent_mean_m3s": 257.92,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.0155,
+    "trend_m3s_per_year": -17.775,
+    "nonstationary": true,
+    "present_year": 2026,
+    "gumbel_location": 401.3,
+    "gumbel_scale": 326.69,
+    "levels": {
+     "2": 521.04,
+     "5": 891.32,
+     "20": 1371.63
+    }
+   }
+  },
+  "07306": {
+   "name": "Romeral",
+   "lat": -34.925,
+   "lon": -71.125,
+   "recent_mean_m3s": 96.07,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.0119,
+    "trend_m3s_per_year": -7.227,
+    "nonstationary": true,
+    "present_year": 2026,
+    "gumbel_location": 125.21,
+    "gumbel_scale": 113.91,
+    "levels": {
+     "2": 166.96,
+     "5": 296.07,
+     "20": 463.54
+    }
+   }
+  },
+  "07307": {
+   "name": "Sagrada Familia",
+   "lat": -35.025,
+   "lon": -71.325,
+   "recent_mean_m3s": 114.56,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.0113,
+    "trend_m3s_per_year": -9.534,
+    "nonstationary": true,
+    "present_year": 2026,
+    "gumbel_location": 201.76,
+    "gumbel_scale": 146.39,
+    "levels": {
+     "2": 255.41,
+     "5": 421.33,
+     "20": 636.55
+    }
+   }
+  },
+  "07308": {
+   "name": "Teno",
+   "lat": -34.875,
+   "lon": -71.225,
+   "recent_mean_m3s": 101.14,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.0172,
+    "trend_m3s_per_year": -7.172,
+    "nonstationary": true,
+    "present_year": 2026,
+    "gumbel_location": 134.54,
+    "gumbel_scale": 120.05,
+    "levels": {
+     "2": 178.54,
+     "5": 314.61,
+     "20": 491.12
+    }
+   }
+  },
+  "07309": {
+   "name": "Vichuquén",
+   "lat": -34.825,
+   "lon": -72.125,
+   "recent_mean_m3s": 2.91,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.0533,
+    "trend_m3s_per_year": 0.0,
+    "nonstationary": false,
+    "present_year": 2026,
+    "gumbel_location": 8.93,
+    "gumbel_scale": 9.32,
+    "levels": {
+     "2": 12.35,
+     "5": 22.91,
+     "20": 36.62
+    }
+   }
+  },
+  "07401": {
+   "name": "Linares",
+   "lat": -35.875,
+   "lon": -71.125,
+   "recent_mean_m3s": 78.75,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.0295,
+    "trend_m3s_per_year": -5.996,
+    "nonstationary": true,
+    "present_year": 2026,
+    "gumbel_location": 147.13,
+    "gumbel_scale": 131.26,
+    "levels": {
+     "2": 195.24,
+     "5": 344.02,
+     "20": 537.01
+    }
+   }
+  },
+  "07402": {
+   "name": "Colbún",
+   "lat": -35.625,
+   "lon": -71.425,
+   "recent_mean_m3s": 188.41,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.0081,
+    "trend_m3s_per_year": -17.313,
+    "nonstationary": true,
+    "present_year": 2026,
+    "gumbel_location": 209.4,
+    "gumbel_scale": 216.8,
+    "levels": {
+     "2": 288.86,
+     "5": 534.59,
+     "20": 853.34
+    }
+   }
+  },
+  "07403": {
+   "name": "Longaví",
+   "lat": -35.825,
+   "lon": -71.775,
+   "recent_mean_m3s": 133.02,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.031,
+    "trend_m3s_per_year": -9.841,
+    "nonstationary": true,
+    "present_year": 2026,
+    "gumbel_location": 200.37,
+    "gumbel_scale": 211.43,
+    "levels": {
+     "2": 277.87,
+     "5": 517.51,
+     "20": 828.37
+    }
+   }
+  },
+  "07404": {
+   "name": "Parral",
+   "lat": -36.225,
+   "lon": -71.925,
+   "recent_mean_m3s": 117.24,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.1027,
+    "trend_m3s_per_year": 0.0,
+    "nonstationary": false,
+    "present_year": 2026,
+    "gumbel_location": 283.37,
+    "gumbel_scale": 173.46,
+    "levels": {
+     "2": 346.94,
+     "5": 543.54,
+     "20": 798.57
+    }
+   }
+  },
+  "07405": {
+   "name": "Retiro",
+   "lat": -35.875,
+   "lon": -71.875,
+   "recent_mean_m3s": 268.43,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.5483,
+    "trend_m3s_per_year": 0.0,
+    "nonstationary": false,
+    "present_year": 2026,
+    "gumbel_location": 649.55,
+    "gumbel_scale": 349.95,
+    "levels": {
+     "2": 777.81,
+     "5": 1174.46,
+     "20": 1688.98
+    }
+   }
+  },
+  "07406": {
+   "name": "San Javier",
+   "lat": -35.425,
+   "lon": -72.075,
+   "recent_mean_m3s": 939.5,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.202,
+    "trend_m3s_per_year": 0.0,
+    "nonstationary": false,
+    "present_year": 2026,
+    "gumbel_location": 2050.72,
+    "gumbel_scale": 1126.81,
+    "levels": {
+     "2": 2463.72,
+     "5": 3740.88,
+     "20": 5397.59
+    }
+   }
+  },
+  "07407": {
+   "name": "Villa Alegre",
+   "lat": -35.675,
+   "lon": -71.575,
+   "recent_mean_m3s": 4.83,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.3022,
+    "trend_m3s_per_year": 0.0,
+    "nonstationary": false,
+    "present_year": 2026,
+    "gumbel_location": 18.6,
+    "gumbel_scale": 12.33,
+    "levels": {
+     "2": 23.12,
+     "5": 37.1,
+     "20": 55.23
+    }
+   }
+  },
+  "07408": {
+   "name": "Yerbas Buenas",
+   "lat": -35.625,
+   "lon": -71.575,
+   "recent_mean_m3s": 194.83,
+   "thresholds": {
+    "years": "1997-2025",
+    "n": 29,
+    "mann_kendall_p": 0.0069,
+    "trend_m3s_per_year": -17.612,
+    "nonstationary": true,
+    "present_year": 2026,
+    "gumbel_location": 206.71,
+    "gumbel_scale": 219.36,
+    "levels": {
+     "2": 287.11,
+     "5": 535.73,
+     "20": 858.25
+    }
+   }
+  }
+ }
+}
