@@ -146,6 +146,7 @@ Researched to reduce dependence on SENAPRED: sources that answer for any latitud
 
 | Source | What it gives by coordinates | Access | Terms as published | Notes |
 |---|---|---|---|---|
+| Open-Meteo Flood API (GloFAS, Copernicus) | Daily river discharge at 0.05 degrees: history from 1 January 1997 and a 51-member ensemble forecast | JSON, no key (`flood-api.open-meteo.com/v1/flood`, `ensemble=true`) | Copernicus GloFAS data served by Open-Meteo | Built: source `glofas_flood`, module `river_flood`; main river per comuna and thresholds in `backend/app/sources/river_points.json` from `tools/river-points` |
 | Open-Meteo Forecast API (open-meteo.com) | Hourly forecast up to 16 days: precipitation, wind, gusts, temperature | JSON, no key | Free for non-commercial use; commercial use needs a paid plan with an API key | Lets the platform derive rain and wind thresholds per comuna without the DMC credential |
 | Open-Meteo Flood API (GloFAS) | Daily river discharge forecast up to 30 days with ensemble spread, snapped to the nearest river cell | JSON, no key | Same as Open-Meteo | Coordinates must sit on or near the river channel; useful for the Maule, Mataquito and Loncomilla basins |
 | Open-Meteo Air Quality API (Copernicus CAMS) | PM2.5, PM10, ozone, NO2 current and forecast | JSON, no key | Same as Open-Meteo | About 40 km global model outside Europe; fills gaps where SINCA has no station |
