@@ -658,7 +658,30 @@ def public_summary(slug: str, conn: Connection = Depends(get_conn)) -> dict[str,
     now = datetime.now(UTC)
 
     def brief(assessments: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        return [{"hazard": a["hazard_name"], "level": a["level"], "level_label": a["level_label"], "headline": a["headline"]} for a in assessments]
+        return [
+            {
+                "key": a["hazard"],
+                "hazard": a["hazard_name"],
+                "level": a["level"],
+                "level_label": a["level_label"],
+                "headline": a["headline"],
+                "explanation": a["explanation"],
+                "evidence": [
+                    {
+                        "label": e["label"],
+                        "value": e["value"],
+                        "source": e["source"],
+                        "data_class": DATA_CLASS_LABEL.get(e["data_class"], e["data_class"]),
+                        "updated_at": e["updated_at"],
+                        "note": e["note"],
+                    }
+                    for e in a["evidence"]
+                ],
+                "actions": a["actions"],
+                "missing": a["missing"],
+            }
+            for a in assessments
+        ]
 
     return {
         "municipality": result["municipality"]["name"],
