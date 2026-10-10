@@ -286,8 +286,13 @@ def rain_card(alerts_html_text: str, outlook: str | None, title: str) -> str:
 
 
 def senapred_status(sources: list[dict], summaries: list[dict]) -> str | None:
-    if any(s["key"] == "senapred_alertas" and s["state"] in ("failed", "stale", "pending") for s in sources):
+    reader = next((s for s in sources if s["key"] == "senapred_alertas"), None)
+    if reader and reader["state"] == "failed":
         return "La página de alertas de SENAPRED no está respondiendo."
+    if reader and reader["state"] == "stale":
+        return f"No hemos podido actualizar las alertas de SENAPRED desde el {format_time(reader['last_success_at'])}."
+    if reader and reader["state"] == "pending":
+        return "Todavía no hemos podido leer las alertas de SENAPRED."
     if any(a.get("official_page_unavailable") for summary in summaries for a in summary["alerts"]):
         return "La página oficial de una alerta vigente de SENAPRED no está respondiendo."
     return None
