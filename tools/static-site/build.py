@@ -122,7 +122,7 @@ ul{list-style:none;margin:0;padding:0}
 .muni p{font-size:.9rem;color:var(--muted)}
 .muni nav{margin-left:auto;font-size:.9rem}
 .wrap{max-width:72rem;margin:0 auto;padding:1rem}
-.notice{border:1px solid var(--border);background:var(--surface);color:var(--fg);border-radius:.75rem;padding:.6rem .75rem;font-size:.88rem}
+.notice{border:1px solid #c5d0dc;border-left:5px solid var(--brand);background:var(--brand-tint);color:var(--senator-deep);border-radius:.75rem;padding:.75rem 1rem;font-size:.95rem}
 .rain{border:2px solid #1d4ed8}
 .rain h2{color:var(--brand)}
 .outlook{font-size:.95rem;margin-bottom:.6rem}
