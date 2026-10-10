@@ -74,7 +74,7 @@ PROVINCES = {"071": "Provincia de Talca", "073": "Provincia de Curicó", "074": 
 
 FAVICON = "data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%23e42827%27/%3E%3Cpath d=%27M16 5 29 27H3z%27 fill=%27%23ffffff%27/%3E%3Crect x=%2714.5%27 y=%2712%27 width=%273%27 height=%278%27 fill=%27%23e42827%27/%3E%3Crect x=%2714.5%27 y=%2722%27 width=%273%27 height=%273%27 fill=%27%23e42827%27/%3E%3C/svg%3E"
 
-ASSETS = ["maplibre-gl.js", "maplibre-gl-shared.js", "maplibre-gl-worker.js", "maplibre-gl.css", "MAPLIBRE-LICENSE.txt", "og-maule.png", "icon-180.png", "icon-32.png", "senator-logo.png", "senator-banner.webp"]
+ASSETS = ["maplibre-gl.js", "maplibre-gl-shared.js", "maplibre-gl-worker.js", "maplibre-gl.css", "MAPLIBRE-LICENSE.txt", "og-maule.jpg", "icon-180.png", "icon-32.png", "senator-logo.png", "senator-banner.webp"]
 SITE_NAME = "Riesgo en mi comuna, Región del Maule"
 INITIATIVE = "Una iniciativa de la oficina de la senadora Paulina Vodanovic."
 
@@ -234,8 +234,8 @@ def share_tags(base_url: str, path: str, title: str, description: str, root: str
         f'<meta property="og:title" content="{escape(title)}">',
         f'<meta property="og:description" content="{escape(description)}">',
         f'<meta property="og:url" content="{escape(base_url)}/{escape(path)}">',
-        f'<meta property="og:image" content="{escape(base_url)}/assets/og-maule.png">',
-        '<meta property="og:image:type" content="image/png">',
+        f'<meta property="og:image" content="{escape(base_url)}/assets/og-maule.jpg">',
+        '<meta property="og:image:type" content="image/jpeg">',
         '<meta property="og:image:width" content="1200">',
         '<meta property="og:image:height" content="630">',
         f'<meta property="og:image:alt" content="{escape(SITE_NAME)}. {escape(INITIATIVE)}">',

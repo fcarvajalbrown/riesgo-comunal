@@ -54,7 +54,7 @@ def preview(fonts: tuple[Path, Path], out: Path) -> None:
     draw.text((text_x, 438), "Una iniciativa de la oficina de la", font=font(regular, 28), fill=WHITE)
     draw.text((text_x, 476), "senadora Paulina Vodanovic", font=font(bold, 32), fill=WHITE)
     draw.text((text_x, 536), "synterra.cl/maule", font=font(bold, 28), fill=WHITE)
-    image.convert("RGB").save(out, "PNG", optimize=True)
+    image.convert("RGB").save(out, "JPEG", quality=86, optimize=True, progressive=True)
 
 
 def icon(size: int, out: Path) -> None:
@@ -75,7 +75,7 @@ def main() -> int:
     parser.add_argument("--bold-font", type=Path, required=True)
     parser.add_argument("--out", type=Path, default=HERE / "vendor")
     args = parser.parse_args()
-    preview((args.regular_font, args.bold_font), args.out / "og-maule.png")
+    preview((args.regular_font, args.bold_font), args.out / "og-maule.jpg")
     icon(180, args.out / "icon-180.png")
     icon(32, args.out / "icon-32.png")
     print(f"preview and icons written to {args.out}")
