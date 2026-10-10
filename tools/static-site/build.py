@@ -285,26 +285,28 @@ def rain_card(alerts_html_text: str, outlook: str | None, title: str) -> str:
     return f'<section class="card rain" aria-labelledby="lluvia"><h2 id="lluvia">{escape(title)}</h2>{forecast}{alerts_html_text}{season}</section>'
 
 
-def senapred_status(sources: list[dict], summaries: list[dict]) -> str | None:
+SOURCES_DOWN = "La información no puede esperar: aquí está nuestra evaluación del riesgo, calculada con todas las fuentes que sí responden."
+READ_OFFICIAL = "Las alertas de esta página pueden no estar al día: revise las vigentes en senapred.cl/alertas."
+
+
+def senapred_status(sources: list[dict], summaries: list[dict]) -> tuple[str, str] | None:
     reader = next((s for s in sources if s["key"] == "senapred_alertas"), None)
     if reader and reader["state"] == "failed":
-        return "La página de alertas de SENAPRED no está respondiendo."
+        return "La página de alertas de SENAPRED no está respondiendo.", SOURCES_DOWN
     if reader and reader["state"] == "stale":
-        return f"No hemos podido actualizar las alertas de SENAPRED desde el {format_time(reader['last_success_at'])}."
+        return f"No hemos podido actualizar las alertas de SENAPRED desde el {format_time(reader['last_success_at'])}.", READ_OFFICIAL
     if reader and reader["state"] == "pending":
-        return "Todavía no hemos podido leer las alertas de SENAPRED."
+        return "Todavía no hemos podido leer las alertas de SENAPRED.", READ_OFFICIAL
     if any(a.get("official_page_unavailable") for summary in summaries for a in summary["alerts"]):
-        return "La página oficial de una alerta vigente de SENAPRED no está respondiendo."
+        return "La página oficial de una alerta vigente de SENAPRED no está respondiendo.", SOURCES_DOWN
     return None
 
 
-def down_banner(headline: str | None) -> str:
-    if not headline:
+def down_banner(status: tuple[str, str] | None) -> str:
+    if not status:
         return ""
-    return (
-        f'<p class="down" role="status"><strong>{escape(headline)}</strong> '
-        "La información no puede esperar: aquí está nuestra evaluación del riesgo, calculada con todas las fuentes que sí responden.</p>"
-    )
+    headline, detail = status
+    return f'<p class="down" role="status"><strong>{escape(headline)}</strong> {escape(detail)}</p>'
 
 
 def senator_bar(generated: str, root: str) -> str:
