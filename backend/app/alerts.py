@@ -32,7 +32,11 @@ def active_alerts(conn: Connection, municipality_id: int, now: datetime | None =
                a.source_key is not null as automatic
         from alert a, municipality m
         where m.id = :m
-          and (a.municipality_id = m.id or (a.municipality_id is null and (a.area is null and a.source_key is null or st_relate(a.area, m.boundary, 'T********'))))
+          and (a.municipality_id = m.id or (a.municipality_id is null and (
+                case when a.properties ? 'cut_codes'
+                     then m.cut_code in (select jsonb_array_elements_text(a.properties->'cut_codes'))
+                     else a.area is null and a.source_key is null or st_relate(a.area, m.boundary, 'T********')
+                end)))
           and (a.ends_at is null or a.ends_at > :now)
           and (a.source_key is null and a.starts_at <= :now or a.source_key is not null)
         order by case a.level when 'Alarma' then 0 when 'Alerta' then 1 else 2 end, a.starts_at desc

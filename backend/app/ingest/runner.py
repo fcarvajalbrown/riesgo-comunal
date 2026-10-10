@@ -310,7 +310,7 @@ def store_alert(conn: Connection, source_key: str, record: AlertRecord, provenan
             "g": json.dumps(record.area) if record.area else None,
             "codes": list(record.area_cut_codes),
             "dc": "international" if source_key in FALLBACK_SOURCES else "official_warning",
-            "p": json.dumps(record.properties, ensure_ascii=False, default=str),
+            "p": json.dumps({**record.properties, "cut_codes": list(record.area_cut_codes)} if record.area_cut_codes else record.properties, ensure_ascii=False, default=str),
             "pid": provenance_id,
         },
     )
