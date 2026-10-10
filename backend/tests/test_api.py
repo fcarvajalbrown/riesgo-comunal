@@ -207,9 +207,10 @@ def test_manual_alert_requires_source_url(env):
 
 
 def test_new_tenant_makes_every_source_due(env):
-    from app.ingest.runner import due_sources, mark_all_sources_due
+    from app.ingest.runner import due_sources, mark_all_sources_due, sync_source_registry
 
     with transaction() as conn:
+        sync_source_registry(conn)
         saved = conn.execute(text("select key, last_attempt_at from source")).all()
         conn.execute(text("update source set last_attempt_at = now()"))
     try:
