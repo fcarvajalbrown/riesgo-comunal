@@ -203,3 +203,11 @@ def test_senapred_feed_problem_reports_failure_and_staleness():
     assert "no ha funcionado todavía" in senapred_feed_problem(None, "Timeout", 10, now)
     assert "Timeout" not in senapred_feed_problem(now - timedelta(minutes=5), "Timeout", 10, now)
     assert "desactivada" in senapred_feed_problem(None, None, 10, now, enabled=False)
+
+
+def test_forecast_card_counts_how_many_models_agree_on_heavy_rain():
+    from app.hazards.weather_forecast import model_agreement
+
+    line = model_agreement({"om_rain_24h_max__ecmwf_ifs025": 42.0, "om_rain_24h_max__gfs_seamless": 31.5, "om_rain_24h_max__icon_seamless": 12.0}, 30.0)
+    assert line.startswith("Lluvia de 30 mm o más en 24 horas: 2 de 3 modelos coinciden")
+    assert model_agreement({}, 30.0) == "No hay pronósticos por modelo para comparar."

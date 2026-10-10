@@ -12,6 +12,8 @@ OUTLOOK_DAYS = 3
 CHILE = ZoneInfo("America/Santiago")
 PERIODS = (("madrugada", 0, 6), ("manana", 6, 12), ("tarde", 12, 19), ("noche", 19, 24))
 PERIOD_NAMES = {"madrugada": "la madrugada", "manana": "la mañana", "tarde": "la tarde", "noche": "la noche"}
+MODELS = {"ecmwf_ifs025": "ECMWF (Europa)", "gfs_seamless": "GFS (EE.UU.)", "icon_seamless": "ICON (Alemania)"}
+HOURLY = ("precipitation", "wind_gusts_10m", "temperature_2m")
 PARAMETERS = {
     "om_rain_24h_max": ("Lluvia máxima en 24 horas pronosticada para las próximas 48 horas", "mm"),
     "om_gust_max": ("Ráfaga máxima pronosticada para las próximas 48 horas", "km/h"),
@@ -71,6 +73,32 @@ def daily_outlook(hourly: dict[str, list], now: datetime) -> dict[str, float]:
     return out
 
 
+def model_records(item: dict, lat: float, lon: float, issued: datetime) -> list[ObservationRecord]:
+    hourly = item.get("hourly") or {}
+    records = []
+    for model, model_name in MODELS.items():
+        series = {"time": hourly.get("time", []), **{name: hourly.get(f"{name}_{model}") or [] for name in HOURLY}}
+        for parameter, value in summarize(series, issued).items():
+            if value is None:
+                continue
+            name, unit = PARAMETERS[parameter]
+            records.append(
+                ObservationRecord(
+                    station_external_id=f"{lat:.3f},{lon:.3f}",
+                    station_name=f"Punto de pronóstico {lat:.2f}, {lon:.2f}",
+                    parameter=f"{parameter}__{model}",
+                    parameter_name=f"{name}, modelo {model_name}",
+                    value=float(value),
+                    unit=unit,
+                    observed_at=issued,
+                    validation_status="forecast",
+                    lon=lon,
+                    lat=lat,
+                )
+            )
+    return records
+
+
 def parameter_label(parameter: str) -> tuple[str, str]:
     if parameter in PARAMETERS:
         return PARAMETERS[parameter]
@@ -109,14 +137,22 @@ class OpenMeteoAdapter(SourceAdapter):
         response = client.get(URL, params=params)
         response.raise_for_status()
         body = response.json()
-        return [RawPayload(dataset="weather_forecast", url=URL, body=body if isinstance(body, list) else [body], options={"points": points})]
+        models = client.get(URL, params={**params, "models": ",".join(MODELS), "forecast_days": 3})
+        models.raise_for_status()
+        model_body = models.json()
+        return [
+            RawPayload(dataset="weather_forecast", url=URL, body=body if isinstance(body, list) else [body], options={"points": points}),
+            RawPayload(dataset="weather_forecast", url=URL, body=model_body if isinstance(model_body, list) else [model_body], options={"points": points, "models": True}),
+        ]
 
     def normalize(self, raw: RawPayload, parsed: Any) -> Batch:
         issued = datetime.now(UTC).replace(minute=0, second=0, microsecond=0)
         return Batch(
             dataset=raw.dataset,
             url=raw.url,
-            records=forecast_records(parsed, raw.options["points"], issued),
+            records=[r for (lat, lon), item in zip(raw.options["points"], parsed) for r in model_records(item, lat, lon, issued)]
+            if raw.options.get("models")
+            else forecast_records(parsed, raw.options["points"], issued),
             source_time=issued,
             transformation="Máximos de las próximas 48 horas calculados desde el pronóstico horario en el centro de cada comuna",
         )

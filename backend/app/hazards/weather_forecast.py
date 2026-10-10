@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 from app.db import rows
 from app.hazards.base import Area, Assessment, Evidence, HazardContext, HazardModule
 from app.hazards.rules import classify_forecast, plain_outlook
+from app.sources.open_meteo import MODELS
 
 CHILE = ZoneInfo("America/Santiago")
 
@@ -12,6 +13,16 @@ FORECAST_NOTE = (
     "No es un aviso oficial: los avisos, alertas y alarmas son los de la Dirección Meteorológica de Chile. "
     "Los umbrales de lluvia son provisionales hasta que la municipalidad defina los suyos."
 )
+
+
+def model_agreement(values: dict[str, float], threshold: float) -> str:
+    rains = {model: values.get(f"om_rain_24h_max__{model}") for model in MODELS}
+    known = {m: v for m, v in rains.items() if v is not None}
+    if not known:
+        return "No hay pronósticos por modelo para comparar."
+    over = [MODELS[m] for m, v in known.items() if v >= threshold]
+    detail = ", ".join(f"{MODELS[m]} {v:g} mm" for m, v in known.items())
+    return f"Lluvia de {threshold:g} mm o más en 24 horas: {len(over)} de {len(known)} modelos coinciden ({detail})."
 
 
 class WeatherForecastModule(HazardModule):
@@ -39,7 +50,8 @@ class WeatherForecastModule(HazardModule):
             since=ctx.now - timedelta(hours=t["max_age_hours"]),
             radius=t["point_radius_km"] * 1000,
         )
-        values = {r["parameter"]: r for r in latest}
+        values = {r["parameter"]: r for r in latest if "__" not in r["parameter"]}
+        agreement = model_agreement({r["parameter"]: r["value"] for r in latest if "__" in r["parameter"]}, t["rain_24h_moderado"])
 
         def value(parameter: str) -> float | None:
             return values[parameter]["value"] if parameter in values else None
@@ -57,7 +69,7 @@ class WeatherForecastModule(HazardModule):
             hazard_name=self.name,
             level=result.level,
             headline=headline,
-            explanation=[headline, result.reason, FORECAST_NOTE],
+            explanation=[headline, result.reason, agreement, FORECAST_NOTE],
             evidence=evidence,
             missing=[] if latest else ["Pronóstico reciente de Open-Meteo"],
             thresholds=t,
