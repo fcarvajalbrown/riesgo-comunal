@@ -1,3 +1,4 @@
+from app.hazards.active_fire import ActiveFireModule
 from app.hazards.air_quality import AirQualityModule
 from app.hazards.base import HazardModule
 from app.hazards.earthquake import EarthquakeModule
@@ -11,7 +12,7 @@ from app.hazards.wildfire import WildfireModule
 
 MODULES: dict[str, HazardModule] = {
     module.key: module
-    for module in (WildfireModule(), TsunamiModule(), FloodModule(), AirQualityModule(), EarthquakeModule(), MeteoModule(), SenapredAlertModule(), InternationalAlertModule(), WeatherForecastModule())
+    for module in (WildfireModule(), ActiveFireModule(), TsunamiModule(), FloodModule(), AirQualityModule(), EarthquakeModule(), MeteoModule(), SenapredAlertModule(), InternationalAlertModule(), WeatherForecastModule())
 }
 
 
