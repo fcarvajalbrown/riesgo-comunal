@@ -28,6 +28,7 @@ export const DATA_CLASS_STYLE: Record<DataClass, { label: string; className: str
   derived: { label: "Cálculo de la plataforma", className: "bg-slate-100 text-slate-700 border-slate-300" },
   estimated: { label: "Estimado", className: "bg-orange-50 text-orange-800 border-orange-200" },
   modelled: { label: "Modelado", className: "bg-indigo-50 text-indigo-800 border-indigo-200" },
+  international: { label: "Aviso internacional", className: "bg-stone-100 text-stone-700 border-stone-300" },
 };
 
 const chile = new Intl.DateTimeFormat("es-CL", {
