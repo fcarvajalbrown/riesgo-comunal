@@ -220,14 +220,14 @@ ul{list-style:none;margin:0;padding:0}
 .src-list li{padding:.45rem 0;border-top:1px solid var(--border);font-size:.85rem}
 .src-list li:first-child{border-top:0}
 .src-list span{display:block;font-size:.85rem;color:var(--muted)}
-.foot{margin-top:1.5rem;border-top:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:.9rem}
-.foot .in{padding:1.1rem 1rem 2.5rem;display:grid;gap:.6rem}
-.foot ul{display:flex;flex-wrap:wrap;gap:0 1.5rem}
-.foot nav a{display:inline-block;padding:.45rem 0;color:var(--brand);font-weight:600}
+.foot{margin-top:1rem;border-top:1px solid var(--border);background:transparent;color:var(--muted);font-size:.7rem}
+.foot .in{padding:.5rem 1rem 1rem;display:grid;gap:.2rem}
+.foot ul{display:flex;flex-wrap:wrap;gap:0 .9rem}
+.foot nav a{display:inline-block;padding:.15rem 0;color:var(--muted);font-weight:400}
 .foot nav a[aria-current]{color:var(--fg);text-decoration:none}
-.foot .credits{font-size:.85rem}
+.foot .credits{font-size:.7rem}
 .side .foot{background:transparent;margin-top:1rem}
-.side .foot .in{padding:1rem 0 1.5rem}
+.side .foot .in{padding:.5rem 0 1rem}
 .prose>*{max-width:46rem}
 .prose .notice{margin-bottom:1rem}
 .prose .card h2{font-size:1.25rem}
