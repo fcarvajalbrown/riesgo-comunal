@@ -1,8 +1,15 @@
 from datetime import timedelta
 
-from app.db import rows
+from app.db import rows, scalar
 from app.hazards.base import Area, Assessment, Evidence, HazardContext, HazardModule
 from app.hazards.common import latest_provenance
+
+
+COASTAL_ACTIONS = [
+    "Si está en el borde costero y el sismo le dificulta mantenerse en pie, evacúe de inmediato hacia un punto de encuentro o área de seguridad.",
+    "Si el mar se recoge de forma anormal, evacúe de inmediato hacia terrenos elevados.",
+    "Evacúe a pie, siga las vías de evacuación señalizadas y regrese solo cuando las autoridades lo indiquen.",
+]
 
 
 class EarthquakeModule(HazardModule):
@@ -32,8 +39,18 @@ class EarthquakeModule(HazardModule):
             radius=t["radius_km"] * 1000,
         )
 
+    def coastal(self, ctx: HazardContext) -> bool:
+        return bool(
+            scalar(
+                ctx.conn,
+                "select 1 from feature f, municipality m where m.id = :mid and f.dataset = 'tsunami_evacuation_area' and st_intersects(f.geom, m.boundary) limit 1",
+                mid=ctx.municipality_id,
+            )
+        )
+
     def assess(self, ctx: HazardContext, area: Area) -> Assessment:
         t = self.thresholds(ctx.thresholds)
+        actions = COASTAL_ACTIONS if self.coastal(ctx) else []
         events = self.recent(ctx, t)
         prov = latest_provenance(ctx.conn, "usgs", "earthquake")
         evidence = [
@@ -66,6 +83,7 @@ class EarthquakeModule(HazardModule):
                 explanation=explanation,
                 evidence=evidence,
                 missing=["Actualización reciente del catálogo USGS"],
+                actions=actions,
                 thresholds=t,
                 area_name=area.name,
             )
@@ -76,6 +94,7 @@ class EarthquakeModule(HazardModule):
             headline=headline,
             explanation=explanation,
             evidence=evidence,
+            actions=actions,
             thresholds=t,
             area_name=area.name,
         )
