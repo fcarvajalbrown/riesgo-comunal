@@ -36,6 +36,14 @@ WARNING_TONE = {
     "Alerta Roja": "tone-red",
     "Alerta Amarilla": "tone-yellow",
     "Alerta Temprana Preventiva": "tone-green",
+    "GDACS verde": "tone-green",
+    "GDACS naranja": "tone-orange",
+    "GDACS roja": "tone-red",
+    "PTWC información": "tone-green",
+    "PTWC vigilancia de tsunami": "tone-yellow",
+    "PTWC aviso de tsunami": "tone-yellow",
+    "PTWC amenaza de tsunami": "tone-orange",
+    "PTWC alerta de tsunami": "tone-orange",
 }
 
 SOURCE_STATE = {
@@ -127,6 +135,7 @@ ul{list-style:none;margin:0;padding:0}
 .pill-out{border:1px solid currentColor;background:transparent}
 .tag{display:inline-block;border-radius:.4rem;border:1px solid var(--border);background:#f8fafc;color:var(--muted);padding:.05rem .45rem;font-size:.72rem;font-weight:500}
 .tag-official{border-color:#fecdd3;background:#fff1f2;color:#be123c}
+.tag-international{border-color:var(--border);background:var(--bg);color:var(--muted)}
 .alerts li{border:1px solid;border-radius:.75rem;padding:.75rem;font-size:.9rem;margin-bottom:.5rem}
 .alerts .head{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
 .alerts .title{font-weight:600;margin-top:.3rem}
@@ -330,12 +339,18 @@ def alert_item(alert: dict, comunas: list[str] | None = None) -> str:
     where = ""
     if comunas is not None:
         where = f'<p class="comunas-line"><strong>Comunas:</strong> {escape("todas las comunas de la región" if len(comunas) >= 30 else ", ".join(comunas))}</p>'
+    international = alert.get("international")
+    level = alert["level"].removeprefix("GDACS ").removeprefix("PTWC ").capitalize() if international else alert["level"]
+    tag = '<span class="tag tag-international">Aviso internacional</span>' if international else '<span class="tag tag-official">Alerta oficial</span>'
+    origin = f'<p class="origin">{escape(alert["description"])}</p>' if international else f'<p class="origin">Origen: {escape(alert["origin"])}.</p>'
+    if international and alert["source_url"]:
+        link = f'<a href="{escape(alert["source_url"])}" rel="noreferrer">Ver el aviso internacional (en inglés)</a>'
     return (
         f'<li class="{WARNING_TONE.get(alert["level"], "tone-red")}">'
-        f'<p class="head"><span class="pill pill-out">{escape(alert["level"])}</span><span class="small">{"Vigente" if alert["in_force"] else "Próximo"}</span><span class="tag tag-official">Alerta oficial</span></p>'
+        f'<p class="head"><span class="pill pill-out">{escape(level)}</span><span class="small">{"Vigente" if alert["in_force"] else "Próximo"}</span>{tag}</p>'
         f'<p class="title">{escape(alert["title"])}</p>'
         f'<p class="small">{escape(alert["issuer"])}, {escape(timing)}</p>{where}'
-        f'<p class="origin">Origen: {escape(alert["origin"])}.</p>{link}</li>'
+        f'{origin}{link}</li>'
     )
 
 
