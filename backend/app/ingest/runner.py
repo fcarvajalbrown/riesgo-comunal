@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 import httpx
 from sqlalchemy import Connection, text
 
+from app.alerts import FALLBACK_SOURCES
 from app.config import get_settings
 from app.db import rows, scalar, transaction
 from app.sources.base import (
@@ -285,7 +286,7 @@ def store_alert(conn: Connection, source_key: str, record: AlertRecord, provenan
                          then (select st_multi(st_collectionextract(st_makevalid(st_union(geom)), 3)) from feature
                                where dataset = 'comuna_boundary' and external_id = any(cast(:codes as text[])))
                     end,
-                    'official_warning', cast(:p as jsonb), :pid)
+                    :dc, cast(:p as jsonb), :pid)
             on conflict (source_key, external_id) where external_id is not null do update set
                 hazard = excluded.hazard, level = excluded.level, title = excluded.title, description = excluded.description,
                 source_url = excluded.source_url, starts_at = excluded.starts_at,
@@ -308,6 +309,7 @@ def store_alert(conn: Connection, source_key: str, record: AlertRecord, provenan
             "sent": sent,
             "g": json.dumps(record.area) if record.area else None,
             "codes": list(record.area_cut_codes),
+            "dc": "international" if source_key in FALLBACK_SOURCES else "official_warning",
             "p": json.dumps(record.properties, ensure_ascii=False, default=str),
             "pid": provenance_id,
         },

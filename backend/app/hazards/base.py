@@ -25,6 +25,7 @@ DATA_CLASS_LABEL = {
     "derived": "Cálculo de la plataforma",
     "estimated": "Estimado",
     "modelled": "Modelado",
+    "international": "Aviso internacional",
 }
 DERIVED_NOTICE = (
     "Nivel calculado por esta plataforma con reglas publicadas y configurables. "

@@ -1,6 +1,6 @@
-from app.alerts import ALERT_ORIGIN, FALLBACK_SOURCES, active_alerts
+from app.alerts import FALLBACK_SOURCES, active_alerts
 from app.hazards.base import Area, Assessment, Evidence, HazardContext, HazardModule
-from app.hazards.rules import INTERNATIONAL_NOTE, classify_international_alerts
+from app.hazards.rules import classify_international_alerts
 
 EQUIVALENCE_NOTE = (
     "Equivalencia de la plataforma: GDACS verde = Informativo, naranja = Alto, roja = Crítico; "
@@ -27,10 +27,10 @@ class InternationalAlertModule(HazardModule):
         result = classify_international_alerts([a["level"] for a in alerts])
         evidence = [
             Evidence(
-                f"{a['level']}: {a['title']}",
-                ALERT_ORIGIN[a["source_key"]],
-                "official_warning",
-                INTERNATIONAL_NOTE,
+                a["title"],
+                a["description"],
+                "international",
+                a["issuer"],
                 a["starts_at"],
                 a["provenance_id"],
                 a["source_url"],

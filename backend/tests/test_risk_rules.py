@@ -130,8 +130,8 @@ def test_every_data_class_has_a_spanish_label():
 
     from app.hazards.base import DATA_CLASS_LABEL
 
-    path = Path(__file__).parents[1] / "alembic" / "versions" / "0002_estimated_modelled_classes.py"
-    spec = importlib.util.spec_from_file_location("m0002", path)
+    path = Path(__file__).parents[1] / "alembic" / "versions" / "0007_international_class.py"
+    spec = importlib.util.spec_from_file_location("m0007", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     classes = {c.strip("'") for c in module.EXTENDED.split(",")}
