@@ -74,7 +74,7 @@ PROVINCES = {"071": "Provincia de Talca", "073": "Provincia de Curicó", "074": 
 
 FAVICON = "data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%23e42827%27/%3E%3Cpath d=%27M16 5 29 27H3z%27 fill=%27%23ffffff%27/%3E%3Crect x=%2714.5%27 y=%2712%27 width=%273%27 height=%278%27 fill=%27%23e42827%27/%3E%3Crect x=%2714.5%27 y=%2722%27 width=%273%27 height=%273%27 fill=%27%23e42827%27/%3E%3C/svg%3E"
 
-ASSETS = ["maplibre-gl.js", "maplibre-gl-shared.js", "maplibre-gl-worker.js", "maplibre-gl.css", "MAPLIBRE-LICENSE.txt", "og-maule.png", "icon-180.png", "icon-32.png"]
+ASSETS = ["maplibre-gl.js", "maplibre-gl-shared.js", "maplibre-gl-worker.js", "maplibre-gl.css", "MAPLIBRE-LICENSE.txt", "og-maule.png", "icon-180.png", "icon-32.png", "senator-logo.png", "senator-banner.webp"]
 SITE_NAME = "Riesgo en mi comuna, Región del Maule"
 INITIATIVE = "Una iniciativa de la oficina de la senadora Paulina Vodanovic."
 
@@ -89,17 +89,20 @@ from (select st_extent(boundary) as e from municipality where cut_code like '07%
 """
 
 STYLE = """
-:root{--bg:#f4f5f7;--surface:#ffffff;--fg:#1b2430;--muted:#5b6573;--border:#dde1e7;--brand:#1f4e79;--senator:#e42827;--senator-deep:#d6152a}
+:root{--bg:#f4f5f7;--surface:#ffffff;--fg:#1b2430;--muted:#5b6573;--border:#dde1e7;--brand:#1f4e79;--senator:#263d55;--senator-deep:#1a2b3d}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--fg);font-family:Inter,"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;font-size:16px;line-height:1.5}
 a{color:inherit}
 a:focus-visible,input:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
 h1,h2,h3,p{margin:0}
 ul{list-style:none;margin:0;padding:0}
-.senator{background:var(--senator);color:#fff;border-bottom:3px solid var(--senator-deep)}
-.senator .in{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:.25rem 1.5rem;padding:.55rem 1rem}
-.senator strong{font-size:clamp(1rem,1.9vw,1.35rem);font-weight:700}
+.senator{background:var(--senator) center/cover no-repeat;color:#fff;border-bottom:3px solid var(--senator-deep)}
+.senator .in{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:.5rem 1.5rem;padding:.6rem 1rem}
+.senator img{display:block;height:clamp(3.5rem,8vw,5.25rem);width:auto}
+.senator .by{display:flex;flex-direction:column;align-items:flex-end;text-align:right;gap:.15rem}
+.senator strong{font-size:clamp(.95rem,1.7vw,1.2rem);font-weight:700}
 .senator span{font-size:.85rem}
+@media (max-width:34rem){.senator .in{justify-content:center}.senator .by{align-items:center;text-align:center}}
 .in{max-width:72rem;margin:0 auto}
 .muni{background:var(--brand);color:#fff}
 .muni .in{display:flex;align-items:center;gap:.8rem;padding:1rem}
@@ -299,8 +302,13 @@ def down_banner(headline: str | None) -> str:
     )
 
 
-def senator_bar(generated: str) -> str:
-    return f'<div class="senator"><div class="in"><strong>Una iniciativa de la oficina de la senadora Paulina Vodanovic</strong><span>Última actualización: {escape(generated)}</span></div></div>'
+def senator_bar(generated: str, root: str) -> str:
+    return (
+        f'<div class="senator" style="background-image:url({root}assets/senator-banner.webp)"><div class="in">'
+        f'<img src="{root}assets/senator-logo.png" width="292" height="168" alt="Paulina Vodanovic, la senadora del Maule">'
+        f'<p class="by"><strong>Una iniciativa de la oficina de la senadora Paulina Vodanovic</strong><span>Última actualización: {escape(generated)}</span></p>'
+        "</div></div>"
+    )
 
 
 def alert_item(alert: dict, comunas: list[str] | None = None) -> str:
@@ -458,7 +466,7 @@ def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str
         if standing
         else ""
     )
-    body = f"""{senator_bar(generated)}
+    body = f"""{senator_bar(generated, "../")}
 <header class="muni"><div class="in">
 <span class="initials" aria-hidden="true">{escape(comuna["name"][:2].upper())}</span>
 <div><h1>{escape(comuna["display_name"])}</h1><p>Información sobre riesgos de desastre para la comunidad de {escape(comuna["name"])}</p></div>
@@ -523,7 +531,7 @@ def index_page(entries: list[tuple[str, str, dict]], generated: str, region: dic
     phones = "".join(f'<li><a href="tel:{n}"><strong>{n}</strong><span>{escape(label)}</span></a></li>' for n, label in EMERGENCY_PHONES)
     links = "".join(f'<li><a href="{escape(href)}" rel="noreferrer">{escape(label)}</a><span>{escape(detail)}</span></li>' for label, detail, href in OFFICIAL_LINKS)
     wind = ' data-wind="assets/viento.json"' if has_wind else ""
-    body = f"""{senator_bar(generated)}
+    body = f"""{senator_bar(generated, "")}
 <header class="muni"><div class="in">
 <span class="initials" aria-hidden="true">VII</span>
 <div><h1>Riesgo en mi comuna, Región del Maule</h1><p>Toque su comuna en el mapa o elíjala en la lista</p></div>
