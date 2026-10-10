@@ -70,6 +70,7 @@ class Assessment:
     area_name: str | None = None
     uses_demo_data: bool = False
     rule_version: str = "1"
+    consensus: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)

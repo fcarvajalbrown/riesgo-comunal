@@ -108,6 +108,8 @@ class ActiveFireModule(HazardModule):
             "Si ve humo o fuego, llame a Bomberos al 132 y siga las indicaciones de CONAF y SENAPRED.",
         ]
         missing = [f"Actualización reciente de {DETECTORS[k]}" for k in DETECTORS if k not in live]
+        both = sum(1 for spot in spots if len({d["source_key"] for d in spot}) >= 2)
+        consensus = f"{len(live)} de {len(DETECTORS)} sistemas satelitales responden" + (f"; {both} de {len(spots)} focos vistos por ambos" if spots else "")
         return Assessment(
             hazard=self.key,
             hazard_name=self.name,
@@ -118,5 +120,6 @@ class ActiveFireModule(HazardModule):
             actions=actions,
             missing=missing,
             thresholds=t,
+            consensus=consensus,
             area_name=area.name,
         )

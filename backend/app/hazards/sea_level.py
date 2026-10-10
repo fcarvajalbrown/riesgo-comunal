@@ -70,9 +70,10 @@ class SeaLevelModule(HazardModule):
             return Assessment(self.key, self.name, "SIN_DATOS", "Los mareógrafos de Constitución y Boyeruca no han enviado datos en la última hora.", explanation,
                               evidence=evidence, missing=["Datos recientes de los mareógrafos"], thresholds=t, area_name=area.name)
         anomalous = anomalous_gauges(readings, t["oscillation_m"])
+        consensus = f"{len({r['gauge'] for r in readings})} de 2 mareógrafos responden"
         if anomalous:
             names = ", ".join(sorted({r["station_name"].split(" (")[0] for r in readings if r["gauge"] in anomalous}))
             return Assessment(self.key, self.name, "ALTO", f"Oscilación anormal del mar en {names}. Aléjese de la costa y siga las indicaciones del SHOA y SENAPRED.", explanation,
-                              evidence=evidence, actions=["Aléjese del borde costero hacia terrenos elevados y siga las indicaciones del SHOA y SENAPRED."], thresholds=t, area_name=area.name)
+                              evidence=evidence, consensus=consensus, actions=["Aléjese del borde costero hacia terrenos elevados y siga las indicaciones del SHOA y SENAPRED."], thresholds=t, area_name=area.name)
         return Assessment(self.key, self.name, "BAJO", "El nivel del mar se comporta con normalidad en Constitución y Boyeruca.", explanation,
-                          evidence=evidence, thresholds=t, area_name=area.name)
+                          evidence=evidence, consensus=consensus, thresholds=t, area_name=area.name)

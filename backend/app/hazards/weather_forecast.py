@@ -72,6 +72,7 @@ class WeatherForecastModule(HazardModule):
             explanation=[headline, result.reason, agreement, FORECAST_NOTE],
             evidence=evidence,
             missing=[] if latest else ["Pronóstico reciente de Open-Meteo"],
+            consensus=agreement.split(" (")[0] if "modelos coinciden" in agreement else None,
             thresholds=t,
             area_name=area.name,
         )

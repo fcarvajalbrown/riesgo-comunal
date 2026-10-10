@@ -118,6 +118,7 @@ class EarthquakeModule(HazardModule):
             f"{len(live)} de {len(CATALOGUES)} catálogos respondieron en las últimas 3 horas.",
         ]
         missing = [f"Actualización reciente del catálogo {CATALOGUES[k]}" for k in CATALOGUES if k not in live]
+        consensus = f"{len(live)} de {len(CATALOGUES)} catálogos responden (USGS, EMSC con datos del CSN)"
         if not live:
             return Assessment(
                 hazard=self.key,
@@ -128,6 +129,7 @@ class EarthquakeModule(HazardModule):
                 evidence=evidence,
                 missing=missing,
                 actions=actions,
+                consensus=consensus,
                 thresholds=t,
                 area_name=area.name,
             )
@@ -140,6 +142,7 @@ class EarthquakeModule(HazardModule):
             evidence=evidence,
             missing=missing,
             actions=actions,
+            consensus=consensus,
             thresholds=t,
             area_name=area.name,
         )

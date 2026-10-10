@@ -665,6 +665,7 @@ def public_summary(slug: str, conn: Connection = Depends(get_conn)) -> dict[str,
                 "level": a["level"],
                 "level_label": a["level_label"],
                 "headline": a["headline"],
+                "consensus": a.get("consensus"),
                 "explanation": a["explanation"],
                 "evidence": [
                     {
