@@ -1,61 +1,59 @@
 import argparse
-import json
 import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parents[1] / "backend"))
+from make_banner import RENDER_SIZE, SOURCES, make_logo, render_svg, silhouette
 
-from app.db import get_engine, rows
+HERE = Path(__file__).resolve().parent
 
 RED = (228, 40, 39)
 DEEP = (214, 21, 42)
 WHITE = (255, 255, 255)
-SCALE_X = 0.82
+NAVY_DEEP = (26, 43, 61)
+PREVIEW_SIZE = (1200, 630)
+TEXTURE_BAND = 280
+MAP_BOX = (870, 60, 1170, 580)
 
 
 def font(path: Path, size: int) -> ImageFont.FreeTypeFont:
     return ImageFont.truetype(str(path), size)
 
 
-def rings(geometry: dict) -> list[list[list[float]]]:
-    polygons = geometry["coordinates"] if geometry["type"] == "MultiPolygon" else [geometry["coordinates"]]
-    return [polygon[0] for polygon in polygons]
+def navy_texture(source: Image.Image, size: tuple[int, int]) -> Image.Image:
+    width, height = size
+    band = source.resize((width, width), Image.LANCZOS).crop((0, 0, width, TEXTURE_BAND))
+    flipped = band.transpose(Image.FLIP_TOP_BOTTOM)
+    texture = Image.new("RGBA", size)
+    for index in range(height // TEXTURE_BAND + 1):
+        texture.paste(band if index % 2 == 0 else flipped, (0, index * TEXTURE_BAND))
+    return texture
 
 
-def draw_region(image: Image.Image, shapes: list[dict], box: tuple[int, int, int, int]) -> None:
-    points = [(x * SCALE_X, y) for shape in shapes for ring in rings(shape) for x, y in ring]
-    x0, x1 = min(p[0] for p in points), max(p[0] for p in points)
-    y0, y1 = min(p[1] for p in points), max(p[1] for p in points)
-    left, top, right, bottom = box
-    scale = min((right - left) / (x1 - x0), (bottom - top) / (y1 - y0))
-    offset_x = left + ((right - left) - (x1 - x0) * scale) / 2
-    offset_y = top + ((bottom - top) - (y1 - y0) * scale) / 2
-    overlay = Image.new("RGBA", image.size, (0, 0, 0, 0))
-    draw = ImageDraw.Draw(overlay)
-    for shape in shapes:
-        for ring in rings(shape):
-            xy = [(offset_x + (x * SCALE_X - x0) * scale, offset_y + (y1 - y) * scale) for x, y in ring]
-            draw.polygon(xy, fill=(255, 255, 255, 60), outline=(255, 255, 255, 235), width=2)
-    image.alpha_composite(overlay)
-
-
-def preview(shapes: list[dict], fonts: tuple[Path, Path], out: Path) -> None:
+def preview(fonts: tuple[Path, Path], out: Path) -> None:
     regular, bold = fonts
-    image = Image.new("RGBA", (1200, 630), RED + (255,))
+    source = render_svg(SOURCES / "1.svg", RENDER_SIZE).convert("RGB")
+    image = navy_texture(source, PREVIEW_SIZE)
     draw = ImageDraw.Draw(image)
-    draw.rectangle((0, 600, 1200, 630), fill=DEEP)
-    draw_region(image, shapes, (870, 60, 1170, 580))
+    draw.rectangle((0, 600, 1200, 630), fill=NAVY_DEEP)
+    shape, mask = silhouette(source, MAP_BOX[3] - MAP_BOX[1])
+    shape = shape.convert("RGBA")
+    shape.putalpha(mask)
+    shape.thumbnail((MAP_BOX[2] - MAP_BOX[0], MAP_BOX[3] - MAP_BOX[1]), Image.LANCZOS)
+    image.alpha_composite(shape, ((MAP_BOX[0] + MAP_BOX[2] - shape.width) // 2, (MAP_BOX[1] + MAP_BOX[3] - shape.height) // 2))
+    logo = make_logo(SOURCES / "4.svg")
+    logo = logo.resize((round(logo.width * 150 / logo.height), 150), Image.LANCZOS)
+    image.alpha_composite(logo, (64, 420))
     draw = ImageDraw.Draw(image)
-    draw.text((64, 92), "Riesgo en mi comuna", font=font(bold, 76), fill=WHITE)
-    draw.text((64, 186), "Región del Maule", font=font(bold, 52), fill=WHITE)
-    draw.text((64, 276), "Alertas oficiales, mapa y pronóstico", font=font(regular, 34), fill=WHITE)
-    draw.text((64, 320), "de las 30 comunas, en un solo lugar", font=font(regular, 34), fill=WHITE)
-    draw.text((64, 452), "Una iniciativa de la oficina de la", font=font(regular, 30), fill=WHITE)
-    draw.text((64, 492), "senadora Paulina Vodanovic", font=font(bold, 34), fill=WHITE)
-    draw.text((64, 552), "synterra.cl/maule", font=font(bold, 28), fill=WHITE)
+    draw.text((64, 72), "Riesgo en mi comuna", font=font(bold, 76), fill=WHITE)
+    draw.text((64, 166), "Región del Maule", font=font(bold, 52), fill=WHITE)
+    draw.text((64, 256), "Alertas oficiales, mapa y pronóstico", font=font(regular, 34), fill=WHITE)
+    draw.text((64, 300), "de las 30 comunas, en un solo lugar", font=font(regular, 34), fill=WHITE)
+    text_x = 64 + logo.width + 36
+    draw.text((text_x, 438), "Una iniciativa de la oficina de la", font=font(regular, 28), fill=WHITE)
+    draw.text((text_x, 476), "senadora Paulina Vodanovic", font=font(bold, 32), fill=WHITE)
+    draw.text((text_x, 536), "synterra.cl/maule", font=font(bold, 28), fill=WHITE)
     image.convert("RGB").save(out, "PNG", optimize=True)
 
 
@@ -77,12 +75,7 @@ def main() -> int:
     parser.add_argument("--bold-font", type=Path, required=True)
     parser.add_argument("--out", type=Path, default=HERE / "vendor")
     args = parser.parse_args()
-    with get_engine().connect() as conn:
-        shapes = [
-            json.loads(r["g"])
-            for r in rows(conn, "select st_asgeojson(st_simplifypreservetopology(boundary, 0.003)) as g from municipality where cut_code like '07%'")
-        ]
-    preview(shapes, (args.regular_font, args.bold_font), args.out / "og-maule.png")
+    preview((args.regular_font, args.bold_font), args.out / "og-maule.png")
     icon(180, args.out / "icon-180.png")
     icon(32, args.out / "icon-32.png")
     print(f"preview and icons written to {args.out}")

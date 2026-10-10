@@ -38,18 +38,22 @@ def make_logo(source: Path) -> Image.Image:
     return logo.resize((width, LOGO_HEIGHT), Image.LANCZOS)
 
 
+def silhouette(image: Image.Image, height: int) -> tuple[Image.Image, Image.Image]:
+    corner = image.crop((0, 0, RENDER_SIZE, RENDER_SIZE // 5)).resize((1, 1), Image.BOX).getpixel((0, 0))
+    base = Image.new("RGB", image.size, corner)
+    lift = ImageChops.subtract(image, base).convert("L").point(lambda v: 255 if v > SILHOUETTE_CUTOFF else 0).filter(ImageFilter.MedianFilter(9))
+    box = lift.getbbox()
+    scale = height / (box[3] - box[1])
+    size = (round((box[2] - box[0]) * scale), height)
+    return image.crop(box).resize(size, Image.LANCZOS), lift.crop(box).filter(ImageFilter.GaussianBlur(4)).resize(size, Image.LANCZOS)
+
+
 def make_background(source: Path) -> Image.Image:
     image = render_svg(source, RENDER_SIZE).convert("RGB")
     width, height = BANNER_SIZE
     background = image.resize((width, width), Image.LANCZOS).crop((0, 0, width, height))
-    base = Image.new("RGB", image.size, background.resize((1, 1), Image.BOX).getpixel((0, 0)))
-    lift = ImageChops.subtract(image, base).convert("L").point(lambda v: 255 if v > SILHOUETTE_CUTOFF else 0).filter(ImageFilter.MedianFilter(9))
-    box = lift.getbbox()
-    scale = height * SILHOUETTE_SHARE / (box[3] - box[1])
-    size = (round((box[2] - box[0]) * scale), round((box[3] - box[1]) * scale))
-    silhouette = image.crop(box).resize(size, Image.LANCZOS)
-    mask = lift.crop(box).filter(ImageFilter.GaussianBlur(4)).resize(size, Image.LANCZOS)
-    background.paste(silhouette, ((width - size[0]) // 2, (height - size[1]) // 2), mask)
+    shape, mask = silhouette(image, round(height * SILHOUETTE_SHARE))
+    background.paste(shape, ((width - shape.width) // 2, (height - shape.height) // 2), mask)
     return background
 
 
