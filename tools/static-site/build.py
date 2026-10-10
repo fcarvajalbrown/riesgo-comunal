@@ -492,6 +492,47 @@ NO_ALERT = '<p class="none">Sin alerta oficial para esta amenaza.</p>'
 NO_ANALYSIS = '<p class="gap">Todavía no tenemos análisis propio para esta amenaza.</p>'
 
 
+SEASON_FILE = HERE.parent / "season" / "current.json"
+SEASON_LEAD = {"incendios": "los incendios", "lluvia": "la lluvia y las crecidas"}
+
+
+def load_season() -> dict | None:
+    try:
+        return json.loads(SEASON_FILE.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def rain_words(value: float | None) -> str:
+    if value is None:
+        return "sin dato de lluvia"
+    if value >= 1.0:
+        return "llovió más de lo normal"
+    if value <= -1.0:
+        return "llovió menos de lo normal"
+    return "llovió cerca de lo normal"
+
+
+def decimal(value: float | None, signed: bool = False) -> str:
+    if value is None:
+        return "sin dato"
+    return (f"{value:+g}" if signed else f"{value:g}").replace(".", ",")
+
+
+def season_note(season: dict | None) -> str:
+    if not season:
+        return ""
+    fire = "sobre" if season["fwi"] is not None and season["fwi"] > season["fwi_normal"] else "bajo"
+    oni = season.get("oni")
+    nino = f', índice de El Niño de NOAA (ONI) {decimal(oni["anomaly"], signed=True)} en {oni["season"]} {oni["year"]}' if oni else ""
+    return (
+        f'<p class="note"><strong>Orden de este mes:</strong> en los últimos {season["window_days"]} días {rain_words(season["spi"])} en el Maule y el clima favorable a incendios estuvo {fire} lo normal, '
+        f'por eso, después de las alertas, mostramos primero {SEASON_LEAD[season["lead"]]}. '
+        f'Índices: SPI {decimal(season["spi"])}, FWI {decimal(season["fwi"])} (normal 1991-2020: {decimal(season["fwi_normal"])}){nino}. '
+        f'Datos ERA5 de Open-Meteo hasta el {datetime.fromisoformat(season["window_end"]).strftime("%d-%m-%Y")}.</p>'
+    )
+
+
 def alert_row(alert: dict) -> str:
     if is_rain(alert):
         return "lluvia"
@@ -512,7 +553,7 @@ def hazard_row(key: str, title: str, alerts: list[dict], cards: list[dict]) -> s
     )
 
 
-def hazard_rows(alerts: list[dict], items: list[dict]) -> str:
+def hazard_rows(alerts: list[dict], items: list[dict], lead: str | None = None) -> str:
     by_key = {item["key"]: item for item in items}
     grouped: dict[str, list[dict]] = {}
     for alert in alerts:
@@ -522,7 +563,7 @@ def hazard_rows(alerts: list[dict], items: list[dict]) -> str:
         cards = [by_key[k] for k in card_keys if k in by_key]
         row_alerts = grouped.get(key, [])
         if cards or row_alerts:
-            rank = (0 if any(a["in_force"] for a in row_alerts) else 1 if row_alerts else 2, min((severity(c["level"]) for c in cards), default=len(SEVERITY)))
+            rank = (0 if any(a["in_force"] for a in row_alerts) else 1 if row_alerts else 2, min((severity(c["level"]) for c in cards), default=len(SEVERITY)), 0 if key == lead else 1)
             rows.append((rank, hazard_row(key, title, row_alerts, cards)))
     ordered = [html for _, html in sorted(rows, key=lambda pair: pair[0])]
     others = grouped.get(OTHER_ROW[0], [])
@@ -605,6 +646,7 @@ def wind_grid(extent: dict) -> dict:
 
 
 def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str, counts: dict[str, int], base_url: str, slug: str, has_wind: bool, banner: str) -> str:
+    season = load_season()
     phones = "".join(f'<li><a href="tel:{n}"><strong>{n}</strong><span>{escape(label)}</span></a></li>' for n, label in EMERGENCY_PHONES)
     links = "".join(f'<li><a href="{escape(href)}" rel="noreferrer">{escape(label)}</a><span>{escape(detail)}</span></li>' for label, detail, href in OFFICIAL_LINKS)
     standing = summary.get("standing_items", [])
@@ -627,7 +669,8 @@ def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str
 <section class="card" aria-labelledby="ahora" style="margin-top:1rem">
 <h2 id="ahora">Qué está pasando ahora</h2>
 <p class="now">Nuestra evaluación del riesgo {level_pill(summary["overall_level"], summary["overall_level_label"])}</p>
-{hazard_rows(summary["alerts"], shown_hazards(summary["items"], bool(counts.get("tsunami_evacuation_area")), datetime.now(UTC)))}
+{hazard_rows(summary["alerts"], shown_hazards(summary["items"], bool(counts.get("tsunami_evacuation_area")), datetime.now(UTC)), (season or {}).get("lead"))}
+{season_note(season)}
 <p class="note"><strong>Temporada de El Niño:</strong> la Dirección Meteorológica de Chile proyecta lluvias sobre lo normal en el centro-sur del país. <a href="{EL_NINO_SOURCE}" rel="noreferrer">Fuente</a></p>
 <p class="note">Pronóstico: <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a>. Calculado el {escape(format_time(summary["computed_at"]))}.</p>
 {sources_html(sources)}
