@@ -97,7 +97,7 @@ from (select st_extent(boundary) as e from municipality where cut_code like '07%
 """
 
 STYLE = """
-:root{--bg:#f4f5f7;--surface:#ffffff;--fg:#1b2430;--muted:#5b6573;--border:#dde1e7;--brand:#1f4e79;--senator:#263d55;--senator-deep:#1a2b3d}
+:root{--bg:#f4f5f7;--surface:#ffffff;--fg:#1b2430;--muted:#5b6573;--border:#dde1e7;--brand:#263d55;--brand-tint:#e9edf2;--senator:#263d55;--senator-deep:#1a2b3d}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--fg);font-family:Inter,"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;font-size:16px;line-height:1.5}
 a{color:inherit}
@@ -112,16 +112,16 @@ ul{list-style:none;margin:0;padding:0}
 .senator span{font-size:.85rem}
 @media (max-width:34rem){.senator .in{justify-content:center}.senator .by{align-items:center;text-align:center}}
 .in{max-width:72rem;margin:0 auto}
-.muni{background:var(--brand);color:#fff}
+.muni{background:var(--surface);color:var(--brand);border-bottom:1px solid var(--border)}
 .muni .in{display:flex;align-items:center;gap:.8rem;padding:1rem}
-.initials{display:flex;align-items:center;justify-content:center;width:3rem;height:3rem;border-radius:.6rem;background:rgba(255,255,255,.15);font-weight:700;font-size:1.1rem;flex:none}
+.initials{display:flex;align-items:center;justify-content:center;width:3rem;height:3rem;border-radius:.6rem;background:var(--brand-tint);font-weight:700;font-size:1.1rem;flex:none}
 .muni h1{font-size:1.25rem;font-weight:600;line-height:1.2}
-.muni p{font-size:.9rem;opacity:.9}
+.muni p{font-size:.9rem;color:var(--muted)}
 .muni nav{margin-left:auto;font-size:.9rem}
 .wrap{max-width:72rem;margin:0 auto;padding:1rem}
 .notice{border:1px solid var(--border);background:var(--surface);color:var(--fg);border-radius:.75rem;padding:.6rem .75rem;font-size:.88rem}
 .rain{border:2px solid #1d4ed8}
-.rain h2{color:#1d4ed8}
+.rain h2{color:var(--brand)}
 .outlook{font-size:.95rem;margin-bottom:.6rem}
 .down{background:var(--fg);color:#fff;border-radius:.75rem;padding:.8rem 1rem;margin-bottom:.75rem;font-size:.95rem}
 .grid{display:grid;gap:1rem;margin-top:1rem;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);align-items:start}
@@ -251,7 +251,7 @@ def share_tags(base_url: str, path: str, title: str, description: str, root: str
         '<meta name="twitter:card" content="summary_large_image">',
         f'<link rel="icon" type="image/png" sizes="32x32" href="{root}assets/icon-32.png">',
         f'<link rel="apple-touch-icon" href="{root}assets/icon-180.png">',
-        '<meta name="theme-color" content="#e42827">',
+        '<meta name="theme-color" content="#263d55">',
     ]
     return "".join(tag + "\n" for tag in tags)
 

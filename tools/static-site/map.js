@@ -7,7 +7,7 @@ const RAIN_TILES = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/IMERG_Pre
 const WILDFIRE = ["#fde68a", "#fdba74", "#fb923c", "#ea580c", "#9a3412"];
 
 const STYLES = {
-  comuna: [{ type: "line", paint: { "line-color": "#1f4e79", "line-width": 2.5 } }],
+  comuna: [{ type: "line", paint: { "line-color": "#1a2b3d", "line-width": 2.5 } }],
   lluvia: [{ type: "raster", paint: { "raster-opacity": 0.5 } }],
   wildfire_hazard: [
     {
