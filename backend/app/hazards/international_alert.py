@@ -9,9 +9,16 @@ EQUIVALENCE_NOTE = (
 )
 
 
+def plain_headline(titles: list[str]) -> str:
+    if not titles:
+        return "No hay avisos de sistemas internacionales para la zona."
+    topics = "; ".join(dict.fromkeys(t.removeprefix("Aviso internacional: ").removeprefix("Aviso internacional de ") for t in titles))
+    return f"{len(titles)} aviso(s) de sistemas internacionales para la zona: {topics}. No reemplazan los avisos oficiales."
+
+
 class InternationalAlertModule(HazardModule):
     key = "international_alert"
-    name = "Alertas internacionales de respaldo"
+    name = "Avisos internacionales"
     description = "Alertas de GDACS y mensajes de tsunami de NOAA (PTWC/NTWC) que alcanzan la comuna. Respaldo cuando falla la lectura de SENAPRED; no reemplazan los avisos oficiales."
     modes = ("ahora",)
     spatial = False
@@ -41,7 +48,7 @@ class InternationalAlertModule(HazardModule):
             hazard=self.key,
             hazard_name=self.name,
             level=result.level,
-            headline=result.reason,
+            headline=plain_headline([a["title"] for a in alerts]),
             explanation=[result.reason, EQUIVALENCE_NOTE],
             evidence=evidence,
             missing=[],
