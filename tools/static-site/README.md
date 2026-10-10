@@ -13,3 +13,5 @@ bash tools/static-site/publish.sh
 ```
 
 Build only: `cd backend && ~/.local/bin/uv.exe run python ../tools/static-site/build.py --out <dir>`.
+
+Refresh: a Hostinger cron runs `deploy/hostinger/trigger_static_site.php` every 15 minutes, which starts `.github/workflows/static-site.yml` through the GitHub API. The fine-grained token (repository `riesgo-comunal`, Actions read and write) lives only in `~/riesgo-comunal/github-token` on Hostinger, mode 600. GitHub's own cron in the workflow stays as a backup.
