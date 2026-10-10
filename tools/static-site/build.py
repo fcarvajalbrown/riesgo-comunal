@@ -150,6 +150,21 @@ ul{list-style:none;margin:0;padding:0}
 .calm p+p{color:var(--muted);margin-top:.25rem}
 .note{font-size:.78rem;color:var(--muted);margin-top:.6rem}
 .rows{border:1px solid var(--border);border-radius:.75rem;overflow:hidden}
+.hz{border:1px solid var(--border);border-radius:.75rem;background:var(--surface)}
+.hz+.hz{margin-top:.6rem}
+.hz summary{display:grid;grid-template-columns:auto 1fr;gap:.2rem .75rem;align-items:start;padding:.75rem .85rem;cursor:pointer;list-style:none}
+.hz summary::-webkit-details-marker{display:none}
+.hz summary h3{margin:0;font-size:1rem}
+.hz summary .line{grid-column:2;font-size:.9rem}
+.hz summary .more{grid-column:2;font-size:.82rem;color:var(--brand);text-decoration:underline}
+.hz[open] summary .more{display:none}
+.hz summary:focus-visible{outline:3px solid var(--brand);outline-offset:2px;border-radius:.75rem}
+.hz .body{border-top:1px solid var(--border);padding:.7rem .85rem .85rem;font-size:.88rem}
+.hz .body h4{margin:.6rem 0 .25rem;font-size:.85rem}
+.hz .body h4:first-child{margin-top:0}
+.hz .body ul{list-style:disc;padding-left:1.1rem}
+.hz .body li+li{margin-top:.25rem}
+.hz .body .meta{color:var(--muted);font-size:.8rem}
 .rows li{display:flex;gap:.75rem;align-items:flex-start;padding:.7rem .8rem;font-size:.9rem;border-top:1px solid var(--border)}
 .rows li:first-child{border-top:0}
 .rows .pill{flex:none;min-width:6.5rem;text-align:center}
@@ -392,7 +407,8 @@ def sources_html(sources: list[dict]) -> str:
     def names(group: list[dict]) -> str:
         return ", ".join(s["name"] for s in group)
 
-    out = ['<h3>Estado de las fuentes</h3>']
+    working = len([x for x in sources if x["state"] == "live"])
+    out = [f'<details class="hz" style="margin-top:.6rem"><summary><span></span><h3>Estado de las fuentes</h3><span class="line">{working} de {len(sources)} fuentes responden.</span><span class="more">Ver el detalle</span></summary><div class="body">']
     if alert_down:
         tail = f"Siguen funcionando: {names(alert_up)}." if alert_up else "Ninguna fuente de alertas responde ahora; consulte senapred.cl y los canales de su municipalidad."
         out.append(f'<p class="calm" style="margin-bottom:.5rem">Sin respuesta reciente: {escape(names(alert_down))}. {escape(tail)}</p>')
@@ -400,8 +416,57 @@ def sources_html(sources: list[dict]) -> str:
     for source in alert_sources:
         label, colour = SOURCE_STATE[source["state"]]
         out.append(f'<li><strong>{escape(source["name"])}</strong>: <strong style="color:{colour}">{escape(label)}</strong><span>Último dato recibido: {escape(last_data(source))}</span></li>')
-    out.append(f"<li><strong>Otras fuentes de datos</strong>: {len(data_sources) - len(data_down)} de {len(data_sources)} funcionando.</li></ul>")
+    out.append(f"<li><strong>Otras fuentes de datos</strong>: {len(data_sources) - len(data_down)} de {len(data_sources)} funcionando.</li></ul></div></details>")
     return "".join(out)
+
+
+ALERT_MODULES = ("senapred_alert", "international_alert")
+AIR_QUALITY_SEASON = range(4, 10)
+
+
+def shown_hazards(items: list[dict], coastal: bool, now: datetime) -> list[dict]:
+    month = now.astimezone(CHILE).month
+
+    def keep(item: dict) -> bool:
+        if item["key"] in ALERT_MODULES:
+            return False
+        if item["key"] == "tsunami" and not coastal:
+            return False
+        if item["key"] == "air_quality" and month not in AIR_QUALITY_SEASON:
+            return item["level"] in ("MODERADO", "ALTO", "CRITICO")
+        return True
+
+    return [item for item in items if keep(item)]
+
+
+def evidence_line(e: dict) -> str:
+    when = f", {format_time(e['updated_at'])}" if e.get("updated_at") else ""
+    link = f' <a href="{escape(e["note"])}" rel="noreferrer">Ver fuente</a>' if str(e.get("note") or "").startswith("http") else ""
+    value = f": {escape(str(e['value']))}" if e.get("value") not in (None, "") else ""
+    return f'<li>{escape(e["label"])}{value}<br><span class="meta">{escape(e["source"])} ({escape(e["data_class"])}{escape(when)})</span>{link}</li>'
+
+
+def hazard_card(item: dict) -> str:
+    parts = []
+    if item.get("explanation"):
+        parts.append("<h4>Cómo lo calculamos</h4><ul>" + "".join(f"<li>{escape(x)}</li>" for x in item["explanation"]) + "</ul>")
+    if item.get("evidence"):
+        parts.append("<h4>Fuentes y datos</h4><ul>" + "".join(evidence_line(e) for e in item["evidence"]) + "</ul>")
+    else:
+        parts.append('<h4>Fuentes y datos</h4><p class="meta">No hay datos recientes para esta amenaza en la comuna.</p>')
+    if item.get("actions"):
+        parts.append("<h4>Qué hacer</h4><ul>" + "".join(f"<li>{escape(x)}</li>" for x in item["actions"]) + "</ul>")
+    if item.get("missing"):
+        parts.append("<h4>Lo que nos falta</h4><ul>" + "".join(f"<li>{escape(x)}</li>" for x in item["missing"]) + "</ul>")
+    return (
+        f'<details class="hz"><summary>{level_pill(item["level"], item["level_label"])}<h3>{escape(item["hazard"])}</h3>'
+        f'<span class="line">{escape(item["headline"])}</span><span class="more">Ver fuentes y datos</span></summary>'
+        f'<div class="body">{"".join(parts)}</div></details>'
+    )
+
+
+def hazard_cards(items: list[dict]) -> str:
+    return "".join(hazard_card(item) for item in items)
 
 
 def items_html(items: list[dict], with_level: bool = True) -> str:
@@ -508,8 +573,8 @@ def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str
 <h2 id="ahora">Qué está pasando ahora</h2>
 <p class="now">Nuestra evaluación del riesgo {level_pill(summary["overall_level"], summary["overall_level_label"])}</p>
 {alerts_html(summary)}
-<h3>Por amenaza</h3>
-{items_html(summary["items"])}
+<h3>Nuestro análisis por amenaza</h3>
+{hazard_cards(shown_hazards(summary["items"], bool(counts.get("tsunami_evacuation_area")), datetime.now(UTC)))}
 <p class="note">Pronóstico: <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a>. Calculado el {escape(format_time(summary["computed_at"]))}.</p>
 {sources_html(sources)}
 </section>
