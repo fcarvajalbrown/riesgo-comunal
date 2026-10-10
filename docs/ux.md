@@ -66,6 +66,17 @@ What follows for design:
 - Phone first: assume a small screen on a mobile connection, so the page stays light and the most urgent item is first on a narrow screen.
 - The official alert and our own analysis of the same hazard sit side by side (stacked, official first, on a phone), each alert shown once.
 
+## Layout research: map placement and type size
+
+Twelve web searches on how public hazard sites place the map and size their text. No published study compares a sticky side map against a map below the content.
+
+- VicEmergency (Victoria) and Hazards Near Me (NSW) show warnings as a map, a list, or both, with a toggle ([VicEmergency](https://support.emergency.vic.gov.au/hc/en-gb/articles/218578948-What-are-the-features-of-the-VicEmergency-website), [NSW Digital](https://www.digital.nsw.gov.au/delivery/government-technology-platforms/products/hazards-ecosystem/hazardwatch-and-hazards-near-me)).
+- Met Office marine warnings put a clickable map with the detail panel beside it ([Met Office](https://weather.metoffice.gov.uk/guides/coast-and-sea/index)); Meteoalarm colours a map and links to per-country lists.
+- The SBB design system puts the map beside the content on desktop and sticky above it on mobile, with the content scrolling over it ([SBB](https://digital.sbb.ch/en/design-system/lyne/components/map-container/)).
+- The GOV.UK Check for flooding service was built mobile first because over 70% of its users are on a phone ([go-live briefing, Oct 2021](https://kingstonseymourparish.gov.uk/wp-content/uploads/Check-for-flooding-go-live-briefing-Oct-2021.pdf)).
+- Australian Warning System: built from research with more than 14,000 people; a design agency's testing with older Canberrans led to simplifying and standardising ([cre8ive](https://cre8ive.com.au/node/91), vendor account).
+- Type size for older readers: a thesis found 16 pt (about 21 px) preferred by UK and Thai older adults ([Kamollimsakul](https://etheses.whiterose.ac.uk/id/eprint/9027/1/Thesis_Sorachai_Kamollimsakul_CS.pdf)); a US federal publication recommends 16 or 18 pt; an ACL tip sheet at least 14 pt ([ACL](https://ACL.gov/sites/default/files/nutrition/BasicTipsOnWebDesignForAnOlderAdultAudience.pdf)). Every source says to let the reader enlarge text, so sizes are in rem and never fixed in px.
+
 ## Not yet done
 
 Mobile layout beyond basic responsiveness, keyboard navigation audit, screen-reader audit, print styles for the web view (the PDF covers printing).
