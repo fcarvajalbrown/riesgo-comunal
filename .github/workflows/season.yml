@@ -1,0 +1,29 @@
+name: season
+
+on:
+  schedule:
+    - cron: "0 10 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: season
+  cancel-in-progress: false
+
+jobs:
+  signal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compute SPI and FWI for the last 30 days
+        run: python3 tools/season/season.py current --out tools/season/current.json
+      - name: Commit the signal
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/season/current.json
+          git diff --cached --quiet || git commit -m "chore(season): monthly SPI and FWI signal"
+          git push

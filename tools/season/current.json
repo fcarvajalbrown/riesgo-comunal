@@ -1,0 +1,42 @@
+{
+ "computed_at": "2026-10-10T05:05:27+00:00",
+ "window_end": "2026-10-09",
+ "window_days": 30,
+ "lead": "lluvia",
+ "spi": 2.24,
+ "fwi": 0.6,
+ "fwi_normal": 2.7,
+ "oni": {
+  "season": "JAS",
+  "year": 2026,
+  "anomaly": 2.16,
+  "source": "https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt"
+ },
+ "points": {
+  "Talca": {
+   "rain_mm": 145.7,
+   "spi": 2.11,
+   "fwi": 0.4,
+   "fwi_normal": 2.9
+  },
+  "Curicó": {
+   "rain_mm": 197.8,
+   "spi": 2.3,
+   "fwi": 0.5,
+   "fwi_normal": 2.8
+  },
+  "Linares": {
+   "rain_mm": 236.0,
+   "spi": 2.27,
+   "fwi": 0.5,
+   "fwi_normal": 2.2
+  },
+  "Cauquenes": {
+   "rain_mm": 131.7,
+   "spi": 2.29,
+   "fwi": 0.8,
+   "fwi_normal": 3.0
+  }
+ },
+ "rule": "Incendios primero si el FWI medio de 30 días supera su normal 1991-2020 y el SPI es menor que 1; si no, lluvia primero."
+}
