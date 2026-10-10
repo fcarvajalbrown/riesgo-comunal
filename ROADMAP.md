@@ -66,7 +66,7 @@ The MVP list of the original specification is complete. These items from the res
 | G7 | Hazards | Coastal surge / marejadas module | Not Started | Official machine-readable source to be found |
 | G8 | Hazards | Drought module (DGA water-scarcity decrees) | Not Started | |
 | G9 | Hazards | Official DMC warnings (all weather hazards): Done via the public CAP feed. Station observations (rain, wind, temperature): Blocked | Blocked (observations only) | DMC credential |
-| G10 | Hazards | Wildfire activity and smoke (NASA FIRMS hotspots, CONAF if available) | Blocked | FIRMS MAP_KEY (free registration) |
+| G10 | Hazards | Wildfire activity and smoke (NASA FIRMS hotspots, CONAF if available) | In Progress | Active fires done (INPE and FIRMS public files, no key needed); smoke and CONAF not done |
 | G11 | Hazards | River conditions (DGA levels and flows) | Not Started | Only web pages verified so far |
 | G12 | Statistics | Incidents by sector, seasonality, recurrence, affected area | Not Started | |
 | G13 | Reports | Maps inside PDF reports; historical comparisons | Not Started | |

@@ -25,8 +25,11 @@ This is a record of what each source's own terms say and what that means for a p
 | CSN | Use, reproduction and distribution allowed for academic and outreach purposes with citation; any other purpose needs express written approval | **No, without written approval** | Same | n/a (not ingested) | Request written approval if earthquakes from CSN are wanted. |
 | USGS | US Government work, public domain | Yes | Yes | "Fuente: USGS (complementario, no es la fuente oficial chilena)" | None |
 | OpenFreeMap / OpenStreetMap basemap | Free, commercial use allowed; attribution required. OSM data is ODbL. | Yes | Self-hosting allowed | "OpenFreeMap © OpenMapTiles Data from OpenStreetMap" | None. For offline municipal installs, self-host tiles. |
-| Open-Meteo | Free API for non-commercial use only; data CC BY 4.0 | Paid plan only | Per plan | n/a (not used) | Use only with a paid plan, if ever. |
-| NASA FIRMS | NASA open data; free key | Yes | Yes | "Fuente: NASA FIRMS (detección satelital, no confirmación oficial)" | Not yet used. |
+| Open-Meteo | Free API for non-commercial use only; data CC BY 4.0 | Paid plan only | Per plan | "Weather data by Open-Meteo.com (CC BY 4.0)" | In use on the free API by the owner's decision, including the separate ECMWF, GFS and ICON requests; whether the site counts as commercial is for a qualified lawyer. |
+| NASA FIRMS | NASA open data; the public 24-hour files need no key; the FIRMS licence page could not be read (HTTP 403) | Not re-checked | Not re-checked | "Fuente: NASA FIRMS (VIIRS y MODIS)" | Used since the scorecards. Confirm the current data-use terms. |
+| INPE Queimadas | Open data published by INPE; licence not found | **UNVERIFIED** | **UNVERIFIED** | "Fuente: INPE, programa Queimadas (Brasil)" | Ask INPE for the licence. |
+| EMSC SeismicPortal | CC BY 4.0 per EMSC; the feed includes solutions authored by the CSN, whose own terms (row above) require written approval for non-academic use | Per EMSC, yes with attribution | Yes | "Fuente: EMSC (seismicportal.eu), CC BY 4.0" | Whether the CSN terms still apply to CSN solutions received through EMSC is for a qualified lawyer. |
+| IOC Sea Level Station Monitoring Facility | The site states the data may not be used for commercial purposes | **No** | Not stated | "Fuente: IOC/UNESCO Sea Level Station Monitoring Facility (datos del SHOA)" | Used by the owner's decision; whether the site counts as commercial is for a qualified lawyer. |
 
 ## Municipal data
 
