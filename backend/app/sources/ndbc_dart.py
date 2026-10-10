@@ -11,7 +11,7 @@ BUOYS = {
     "32404": ("Boya DART 32404, frente a Valparaíso", -32.13, -73.797),
 }
 EVENT_TYPES = {2, 3}
-EVENT_WINDOW_HOURS = 3
+EVENT_WINDOW_HOURS = 6
 
 
 def parse_dart(text: str) -> list[dict[str, Any]]:
