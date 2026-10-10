@@ -59,7 +59,30 @@ MAP_LAYERS = [
     ("tsunami_meeting_point", "Puntos de encuentro por tsunami", "SENAPRED", True, '<span class="dot" style="background:#059669"></span>'),
     ("dmc_warning", "Avisos y alertas meteorológicas vigentes", "Dirección Meteorológica de Chile", True, '<span class="sq" style="background:#eab308"></span>'),
     ("wildfire_hazard", "Recurrencia de incendios forestales", "SENAPRED con datos de CONAF", True, '<span class="sq" style="background:linear-gradient(90deg,#fde68a,#9a3412)"></span>'),
+    ("dart_buoy", "Boyas de tsunami en el océano, frente a la costa (el mapa se aleja para mostrarlas)", "NOAA, boyas DART", False, '<span class="dot" style="background:#7c3aed"></span>'),
 ]
+BUOY_SQL = """
+select distinct on (o.station_external_id) o.station_external_id as id, o.station_name as name, st_x(o.geom) as lon, st_y(o.geom) as lat, o.observed_at,
+       (select e.value from observation e where e.station_external_id = o.station_external_id and e.parameter = 'dart_event_mode' order by e.observed_at desc limit 1) as event
+from observation o
+where o.source_key = 'ndbc_dart'
+order by o.station_external_id, o.observed_at desc
+"""
+
+
+def buoy_geojson(conn) -> dict:
+    return {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "geometry": {"type": "Point", "coordinates": [r["lon"], r["lat"]]},
+                "properties": {"name": r["name"], "event": bool(r["event"]), "observed_at": r["observed_at"].isoformat()},
+            }
+            for r in rows(conn, BUOY_SQL)
+            if r["lon"] is not None
+        ],
+    }
 
 OFFICIAL_LINKS = [
     ("SENAPRED", "Servicio Nacional de Prevención y Respuesta ante Desastres", "https://senapred.cl"),
@@ -781,6 +804,7 @@ def main() -> int:
         has_wind = bool(wind["features"])
         (assets / "viento.json").write_text(json.dumps(wind, separators=(",", ":")), encoding="utf-8")
         region_rows = rows(conn, REGION_SQL)
+        buoys = buoy_geojson(conn)
         for tenant in tenants:
             slug = tenant["slug"]
             comuna = public_comuna(slug, conn)
@@ -790,7 +814,10 @@ def main() -> int:
             layers_dir.mkdir(parents=True, exist_ok=True)
             counts = {}
             for key in ["comuna", *[layer[0] for layer in MAP_LAYERS]]:
-                collection = layer_geojson(conn, tenant["id"], key)
+                if key == "dart_buoy":
+                    collection = buoys if counts.get("tsunami_evacuation_area") else {"type": "FeatureCollection", "features": []}
+                else:
+                    collection = layer_geojson(conn, tenant["id"], key)
                 counts[key] = len(collection.get("features", []))
                 if key in regional:
                     for feature in collection.get("features", []):

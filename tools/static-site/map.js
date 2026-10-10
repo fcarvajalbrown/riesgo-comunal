@@ -29,18 +29,21 @@ const STYLES = {
   tsunami_meeting_point: [
     { type: "circle", paint: { "circle-color": "#059669", "circle-radius": 6, "circle-stroke-color": "#ffffff", "circle-stroke-width": 1.5 } },
   ],
+  dart_buoy: [
+    { type: "circle", paint: { "circle-color": ["case", ["get", "event"], "#b42318", "#7c3aed"], "circle-radius": 8, "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } },
+  ],
   viento: [
     {
       type: "symbol",
       layout: {
         "icon-image": "flecha",
-        "icon-size": ["interpolate", ["linear"], ["get", "speed"], 0, 0.6, 60, 1.3],
+        "icon-size": ["interpolate", ["linear"], ["get", "speed"], 0, 0.48, 60, 1.04],
         "icon-rotate": ["+", ["get", "dir"], 180],
         "icon-rotation-alignment": "map",
         "icon-allow-overlap": false,
         "text-field": ["concat", ["to-string", ["round", ["get", "speed"]]], " km/h"],
         "text-size": 11,
-        "text-offset": [0, 1.6],
+        "text-offset": [0, 1.3],
         "text-allow-overlap": false,
       },
       paint: { "icon-color": "#0f172a", "text-color": "#0f172a", "text-halo-color": "#ffffff", "text-halo-width": 1.5 },
@@ -48,7 +51,7 @@ const STYLES = {
   ],
 };
 
-const ORDER = ["wildfire_hazard", "dmc_warning", "tsunami_evacuation_area", "lluvia", "tsunami_meeting_point", "viento", "comuna"];
+const ORDER = ["wildfire_hazard", "dmc_warning", "tsunami_evacuation_area", "lluvia", "tsunami_meeting_point", "dart_buoy", "viento", "comuna"];
 
 function text(tag, value) {
   const node = document.createElement(tag);
@@ -77,6 +80,8 @@ function describe(key, props) {
       link.rel = "noreferrer";
       box.append(document.createElement("br"), link);
     }
+  } else if (key === "dart_buoy") {
+    box.append(text("strong", props.name || "Boya DART"), text("p", props.event ? "En modo evento: detectó una onda en el océano." : "En modo normal: sin ondas detectadas."), text("span", `Último dato: ${chileTime(props.observed_at)}. Fuente: NOAA`));
   } else if (key === "viento") {
     box.append(text("strong", `Viento: ${Math.round(props.speed)} km/h`), text("p", `Ráfagas de hasta ${Math.round(props.gust)} km/h`), text("span", "Modelo Open-Meteo, ahora"));
   }
@@ -117,17 +122,24 @@ async function show(map, urls, key, visible) {
     } else {
       const response = await fetch(urls[key]);
       if (!response.ok) return;
-      map.addSource(key, { type: "geojson", data: await response.json() });
+      const data = await response.json();
+      map.addSource(key, { type: "geojson", data });
+      if (key === "dart_buoy") map.dartData = data;
     }
     STYLES[key].forEach((style, i) => map.addLayer({ id: `${key}-${i}`, source: key, ...style }, beforeId(map, key)));
   }
   for (let i = 0; i < STYLES[key].length; i++) {
     if (map.getLayer(`${key}-${i}`)) map.setLayoutProperty(`${key}-${i}`, "visibility", visible ? "visible" : "none");
   }
+  if (key === "dart_buoy" && visible && map.dartData?.features.length) {
+    const bounds = map.getBounds();
+    for (const feature of map.dartData.features) bounds.extend(feature.geometry.coordinates);
+    map.fitBounds(bounds, { padding: 30 });
+  }
 }
 
 function addPopups(map) {
-  const clickable = ["tsunami_meeting_point", "viento", "dmc_warning", "tsunami_evacuation_area", "wildfire_hazard"];
+  const clickable = ["dart_buoy", "tsunami_meeting_point", "viento", "dmc_warning", "tsunami_evacuation_area", "wildfire_hazard"];
   map.on("click", (event) => {
     const layers = clickable.map((key) => `${key}-0`).filter((id) => map.getLayer(id));
     const hit = map.queryRenderedFeatures(event.point, { layers })[0];
@@ -164,7 +176,7 @@ function regionLayers(map, url) {
 
 for (const element of document.querySelectorAll("[data-map]")) {
   const urls = { lluvia: null, viento: element.dataset.wind };
-  for (const key of ["comuna", "wildfire_hazard", "dmc_warning", "tsunami_evacuation_area", "tsunami_meeting_point"]) {
+  for (const key of ["comuna", "wildfire_hazard", "dmc_warning", "tsunami_evacuation_area", "tsunami_meeting_point", "dart_buoy"]) {
     if (element.dataset.layers) urls[key] = `${element.dataset.layers}${key}.json`;
   }
   const map = new maplibregl.Map({
