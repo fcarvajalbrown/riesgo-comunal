@@ -221,8 +221,9 @@ body.fit{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:
 .none,.gap{border:1px dashed var(--border);border-radius:.75rem;padding:.75rem;color:var(--muted)}
 .alerts a,.hz summary .more{padding:.35rem 0}
 .hz summary .name{font-weight:600;font-size:1.05rem}
-.mapwide{margin-top:1rem;height:75vh;min-height:24rem;display:flex;flex-direction:column;padding:0;overflow:hidden}
-@media (max-width:48rem){.pair{grid-template-columns:1fr;gap:.9rem}.pair .ours{border-left:0;padding-left:0}.mapwide{height:65vh;margin-inline:1.5rem}}
+.mapwide{margin-top:1rem;display:flex;flex-direction:column;padding:0;overflow:hidden}
+.mapwide .map{flex:none;height:min(75vh,44rem);min-height:20rem}
+@media (max-width:48rem){.pair{grid-template-columns:1fr;gap:.9rem}.pair .ours{border-left:0;padding-left:0}.mapwide{margin-inline:1.5rem}.mapwide .map{height:65vh}}
 @media (max-width:960px){
 body.fit{height:auto;overflow:visible}
 .region{grid-template-columns:1fr}
