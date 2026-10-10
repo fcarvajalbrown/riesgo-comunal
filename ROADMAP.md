@@ -24,7 +24,7 @@ Launch blockers:
 
 Blockers fixed: 1 in 21f3645 (alerts carry the declared comuna codes and are matched by code; verified live: Rauco and Constitución no longer show the Molina-Curicó and Licantén-Curepto alerts, Molina still does); 2 in cf5811d (pages titled "Riesgo en <comuna>"). Also done since: live river flood card, DART buoys in the sea card and map, footer with method, about (unsigned, sourced "Por qué existe este sitio") and press pages with the senado.cl contact; senator quote pending her media manager.
 
-Should fix today:
+Pulido de la página (pending, in priority order; next session starts here):
 3. "Nuestra evaluación del riesgo" takes the official alert level as ours, one step above SENAPRED's colour (Amarilla shows as Alto).
 4. Public copy names environment variables ("requieren DMC_USER y DMC_TOKEN") under "Lo que nos falta".
 5. The SHOA bulletin reader has never worked (snamchile.cl and shoa.cl answer 403 to this machine), yet the tsunami row says "Sin alerta oficial".
@@ -33,10 +33,17 @@ Should fix today:
 8. Phone pages scroll sideways (index 404 px, comuna 399 px at 390 px).
 9. Most text still at .85rem (15.3 px); Alto pill contrast 4.01:1 and Sin datos 3.15:1 fail AA.
 10. Index map 1.86 MB on first visit; fire-recurrence layer 3.64 MB raw on by default and drawn before the comuna colours; static layers re-downloaded after every build.
-11. Phone maps small and a third covered by the attribution box.
+11. Phone maps: comuna map height fixed (549 px on a 390 px phone, 5d72b91); the expanded attribution box still covers part of it and the index map is still small.
 12. English and jargon in public copy (Weather data by Open-Meteo.com repeated, sensor codes, ECMWF/GFS/ICON, SPI/FWI/ONI line), mixed decimal separators, "foco(s)" style plurals.
-13. The season note says rain comes first on comunas with no rain row.
+13. Season note said rain comes first on comunas with no rain row; every comuna now has the rain row (live river card), so re-check the wording only.
 14. Hostinger CDN bot check answered 403 to some curl bursts; check the security level before launch traffic.
+15. Keep `tools/static-site/info_pages.py` (Cómo lo calculamos) in step with any threshold change in `backend/app/hazards/*.py`, `tools/season` or `tools/river-points`; it repeats them as fixed text.
+16. Senator quote for the press page and the minuta: pending approval of her media manager. `minuta-prensa-lanzamiento.md` at the repo root is uncommitted and still has "[FECHA DE ENVÍO]" and the quote placeholder; its dateline city (SANTIAGO) and contact block need confirming.
+17. Site name: the page says "Riesgo en mi comuna, Región del Maule", the minuta says "Synterra Maule"; pick one.
+18. Second landslide/aluvión source: none yet (only SENAPRED alerts); NASA LHASA v2 is the only candidate found. Landslide alerts sit in the rain and flood row for now.
+19. DART 34420 off Concepción returns 404 at NDBC; only 32404 off Valparaíso reports, with about 6 h publication lag.
+20. Wind arrows: 20% smaller done; a denser grid (0.05 degrees, about 2,100 points) exceeds Open-Meteo's 600 locations per minute and the models are no finer than 0.1 degrees, so density stays at 0.1 degrees.
+21. River thresholds: rerun `tools/river-points` once a year (present-year trend adjustment); GloFAS history via Open-Meteo starts 1997, so 29 annual maxima.
 
 Later: alert start times from the URL slug rather than the page; Vichuquén "Alto" from a single detection 24 h old (consistent with the owner rule) and its "Ver fuente" goes to OpenStreetMap; "recurrencia baja" may read as low danger; inland tsunami line; English Hostinger 404 page; no robots.txt; index.html in map links; desktop index right panel scrolls internally; El Niño note cites Emol rather than the DMC.
 

@@ -29,6 +29,18 @@ It is a decision-support tool. Levels shown are platform calculations from offic
 - Spanish assistant that answers from platform tools and municipal documents with citations; works without an LLM and with any OpenAI-compatible endpoint.
 - Multi-tenant: one installation, many comunas, data isolated per municipality.
 
+## Public Maule site
+
+A static public site for the 30 comunas of the Región del Maule, an initiative of the office of senator Paulina Vodanovic, is live at https://synterra.cl/maule/. `tools/static-site/build.py` generates it from the same database and public API functions; the `static-site` GitHub workflow rebuilds it about every 15 minutes, triggered by a Hostinger cron. Each comuna page shows one row per hazard with the official alert (SENAPRED, DMC, SHOA) beside "Nuestro análisis", a card that cross-checks independent sources:
+
+- Sismos: USGS and EMSC (which carries the CSN's solutions).
+- Incendios: INPE and NASA FIRMS satellite fire detections.
+- Crecidas de ríos: the Copernicus GloFAS 51-member river forecast against each river's 2, 5 and 20-year flows (`tools/river-points`).
+- Mar y tsunami: IOC/UNESCO tide gauges at Constitución and Boyeruca and NOAA DART buoys.
+- Tiempo: three weather models (ECMWF, GFS, ICON) through Open-Meteo.
+
+Rows with an official alert come first, then by level, then by a monthly season signal (SPI and Canadian FWI from ERA5, `tools/season`). The footer links to "Cómo lo calculamos", "Sobre esta iniciativa" and "Prensa". Audience and readability rules are in `docs/ux.md`.
+
 ## Run with Docker
 
 ```bash
@@ -59,7 +71,7 @@ cd frontend && pnpm test && pnpm typecheck
 | `docs/risk-model.md` | hazard modules, rules, thresholds, labels |
 | `docs/ai-rag.md` | assistant, tools, document search |
 | `docs/api.md` | HTTP API |
-| `docs/ux.md` | screens and interface rules |
+| `docs/ux.md` | screens, interface rules, audience of the Maule site and layout research |
 | `docs/municipal-customization.md` | onboarding a comuna, configuration, extending modules and sources |
 | `docs/security.md` | security controls in place and pending |
 | `docs/deployment.md` | install, resources, backups, updates |
