@@ -5,6 +5,7 @@ from app.sources.dmc_cap import DmcCapAdapter
 from app.sources.emsc import EmscAdapter
 from app.sources.geoportal import GeoportalAdapter
 from app.sources.ine_census import IneCensusAdapter
+from app.sources.inpe_queimadas import InpeQueimadasAdapter
 from app.sources.international_alerts import GdacsAdapter, PtwcAdapter
 from app.sources.mop_vialidad import MopVialidadAdapter
 from app.sources.open_meteo import OpenMeteoAdapter
@@ -16,7 +17,7 @@ from app.sources.usgs import UsgsAdapter
 
 ADAPTERS: dict[str, type[SourceAdapter]] = {
     cls.meta.key: cls
-    for cls in (SenapredAdapter, GeoportalAdapter, SincaAdapter, DgaStationsAdapter, UsgsAdapter, EmscAdapter, DmcAdapter, DmcCapAdapter, SenapredAlertsAdapter, IneCensusAdapter, MopVialidadAdapter, GdacsAdapter, PtwcAdapter, ShoaSnamAdapter, OpenMeteoAdapter)
+    for cls in (SenapredAdapter, GeoportalAdapter, SincaAdapter, DgaStationsAdapter, UsgsAdapter, EmscAdapter, InpeQueimadasAdapter, DmcAdapter, DmcCapAdapter, SenapredAlertsAdapter, IneCensusAdapter, MopVialidadAdapter, GdacsAdapter, PtwcAdapter, ShoaSnamAdapter, OpenMeteoAdapter)
 }
 
 

@@ -1,0 +1,9 @@
+id,lat,lon,data_hora_gmt,satelite,municipio,estado,pais,municipio_id,estado_id,pais_id,numero_dias_sem_chuva,precipitacao,risco_fogo,bioma,frp
+e16bc17f-cef2-36db-8266-fe3576fa6f74,  -5.958600, -55.364800,2026-10-09 00:00:00,GOES-19,ITAITUBA,PARÁ,Brasil,1503606,15,33,,,,Amazônia,62.5
+ef82d576-efb2-32a2-94ce-1d0a8add70d4, -11.617300, -43.714200,2026-10-09 00:00:00,GOES-19,BARRA,BAHIA,Brasil,2902708,29,33,,,,Cerrado,77.9
+e0bc95fd-3667-35c9-891a-eba01aab1d4f, -34.938490, -72.074870,2026-10-09 02:06:00,TERRA_M-M,Curicó,Maule,Chile,36,12,48,,,,,15.2
+a576ddf6-0f05-3044-a09a-f4403839c84b, -34.935770, -72.059520,2026-10-09 02:06:00,TERRA_M-M,Curicó,Maule,Chile,36,12,48,,,,,23.5
+0cea3371-e438-3f9a-a42f-96eb5a2d35de, -34.938460, -72.065120,2026-10-09 05:31:00,NOAA-20,Curicó,Maule,Chile,36,12,48,,,,,1.8
+c1d8e770-83ce-3e2c-bd9c-4761c21d2393, -34.935720, -72.064290,2026-10-09 05:31:00,NOAA-20,Curicó,Maule,Chile,36,12,48,,,,,1.6
+9cffbeda-5b14-3fa2-beeb-1550d58e386a, -34.939660, -72.065190,2026-10-09 05:31:00,NOAA-20,Curicó,Maule,Chile,36,12,48,,,,,1.6
+d17b8f00-e565-3bdd-b294-a6da2eaccd91, -34.934490, -72.064320,2026-10-09 05:31:00,NOAA-20,Curicó,Maule,Chile,36,12,48,,,,,0.9
