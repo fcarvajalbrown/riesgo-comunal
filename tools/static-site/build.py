@@ -686,7 +686,7 @@ def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str
     body = f"""{senator_bar(generated, "../")}
 <header class="muni"><div class="in">
 <span class="initials" aria-hidden="true">{escape(comuna["name"][:2].upper())}</span>
-<div><h1>{escape(comuna["display_name"])}</h1><p>Información sobre riesgos de desastre para la comunidad de {escape(comuna["name"])}</p></div>
+<div><h1>Riesgo en {escape(comuna["name"])}</h1><p>Información sobre riesgos de desastre para la comunidad de {escape(comuna["name"])}</p></div>
 <nav><a href="../index.html">Todas las comunas del Maule</a></nav>
 </div></header>
 <main class="wrap">
