@@ -136,13 +136,15 @@ METHOD_HTML = (
 <h3>Nuestro análisis: el nivel del mar ahora</h3>
 <p>Usamos los mareógrafos de Constitución y Boyeruca. Un mareógrafo es un instrumento que mide la altura del mar. Estos los opera el SHOA, y la IOC de la UNESCO publica sus datos cada minuto.</p>
 <p>Primero quitamos el efecto de la marea. En un día tranquilo, el mar sube y baja menos de 25 centímetros.</p>
+<p>También leemos dos boyas DART de la NOAA de Estados Unidos, frente a Valparaíso y frente a Concepción. Miden el océano desde el fondo del mar. Cuando una boya detecta una onda, empieza sola a medir cada minuto. Las boyas publican sus datos con algunas horas de retraso.</p>
 <h3>Cómo decidimos el nivel</h3>
 <ul class="dots">
 <li><strong>Alto:</strong> todos los sensores de un mareógrafo marcan más de 50 centímetros en la última hora. Puede ser un tsunami o una marejada fuerte.</li>
+<li><strong>Moderado:</strong> una boya detectó una onda en las últimas 6 horas, pero los mareógrafos de la costa no muestran nada anormal.</li>
 <li><strong>Bajo:</strong> el mar se comporta con normalidad.</li>
-<li><strong>Sin datos:</strong> los mareógrafos no enviaron datos en la última hora.</li>
+<li><strong>Sin datos:</strong> ni los mareógrafos ni las boyas enviaron datos recientes.</li>
 </ul>
-<p>Esta señal llega unos 15 minutos tarde. Si está en el borde costero y un sismo le hace difícil mantenerse en pie, no espere esta señal: evacúe de inmediato hacia un punto de encuentro o zona segura.</p>
+<p>La señal de los mareógrafos llega unos 15 minutos tarde. Si está en el borde costero y un sismo le hace difícil mantenerse en pie, no espere esta señal: evacúe de inmediato hacia un punto de encuentro o zona segura.</p>
 <p>Más abajo en la página, el mapa muestra las áreas de evacuación por tsunami y los puntos de encuentro publicados por SENAPRED.</p>
 </section>
 
