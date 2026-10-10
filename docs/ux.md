@@ -41,6 +41,31 @@ SIN_DATOS grey, INFORMATIVO blue, BAJO green, MODERADO yellow, ALTO orange, CRIT
 
 MapLibre GL with the OpenFreeMap positron basemap. Layers per tab, toggled from a legend; clicking a feature shows its properties and source. The map never loads data from an external API other than the basemap tiles.
 
+## Audience of the Maule public site
+
+Read this before any layout, copy or styling change to the static site (`tools/static-site/`). Every design decision is checked against these readers, not against a generic web user.
+
+Sourced facts:
+
+| Fact | Value | Source |
+|---|---|---|
+| Maule population | 1,123,008 | Censo 2024 (INE), via BCN |
+| Average years of schooling, ages 18+ | 11.1 years, second lowest in Chile after Ñuble (11.0) | Censo 2024, reported by CNN Chile |
+| Illiteracy, ages 15+ | 6.2% in Maule, highest region, against 3.1% nationally | CASEN 2015 regional fiche |
+| Older population, Curepto | 33.5% of residents are older people, among the highest shares in Chile | UDD, from INE 2024 projections |
+| Older population, Talca | 20.4% aged 60+ | INE 2024 projection |
+| Mobile-only internet | 25% of Chilean households connect only through a mobile phone, concentrated in rural areas | SUBTEL XII Encuesta de Acceso y Usos de Internet (2025) |
+| Fixed fibre coverage | Fibre plan reaches 21 of 30 Maule comunas | SUBTEL |
+
+Not found, do not fill in: the Censo 2024 rural share of Maule and its share of people aged 65+.
+
+What follows for design:
+
+- Many readers are older, with lower schooling and a real share with reading difficulty: plain Spanish, short sentences, no technical codes or English, one idea per line.
+- Large body text and touch targets, high contrast (WCAG AA at minimum), level shown by word and colour, never colour alone.
+- Phone first: assume a small screen on a mobile connection, so the page stays light and the most urgent item is first on a narrow screen.
+- The official alert and our own analysis of the same hazard sit side by side (stacked, official first, on a phone), each alert shown once.
+
 ## Not yet done
 
 Mobile layout beyond basic responsiveness, keyboard navigation audit, screen-reader audit, print styles for the web view (the PDF covers printing).
