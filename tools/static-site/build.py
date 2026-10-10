@@ -107,6 +107,8 @@ h1,h2,h3,p{margin:0}
 ul{list-style:none;margin:0;padding:0}
 .senator{background:var(--senator) center/cover no-repeat;color:#fff;border-bottom:3px solid var(--senator-deep)}
 .senator .in{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:.5rem 1.5rem;padding:.6rem 1rem}
+.senator .home{display:block;border-radius:.4rem}
+.senator .home:focus-visible{outline:3px solid #fff;outline-offset:3px}
 .senator img{display:block;height:clamp(3.5rem,8vw,5.25rem);width:auto}
 .senator .by{display:flex;flex-direction:column;align-items:flex-end;text-align:right;gap:.15rem}
 .senator strong{font-size:clamp(.95rem,1.7vw,1.2rem);font-weight:700}
@@ -350,7 +352,7 @@ def down_banner(status: tuple[str, str] | None) -> str:
 def senator_bar(generated: str, root: str) -> str:
     return (
         f'<div class="senator" style="background-image:url({root}assets/senator-banner.webp)"><div class="in">'
-        f'<img src="{root}assets/senator-logo.png" width="292" height="168" alt="Paulina Vodanovic, la senadora del Maule">'
+        f'<a class="home" href="{root}index.html"><img src="{root}assets/senator-logo.png" width="292" height="168" alt="Paulina Vodanovic, la senadora del Maule. Ir al inicio: todas las comunas"></a>'
         f'<p class="by"><strong>Una iniciativa de la oficina de la senadora Paulina Vodanovic</strong><span>Última actualización: {escape(generated)}</span></p>'
         "</div></div>"
     )
