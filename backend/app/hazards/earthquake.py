@@ -8,10 +8,10 @@ from app.hazards.common import latest_provenance
 class EarthquakeModule(HazardModule):
     key = "earthquake"
     name = "Sismos recientes"
-    description = "Sismos de las últimas 72 horas cerca de la comuna según USGS (fuente complementaria; la fuente oficial chilena es el CSN)."
+    description = "Sismos de las últimas 24 horas cerca de la comuna según USGS (fuente complementaria; la fuente oficial chilena es el CSN)."
     modes = ("ahora", "planificar")
     spatial = False
-    default_thresholds = {"radius_km": 150.0, "min_magnitude": 4.0, "hours": 72}
+    default_thresholds = {"radius_km": 200.0, "min_magnitude": 4.5, "hours": 24}
     layers = ("earthquake",)
 
     def recent(self, ctx: HazardContext, t: dict) -> list[dict]:
@@ -49,9 +49,9 @@ class EarthquakeModule(HazardModule):
         ]
         if events:
             strongest = max(events, key=lambda e: e["magnitude"])
-            headline = f"{len(events)} sismo(s) de magnitud {t['min_magnitude']:.0f} o más en las últimas {t['hours']} horas a menos de {t['radius_km']:.0f} km; el mayor fue M{strongest['magnitude']:.1f}."
+            headline = f"{len(events)} sismo(s) de magnitud {t['min_magnitude']:g} o más en las últimas {t['hours']} horas a menos de {t['radius_km']:.0f} km; el mayor fue M{strongest['magnitude']:.1f}."
         else:
-            headline = f"Sin sismos de magnitud {t['min_magnitude']:.0f} o más en las últimas {t['hours']} horas a menos de {t['radius_km']:.0f} km."
+            headline = f"Sin sismos de magnitud {t['min_magnitude']:g} o más en las últimas {t['hours']} horas a menos de {t['radius_km']:.0f} km."
         explanation = [
             "Información de sismos ya ocurridos. Los sismos no se pueden pronosticar y esta plataforma no lo intenta.",
             "Fuente complementaria USGS. La información sísmica oficial de Chile es la del Centro Sismológico Nacional.",
