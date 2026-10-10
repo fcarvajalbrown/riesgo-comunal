@@ -156,6 +156,7 @@ ul{list-style:none;margin:0;padding:0}
 .hz summary::-webkit-details-marker{display:none}
 .hz summary h3{margin:0;font-size:1rem}
 .hz summary .line{grid-column:2;font-size:.9rem}
+.hz summary .agree{grid-column:2;font-size:.82rem;color:var(--muted)}
 .hz summary .more{grid-column:2;font-size:.82rem;color:var(--brand);text-decoration:underline}
 .hz[open] summary .more{display:none}
 .hz summary:focus-visible{outline:3px solid var(--brand);outline-offset:2px;border-radius:.75rem}
@@ -458,9 +459,10 @@ def hazard_card(item: dict) -> str:
         parts.append("<h4>Qué hacer</h4><ul>" + "".join(f"<li>{escape(x)}</li>" for x in item["actions"]) + "</ul>")
     if item.get("missing"):
         parts.append("<h4>Lo que nos falta</h4><ul>" + "".join(f"<li>{escape(x)}</li>" for x in item["missing"]) + "</ul>")
+    agree = f'<span class="agree">{escape(item["consensus"])}</span>' if item.get("consensus") else ""
     return (
         f'<details class="hz"><summary>{level_pill(item["level"], item["level_label"])}<h3>{escape(item["hazard"])}</h3>'
-        f'<span class="line">{escape(item["headline"])}</span><span class="more">Ver fuentes y datos</span></summary>'
+        f'<span class="line">{escape(item["headline"])}</span>{agree}<span class="more">Ver fuentes y datos</span></summary>'
         f'<div class="body">{"".join(parts)}</div></details>'
     )
 
