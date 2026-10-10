@@ -22,6 +22,8 @@ Launch blockers:
 1. Wrong comunas on SENAPRED alerts: 13 comunas carry alerts declared only for their neighbours (Molina-Curicó alert also on Rauco, Río Claro, Romeral, Sagrada Familia, San Clemente, San Rafael, Teno; Licantén-Curepto also on Constitución, Hualañé, Sagrada Familia; a Ñuble-only alert on Cauquenes, Colbún, Parral, Pelluhue). Likely cause: the alert area is the union of the named comunas and `active_alerts` matches any comuna whose boundary touches it (`st_relate ... 'T********'`). Fix: match by the stored comuna codes.
 2. Every comuna page is headed "Municipalidad de <Comuna>", which reads as if the municipality publishes the page.
 
+Blockers fixed: 1 in 21f3645 (alerts carry the declared comuna codes and are matched by code; verified live: Rauco and Constitución no longer show the Molina-Curicó and Licantén-Curepto alerts, Molina still does); 2 in cf5811d (pages titled "Riesgo en <comuna>"). Also done since: live river flood card, DART buoys in the sea card and map, footer with method, about (unsigned, sourced "Por qué existe este sitio") and press pages with the senado.cl contact; senator quote pending her media manager.
+
 Should fix today:
 3. "Nuestra evaluación del riesgo" takes the official alert level as ours, one step above SENAPRED's colour (Amarilla shows as Alto).
 4. Public copy names environment variables ("requieren DMC_USER y DMC_TOKEN") under "Lo que nos falta".
