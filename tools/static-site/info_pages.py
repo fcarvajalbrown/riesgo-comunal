@@ -205,6 +205,12 @@ ABOUT_HTML = (
 <p>No pide registro.</p>
 </section>
 
+<section class="card" aria-labelledby="por-que"><h2 id="por-que">Por qué existe este sitio</h2>
+<p>En el Maule, los canales oficiales ya han fallado. Durante la crecida de junio de 2023, la Contraloría constató que SENAPRED no envió la alerta masiva por inundación en Rauco, Hualañé y Licantén (<a href="https://www.cnnchile.com/pais/contraloria-revela-fallas-senapred-sistema-frontal-maule-no-alerto-amenaza-inundacion_20240312/" rel="noreferrer">CNN Chile, 12 de marzo de 2024</a>).</p>
+<p>Hoy SENAPRED tiene menos recursos. Según <a href="https://www.meganoticias.cl/nacional/533626-presupuesto-senapred-recorte-gestion-riesgo-desastres-2027-09-10-2026.html" rel="noreferrer">Mega Investiga (9 de octubre de 2026)</a>, el proyecto de Presupuesto 2027 que el Gobierno del Presidente José Antonio Kast ingresó al Congreso (<a href="https://www.emol.com/noticias/Economia/2026/09/30/1212889/gobierno-ingresa-proyecto-presupuesto-2027.html" rel="noreferrer">Emol, 30 de septiembre de 2026</a>) baja en 30,6% su Programa de Gestión del Riesgo de Desastres. La asociación de funcionarios del servicio dice que no se pueden reemplazar a quienes se van, salvo en alerta temprana (<a href="https://eldesconcierto.cl/actualidad/funcionarios-senapred-levantan-alerta-crisis-laboral-y-humana-pone-riesgo-chile-n5462614" rel="noreferrer">El Desconcierto, 28 de septiembre de 2026</a>).</p>
+<p>Por eso este sitio sigue funcionando aunque falle un canal oficial: cruza varias fuentes independientes y muestra cuáles responden.</p>
+</section>
+
 <section class="card" aria-labelledby="que-no-es"><h2 id="que-no-es">Lo que no es</h2>
 <p>No es un sistema oficial de alertas. No reemplaza a SENAPRED, al SHOA ni a la Dirección Meteorológica de Chile. Usamos sus datos públicos, pero el sitio no habla en nombre de ellos.</p>
 <p>En una emergencia, siga las indicaciones de SENAPRED y de la autoridad.</p>
@@ -255,6 +261,12 @@ def press_html(base_url: str, assets: list[tuple[str, str, str, str, str]]) -> s
 <li><strong>Actualización:</strong> más o menos cada 15 minutos</li>
 <li><strong>Cómo se calcula:</strong> <a href="../{METHOD_SLUG}/index.html">Cómo lo calculamos</a></li>
 </ul>
+</section>
+
+<section class="card" aria-labelledby="contacto"><h2 id="contacto">Contacto de prensa</h2>
+<p>Oficina de la senadora Paulina Vodanovic, Senado de Chile.</p>
+<p>Correo: <a href="mailto:pvodanovic@senado.cl">pvodanovic@senado.cl</a></p>
+<p>Teléfonos del Senado: <a href="tel:+56322504000">(56-32) 250 4000</a> y <a href="tel:+56225196700">(56-2) 2519 6700</a>.</p>
 </section>
 
 <section class="card" aria-labelledby="descargas"><h2 id="descargas">Imágenes para descargar</h2>
