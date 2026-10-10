@@ -430,7 +430,7 @@ def shown_hazards(items: list[dict], coastal: bool, now: datetime) -> list[dict]
     def keep(item: dict) -> bool:
         if item["key"] in ALERT_MODULES:
             return False
-        if item["key"] == "tsunami" and not coastal:
+        if item["key"] in ("tsunami", "sea_level") and not coastal:
             return False
         if item["key"] == "air_quality" and month not in AIR_QUALITY_SEASON:
             return item["level"] in ("MODERADO", "ALTO", "CRITICO")
