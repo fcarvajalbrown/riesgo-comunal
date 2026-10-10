@@ -59,9 +59,9 @@ SOURCE_STATE = {
 MAP_LAYERS = [
     ("tsunami_evacuation_area", "Área de evacuación por tsunami", "SENAPRED", True, '<span class="sq" style="background:rgba(37,99,235,.3);border:1px solid #1d4ed8"></span>'),
     ("tsunami_meeting_point", "Puntos de encuentro por tsunami", "SENAPRED", True, '<span class="dot" style="background:#059669"></span>'),
+    ("dart_buoy", "Boyas de tsunami en el océano, frente a la costa (el mapa se aleja para mostrarlas)", "NOAA, boyas DART", False, '<span class="dot" style="background:#7c3aed"></span>'),
     ("dmc_warning", "Avisos y alertas meteorológicas vigentes", "Dirección Meteorológica de Chile", True, '<span class="sq" style="background:#eab308"></span>'),
     ("wildfire_hazard", "Recurrencia de incendios forestales", "SENAPRED con datos de CONAF", True, '<span class="sq" style="background:linear-gradient(90deg,#fde68a,#9a3412)"></span>'),
-    ("dart_buoy", "Boyas de tsunami en el océano, frente a la costa (el mapa se aleja para mostrarlas)", "NOAA, boyas DART", False, '<span class="dot" style="background:#7c3aed"></span>'),
 ]
 BUOY_SQL = """
 select distinct on (o.station_external_id) o.station_external_id as id, o.station_name as name, st_x(o.geom) as lon, st_y(o.geom) as lat, o.observed_at,
