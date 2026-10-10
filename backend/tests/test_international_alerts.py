@@ -46,7 +46,9 @@ def test_gdacs_record_is_labelled_international_and_mapped():
     record = gdacs_record(item)
     assert record.level == "GDACS naranja"
     assert record.hazard == "wildfire"
-    assert record.title.startswith("Fuente internacional (GDACS), no reemplaza el aviso oficial")
+    assert record.title == f"Aviso internacional: incendio forestal en {item['country']}"
+    assert record.description.startswith("Nivel naranja: podría causar un desastre local.")
+    assert "alertas oficiales son las de SENAPRED" in record.description
     assert record.ends_at is None
     assert record.area["coordinates"][0][0][0] == [-67.1250473944409, -17.0350039971287]
     ended = gdacs_record(gdacs_items()["FL1104207"])
@@ -76,6 +78,7 @@ def test_ptwc_relevance_and_record():
     assert record.level == "PTWC amenaza de tsunami"
     assert record.area_cut_codes == ("07102",)
     assert record.ends_at - record.starts_at == timedelta(hours=12)
-    assert "no reemplaza el aviso oficial" in record.title
+    assert record.title == "Aviso internacional de tsunami tras un sismo (magnitud preliminar 5.3)"
+    assert "alertas oficiales de tsunami son las del SHOA" in record.description
     assert ptwc_record({**entry, "category": "Cancellation"}, []).cancelled
 

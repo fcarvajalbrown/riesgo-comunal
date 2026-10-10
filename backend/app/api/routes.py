@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field, HttpUrl
 from sqlalchemy import Connection, text
 
 from app.ai.assistant import answer
-from app.alerts import ALERT_FEED_NOTE, ALERT_ORIGIN, active_alerts, alert_feed_status
+from app.alerts import ALERT_FEED_NOTE, ALERT_ORIGIN, FALLBACK_SOURCES, active_alerts, alert_feed_status
 from app.api.layers import LAYERS, layer_catalog, layer_geojson, provenance_detail, search_places
 from app.auth import Principal, audit, current_principal, issue_token, require, verify_password
 from app.db import get_conn, row, rows, scalar
@@ -678,6 +678,8 @@ def public_summary(slug: str, conn: Connection = Depends(get_conn)) -> dict[str,
                 "ends_at": a["ends_at"],
                 "in_force": a["starts_at"] <= now,
                 "origin": ALERT_ORIGIN.get(a["source_key"], "ingresada por la municipalidad"),
+                "international": a["source_key"] in FALLBACK_SOURCES,
+                "description": a["description"] if a["source_key"] in FALLBACK_SOURCES else None,
                 "official_page_unavailable": bool((a["properties"] or {}).get("pagina_oficial_no_disponible")),
             }
             for a in active_alerts(conn, municipality_id, now)

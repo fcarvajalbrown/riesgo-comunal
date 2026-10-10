@@ -17,6 +17,22 @@ PTWC_WINDOW_HOURS = 12
 SOUTH_AMERICA_PACIFIC = (-120.0, -60.0, -65.0, 5.0)
 GDACS_HAZARD = {"EQ": "earthquake", "FL": "flood", "WF": "wildfire", "VO": "volcanic", "DR": "drought", "TC": "cyclone", "TS": "tsunami"}
 GDACS_LEVEL = {"Green": "GDACS verde", "Orange": "GDACS naranja", "Red": "GDACS roja"}
+GDACS_HAZARD_NAME = {
+    "EQ": "sismo",
+    "FL": "inundación",
+    "WF": "incendio forestal",
+    "VO": "actividad volcánica",
+    "DR": "sequía",
+    "TC": "ciclón tropical",
+    "TS": "tsunami",
+}
+GDACS_MEANING = {
+    "Green": "Nivel verde: se espera un impacto bajo.",
+    "Orange": "Nivel naranja: podría causar un desastre local.",
+    "Red": "Nivel rojo: se espera un desastre grave.",
+}
+GDACS_ISSUER = "Lo emite GDACS, un sistema de la Comisión Europea y la ONU. En Chile, las alertas oficiales son las de SENAPRED y, para tsunamis, las del SHOA."
+PTWC_ISSUER = "Lo emite el Centro de Alerta de Tsunamis del Pacífico (NOAA, Estados Unidos). En Chile, las alertas oficiales de tsunami son las del SHOA y SENAPRED."
 PTWC_LEVEL = {
     "Warning": "PTWC alerta de tsunami",
     "Threat": "PTWC amenaza de tsunami",
@@ -105,8 +121,8 @@ def gdacs_record(item: dict[str, Any]) -> AlertRecord:
         issuer="GDACS (Comisión Europea y Naciones Unidas)",
         hazard=GDACS_HAZARD.get(item["event_type"], "other"),
         level=level,
-        title=f"{label}: {item['title']}",
-        description=f"{label}. {item['description']}",
+        title=f"Aviso internacional: {GDACS_HAZARD_NAME.get(item['event_type'], 'evento')} en {item['country'] or 'la zona'}",
+        description=f"{GDACS_MEANING.get(item['alert_level'], 'Nivel sin informar.')} {GDACS_ISSUER}",
         source_url=item["link"],
         starts_at=item["from_date"],
         ends_at=None if item["is_current"] else (item["modified"] or item["to_date"]),
@@ -213,8 +229,8 @@ def ptwc_record(entry: dict[str, Any], coastal_codes: list[str]) -> AlertRecord:
         issuer="Pacific Tsunami Warning Center / National Tsunami Warning Center (NOAA, EE.UU.)",
         hazard="tsunami",
         level=level,
-        title=f"{label}: {entry['category'] or 'Mensaje'} por sismo {entry['title']}{magnitude}",
-        description=f"{label}. {entry['note']}".strip(),
+        title=f"Aviso internacional de tsunami tras un sismo{magnitude}",
+        description=PTWC_ISSUER,
         source_url=entry["bulletin_url"],
         starts_at=entry["updated"],
         ends_at=entry["updated"] + timedelta(hours=PTWC_WINDOW_HOURS),
