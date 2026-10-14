@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 import unicodedata
@@ -235,26 +236,37 @@ def page_missing(body_text: str) -> bool:
     return NOT_FOUND_TEXT in fold(body_text or "")
 
 
-def check_pages(urls: list[str], timeout_ms: int = 30000) -> dict[str, bool]:
-    from playwright.sync_api import Error as PlaywrightError
-    from playwright.sync_api import sync_playwright
+def check_pages(urls: list[str], timeout_ms: int = 30000, concurrency: int = 6) -> dict[str, bool]:
+    if not urls:
+        return {}
+    return asyncio.run(_check_pages(urls, timeout_ms, concurrency))
+
+
+async def _check_pages(urls: list[str], timeout_ms: int, concurrency: int) -> dict[str, bool]:
+    from playwright.async_api import Error as PlaywrightError
+    from playwright.async_api import async_playwright
 
     results: dict[str, bool] = {}
-    if not urls:
-        return results
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        try:
-            page = browser.new_page()
-            for url in urls:
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        slots = asyncio.Semaphore(concurrency)
+
+        async def check(url: str) -> None:
+            async with slots:
+                page = await browser.new_page()
                 try:
-                    page.goto(url, wait_until="networkidle", timeout=timeout_ms)
-                    page.wait_for_timeout(2000)
-                    results[url] = page_missing(page.inner_text("body"))
+                    await page.goto(url, wait_until="networkidle", timeout=timeout_ms)
+                    await page.wait_for_timeout(2000)
+                    results[url] = page_missing(await page.inner_text("body"))
                 except PlaywrightError:
-                    continue
+                    pass
+                finally:
+                    await page.close()
+
+        try:
+            await asyncio.gather(*(check(url) for url in urls))
         finally:
-            browser.close()
+            await browser.close()
     return results
 
 
