@@ -1,0 +1,21 @@
+name: static-site-health
+
+on:
+  schedule:
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  issues: write
+
+jobs:
+  digest:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Comment on the health issue when the last day had failures
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/static-site-health/report.py --repo "$GITHUB_REPOSITORY" --hours 24
