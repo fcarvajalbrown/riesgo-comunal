@@ -1,0 +1,28 @@
+name: source-probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: Source URL to probe
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen --no-dev
+      - run: uv run playwright install --with-deps chromium-headless-shell
+      - env:
+          URL: ${{ inputs.url }}
+        run: uv run python ../tools/source-probe/probe.py "$URL" --browser
