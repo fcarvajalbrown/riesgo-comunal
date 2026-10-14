@@ -8,6 +8,7 @@ from app.sources.base import IngestScope, SourceError
 PAGE_SIZE = 1000
 MAX_PAGES = 200
 RATE_LIMIT_WAIT_SECONDS = 62
+TRANSIENT_WAIT_SECONDS = 5
 
 
 def query_geojson(
@@ -166,6 +167,9 @@ def query_esri_by_ids(
 def _get_json(client: httpx.Client, url: str, params: dict[str, Any], attempts: int = 4) -> dict[str, Any]:
     for attempt in range(attempts):
         response = client.get(url, params=params)
+        if _is_transient(response.status_code) and attempt < attempts - 1:
+            time.sleep(TRANSIENT_WAIT_SECONDS * (attempt + 1))
+            continue
         response.raise_for_status()
         data = response.json()
         error = data.get("error") if isinstance(data, dict) else None
@@ -176,3 +180,7 @@ def _get_json(client: httpx.Client, url: str, params: dict[str, Any], attempts: 
             raise SourceError(f"ArcGIS error en {url}: {error}")
         return data
     raise SourceError(f"ArcGIS sin respuesta válida en {url}")
+
+
+def _is_transient(status_code: int) -> bool:
+    return status_code == 304 or status_code >= 500
