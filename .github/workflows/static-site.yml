@@ -69,12 +69,13 @@ jobs:
           docker exec "$DB_CONTAINER" pg_restore -U riesgo -d riesgo --no-owner --exit-on-error -L /tmp/restore.list /tmp/riesgo.dump
       - run: uv run alembic upgrade head
       - id: region
+        if: steps.restore.outputs.cache-matched-key == ''
         run: uv run python -m app.cli create-region --region 07
         continue-on-error: true
       - name: Region setup failed
         if: steps.region.outcome == 'failure'
         run: echo "create-region failed; ingest continues on the restored database"
-      - run: uv run python -m app.cli ingest ${{ steps.restore.outputs.cache-matched-key == '' && '--backfill' || '' }}
+      - run: uv run python -m app.cli ingest --jobs 6 ${{ steps.restore.outputs.cache-matched-key == '' && '--backfill' || '--due --due-slack-minutes 5' }}
       - run: psql postgresql://riesgo:riesgo@127.0.0.1:5432/riesgo -c analyze
       - name: Dump the database for the next run
         env:
