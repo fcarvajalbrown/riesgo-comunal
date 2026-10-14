@@ -4,9 +4,15 @@ on:
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
+    inputs:
+      fresh:
+        description: Start from an empty database instead of the last run's
+        type: boolean
+        default: false
 
 permissions:
   contents: read
+  actions: write
   pages: write
   id-token: write
 
@@ -46,10 +52,41 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --frozen --no-dev
       - run: uv run playwright install --with-deps chromium-headless-shell
+      - id: restore
+        if: ${{ !inputs.fresh }}
+        uses: actions/cache/restore@v4
+        with:
+          path: backend/.db-cache/riesgo.dump
+          key: static-site-db-${{ github.run_id }}
+          restore-keys: static-site-db-
+      - name: Load the last run's database
+        if: steps.restore.outputs.cache-matched-key != ''
+        env:
+          DB_CONTAINER: ${{ job.services.db.id }}
+        run: |
+          docker cp .db-cache/riesgo.dump "$DB_CONTAINER":/tmp/riesgo.dump
+          docker exec "$DB_CONTAINER" sh -c "pg_restore -l /tmp/riesgo.dump | grep -vE 'EXTENSION|SCHEMA - public|SCHEMA public|spatial_ref_sys' > /tmp/restore.list"
+          docker exec "$DB_CONTAINER" pg_restore -U riesgo -d riesgo --no-owner --exit-on-error -L /tmp/restore.list /tmp/riesgo.dump
       - run: uv run alembic upgrade head
       - run: uv run python -m app.cli create-region --region 07
-      - run: uv run python -m app.cli ingest --backfill
+      - run: uv run python -m app.cli ingest ${{ steps.restore.outputs.cache-matched-key == '' && '--backfill' || '' }}
       - run: psql postgresql://riesgo:riesgo@127.0.0.1:5432/riesgo -c analyze
+      - name: Dump the database for the next run
+        env:
+          DB_CONTAINER: ${{ job.services.db.id }}
+        run: |
+          mkdir -p .db-cache
+          docker exec "$DB_CONTAINER" pg_dump -U riesgo -d riesgo -Fc --exclude-schema=tiger --exclude-schema=tiger_data --exclude-schema=topology > .db-cache/riesgo.dump
+          ls -l .db-cache/riesgo.dump
+      - uses: actions/cache/save@v4
+        with:
+          path: backend/.db-cache/riesgo.dump
+          key: static-site-db-${{ github.run_id }}
+      - name: Delete older database caches
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh cache list --repo "$GITHUB_REPOSITORY" --key static-site-db- --limit 100 --json key -q '.[].key'             | grep -vx "static-site-db-$GITHUB_RUN_ID"             | xargs -r -n1 gh cache delete --repo "$GITHUB_REPOSITORY"
       - run: uv run python ../tools/static-site/build.py --out ../site
       - uses: actions/upload-pages-artifact@v3
         with:
