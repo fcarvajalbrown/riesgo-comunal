@@ -69,6 +69,7 @@ jobs:
           docker exec "$DB_CONTAINER" pg_restore -U riesgo -d riesgo --no-owner --exit-on-error -L /tmp/restore.list /tmp/riesgo.dump
       - run: uv run alembic upgrade head
       - run: uv run python -m app.cli create-region --region 07
+        continue-on-error: true
       - run: uv run python -m app.cli ingest ${{ steps.restore.outputs.cache-matched-key == '' && '--backfill' || '' }}
       - run: psql postgresql://riesgo:riesgo@127.0.0.1:5432/riesgo -c analyze
       - name: Dump the database for the next run
@@ -94,6 +95,7 @@ jobs:
       - id: deploy
         uses: actions/deploy-pages@v4
       - name: Publish to synterra.cl/maule
+        continue-on-error: true
         working-directory: .
         env:
           HOSTINGER_SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
