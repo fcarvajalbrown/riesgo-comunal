@@ -3,10 +3,11 @@ import json
 import logging
 import secrets
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from app.auth import ROLES, hash_password
 from app.db import rows, scalar, transaction
-from app.ingest.runner import mark_all_sources_due, run_source
+from app.ingest.runner import due_sources, mark_all_sources_due, run_source
 from app.sources.registry import ADAPTERS
 from app.sources.senapred import LAYERS, SenapredAdapter
 from app.tenants import create_municipality, refresh_analysis_cells, slugify
@@ -19,11 +20,27 @@ def cmd_migrate(_args) -> None:
     command.upgrade(Config("alembic.ini"), "head")
 
 
+BOUNDARY_SOURCE = "senapred"
+
+
 def cmd_ingest(args) -> None:
-    keys = args.sources or list(ADAPTERS)
-    for key in keys:
+    if args.sources:
+        keys = args.sources
+    elif args.due:
+        keys = due_sources(slack_minutes=args.due_slack_minutes)
+    else:
+        keys = list(ADAPTERS)
+
+    def ingest(key: str) -> dict:
         options = {"backfill": True} if key == "usgs" and args.backfill else {}
-        print(json.dumps(run_source(key, **options), ensure_ascii=False))
+        return run_source(key, **options)
+
+    if BOUNDARY_SOURCE in keys:
+        print(json.dumps(ingest(BOUNDARY_SOURCE), ensure_ascii=False), flush=True)
+    rest = [k for k in keys if k != BOUNDARY_SOURCE]
+    with ThreadPoolExecutor(max_workers=max(1, args.jobs)) as pool:
+        for future in as_completed([pool.submit(ingest, key) for key in rest]):
+            print(json.dumps(future.result(), ensure_ascii=False), flush=True)
 
 
 def ensure_boundaries(cut_prefix: str) -> None:
@@ -156,6 +173,9 @@ def main(argv: list[str] | None = None) -> None:
     p = sub.add_parser("ingest")
     p.add_argument("sources", nargs="*")
     p.add_argument("--backfill", action="store_true")
+    p.add_argument("--due", action="store_true", help="only sources whose refresh interval has passed")
+    p.add_argument("--due-slack-minutes", type=float, default=0)
+    p.add_argument("--jobs", type=int, default=1, help="sources ingested at the same time")
     p.set_defaults(func=cmd_ingest)
 
     p = sub.add_parser("create-tenant")

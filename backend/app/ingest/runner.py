@@ -398,14 +398,19 @@ def mark_all_sources_due(conn: Connection) -> None:
     conn.execute(text("update source set last_attempt_at = null"))
 
 
-def due_sources(now: datetime | None = None) -> list[str]:
+FAILED_RETRY_MINUTES = 60
+
+
+def is_due(interval_minutes: int, last_attempt_at: datetime | None, last_error: str | None, now: datetime, slack_minutes: float = 0) -> bool:
+    if last_attempt_at is None:
+        return True
+    wait = min(interval_minutes, FAILED_RETRY_MINUTES) if last_error else interval_minutes
+    return (now - last_attempt_at).total_seconds() >= (wait - slack_minutes) * 60
+
+
+def due_sources(now: datetime | None = None, slack_minutes: float = 0) -> list[str]:
     now = now or datetime.now(UTC)
     with transaction() as conn:
         sync_source_registry(conn)
-        result = rows(conn, "select key, interval_minutes, last_attempt_at, enabled from source where enabled")
-    due = []
-    for r in result:
-        last = r["last_attempt_at"]
-        if last is None or (now - last).total_seconds() >= r["interval_minutes"] * 60:
-            due.append(r["key"])
-    return due
+        result = rows(conn, "select key, interval_minutes, last_attempt_at, last_error from source where enabled")
+    return [r["key"] for r in result if is_due(r["interval_minutes"], r["last_attempt_at"], r["last_error"], now, slack_minutes)]
