@@ -68,8 +68,12 @@ jobs:
           docker exec "$DB_CONTAINER" sh -c "pg_restore -l /tmp/riesgo.dump | grep -vE 'EXTENSION|SCHEMA - public|SCHEMA public|spatial_ref_sys' > /tmp/restore.list"
           docker exec "$DB_CONTAINER" pg_restore -U riesgo -d riesgo --no-owner --exit-on-error -L /tmp/restore.list /tmp/riesgo.dump
       - run: uv run alembic upgrade head
-      - run: uv run python -m app.cli create-region --region 07
+      - id: region
+        run: uv run python -m app.cli create-region --region 07
         continue-on-error: true
+      - name: Region setup failed
+        if: steps.region.outcome == 'failure'
+        run: echo "create-region failed; ingest continues on the restored database"
       - run: uv run python -m app.cli ingest ${{ steps.restore.outputs.cache-matched-key == '' && '--backfill' || '' }}
       - run: psql postgresql://riesgo:riesgo@127.0.0.1:5432/riesgo -c analyze
       - name: Dump the database for the next run
@@ -95,6 +99,7 @@ jobs:
       - id: deploy
         uses: actions/deploy-pages@v4
       - name: Publish to synterra.cl/maule
+        id: hostinger
         continue-on-error: true
         working-directory: .
         env:
@@ -114,3 +119,6 @@ jobs:
           [ -s ~/.ssh/host_keys ]
           cat ~/.ssh/host_keys >> ~/.ssh/known_hosts
           rsync -az --delete -e "ssh -i ~/.ssh/deploy -p $PORT" site/ "$REMOTE_USER@$HOST:domains/synterra.cl/public_html/maule/"
+      - name: Hostinger upload missed
+        if: steps.hostinger.outcome == 'failure'
+        run: echo "synterra.cl/maule keeps the previous version until the next run"
