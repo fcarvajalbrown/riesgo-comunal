@@ -582,6 +582,14 @@ OTHER_ROW = ("otras", "Otras alertas oficiales")
 SEVERITY = ("CRITICO", "ALTO", "MODERADO", "BAJO", "INFORMATIVO", "SIN_DATOS")
 NO_ALERT = '<p class="none">Sin alerta oficial para esta amenaza.</p>'
 NO_ANALYSIS = '<p class="gap">Todavía no tenemos análisis propio para esta amenaza.</p>'
+UNREAD_OFFICIAL = {
+    "mar": ("shoa_snam", '<p class="gap">No pudimos leer los boletines de tsunami del SHOA, así que no podemos decir si hay una alerta oficial. Revíselos en <a href="https://www.snamchile.cl" rel="noreferrer">snamchile.cl</a>.</p>'),
+}
+
+
+def unread_rows(sources: list[dict]) -> dict[str, str]:
+    states = {s["key"]: s["state"] for s in sources}
+    return {row: note for row, (source, note) in UNREAD_OFFICIAL.items() if states.get(source, "live") != "live"}
 
 
 SEASON_FILE = HERE.parent / "season" / "current.json"
@@ -635,8 +643,8 @@ def severity(level: str) -> int:
     return SEVERITY.index(level) if level in SEVERITY else len(SEVERITY)
 
 
-def hazard_row(key: str, title: str, alerts: list[dict], cards: list[dict]) -> str:
-    official = f'<ul class="alerts">{"".join(alert_item(a) for a in alerts)}</ul>' if alerts else NO_ALERT
+def hazard_row(key: str, title: str, alerts: list[dict], cards: list[dict], unread: str = "") -> str:
+    official = (f'<ul class="alerts">{"".join(alert_item(a) for a in alerts)}</ul>' if alerts else "" if unread else NO_ALERT) + unread
     ours = "".join(hazard_card(item) for item in cards) or NO_ANALYSIS
     return (
         f'<section class="hrow" aria-labelledby="fila-{key}"><h3 id="fila-{key}">{escape(title)}</h3><div class="pair">'
@@ -645,7 +653,7 @@ def hazard_row(key: str, title: str, alerts: list[dict], cards: list[dict]) -> s
     )
 
 
-def hazard_rows(alerts: list[dict], items: list[dict], lead: str | None = None) -> str:
+def hazard_rows(alerts: list[dict], items: list[dict], lead: str | None = None, unread: dict[str, str] | None = None) -> str:
     by_key = {item["key"]: item for item in items}
     grouped: dict[str, list[dict]] = {}
     for alert in alerts:
@@ -656,7 +664,7 @@ def hazard_rows(alerts: list[dict], items: list[dict], lead: str | None = None) 
         row_alerts = grouped.get(key, [])
         if cards or row_alerts:
             rank = (0 if any(a["in_force"] for a in row_alerts) else 1 if row_alerts else 2, min((severity(c["level"]) for c in cards), default=len(SEVERITY)), 0 if key == lead else 1)
-            rows.append((rank, hazard_row(key, title, row_alerts, cards)))
+            rows.append((rank, hazard_row(key, title, row_alerts, cards, (unread or {}).get(key, ""))))
     ordered = [html for _, html in sorted(rows, key=lambda pair: pair[0])]
     others = grouped.get(OTHER_ROW[0], [])
     if others:
@@ -761,7 +769,7 @@ def comuna_page(comuna: dict, summary: dict, sources: list[dict], generated: str
 <section class="card" aria-labelledby="ahora" style="margin-top:1rem">
 <h2 id="ahora">Qué está pasando ahora</h2>
 <p class="now">Nuestra evaluación del riesgo {level_pill(summary["overall_level"], summary["overall_level_label"])}</p>
-{hazard_rows(summary["alerts"], shown_hazards(summary["items"], bool(counts.get("tsunami_evacuation_area")), datetime.now(UTC)), (season or {}).get("lead"))}
+{hazard_rows(summary["alerts"], shown_hazards(summary["items"], bool(counts.get("tsunami_evacuation_area")), datetime.now(UTC)), (season or {}).get("lead"), unread_rows(sources))}
 {season_note(season)}
 <p class="note"><strong>Temporada de El Niño:</strong> la Dirección Meteorológica de Chile proyecta lluvias sobre lo normal en el centro-sur del país. <a href="{EL_NINO_SOURCE}" rel="noreferrer">Fuente</a></p>
 <p class="note">Pronóstico: <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a>. Calculado el {escape(format_time(summary["computed_at"]))}.</p>
