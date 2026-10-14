@@ -277,11 +277,12 @@ body.fit{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:
 @media (max-width:48rem){.pair{grid-template-columns:1fr;gap:.9rem}.pair .ours{border-left:0;padding-left:0}.mapwide{margin-inline:1.5rem}.mapwide .map{height:65vh}}
 @media (max-width:960px){
 body.fit{height:auto;overflow:visible}
-.region{grid-template-columns:1fr}
-.region .mapcard{height:70vh}
+.region{grid-template-columns:minmax(0,1fr)}
+.region .mapcard{height:auto}
 .side{overflow:visible}
-.grid,.grid2{grid-template-columns:1fr}
-.mapcard{position:relative;top:0;height:70vh}
+.grid,.grid2{grid-template-columns:minmax(0,1fr)}
+.mapcard{position:relative;top:0;height:auto}
+.mapcard .map{flex:none;height:60vh;height:60svh;min-height:18rem}
 .muni nav{display:none}
 }
 """
