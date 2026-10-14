@@ -1,6 +1,18 @@
 import argparse
 import sys
 
+OVERFLOW_SCRIPT = r"""() => {
+  const limit = document.documentElement.clientWidth;
+  const wide = [];
+  for (const el of document.querySelectorAll("body *")) {
+    const r = el.getBoundingClientRect();
+    if (r.width && r.right > limit + 0.5) {
+      wide.push(`${el.tagName.toLowerCase()}${el.id ? "#" + el.id : ""}${el.className && typeof el.className === "string" ? "." + el.className.trim().split(/\s+/).join(".") : ""} right=${Math.round(r.right)}`);
+    }
+  }
+  return {limit, scroll: document.documentElement.scrollWidth, wide: wide.slice(0, 15)};
+}"""
+
 from playwright.sync_api import sync_playwright
 
 
@@ -17,6 +29,8 @@ def main() -> int:
     parser.add_argument("--local-storage", action="append", default=[], metavar="KEY=VALUE")
     parser.add_argument("--press-enter", action="store_true")
     parser.add_argument("--select", nargs=2, action="append", default=[], metavar=("SELECTOR", "VALUE"))
+    parser.add_argument("--overflow", action="store_true", help="list elements wider than the viewport")
+    parser.add_argument("--add-style", default=None, metavar="CSS", help="inject CSS after load, to try a style change on a live page")
     args = parser.parse_args()
     errors: list[str] = []
     with sync_playwright() as p:
@@ -28,6 +42,10 @@ def main() -> int:
         page.on("console", lambda m: errors.append(f"console.{m.type}: {m.text}") if m.type == "error" else None)
         page.on("pageerror", lambda e: errors.append(f"pageerror: {e}"))
         page.goto(args.url, wait_until="networkidle", timeout=60000)
+        if args.add_style:
+            page.add_style_tag(content=args.add_style)
+            page.set_viewport_size({"width": args.width, "height": args.height + 1})
+            page.set_viewport_size({"width": args.width, "height": args.height})
         if args.wait_text:
             page.get_by_text(args.wait_text).first.wait_for(timeout=30000)
         if args.fill:
@@ -42,6 +60,11 @@ def main() -> int:
             page.select_option(selector, value)
             page.wait_for_timeout(args.settle_ms)
         page.wait_for_timeout(args.settle_ms)
+        if args.overflow:
+            found = page.evaluate(OVERFLOW_SCRIPT)
+            print(f"viewport {found['limit']} px, page {found['scroll']} px")
+            for line in found["wide"]:
+                print(f"wider than viewport: {line}")
         page.screenshot(path=args.out, full_page=True)
         browser.close()
     for line in errors:
