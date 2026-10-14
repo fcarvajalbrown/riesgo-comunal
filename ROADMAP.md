@@ -27,7 +27,7 @@ Blockers fixed: 1 in 21f3645 (alerts carry the declared comuna codes and are mat
 Pulido de la página (pending, in priority order; next session starts here):
 3. "Nuestra evaluación del riesgo" takes the official alert level as ours, one step above SENAPRED's colour (Amarilla shows as Alto).
 4. Public copy names environment variables ("requieren DMC_USER y DMC_TOKEN") under "Lo que nos falta".
-5. The SHOA bulletin reader has never worked (snamchile.cl and shoa.cl answer 403 to this machine), yet the tsunami row says "Sin alerta oficial". snamchile.cl/index.php answers 405 to every CI run and 403 to plain curl, but 200 to the same GET with a browser User-Agent, so the block is on the User-Agent, not the IP.
+5. The SHOA bulletin reader has never worked (snamchile.cl and shoa.cl answer 403 to this machine), yet the tsunami row says "Sin alerta oficial". snamchile.cl/index.php sits behind an AWS load balancer that blocks by address, not by request: `tools/source-probe` (workflow `source-probe`) run on a GitHub runner (20.55.87.181, Azure) got 405 for the tool User-Agent, the `Mozilla/5.0 (compatible; ...)` User-Agent the adapter already sends, a full browser header set and headless Chromium alike, while the same four from a home connection got 403 for the bare tool User-Agent and 200 for the other three. No request change can make it work from GitHub Actions; it needs a fetch from an address the site accepts.
 6. Claims not backed: "con SENAPRED, el SHOA, la DMC" implies collaboration; "umbrales provisionales hasta que la municipalidad defina los suyos" implies municipalities take part.
 7. Index lists rain alerts twice (rain card and "Alertas vigentes").
 8. Phone pages scroll sideways (index 404 px, comuna 399 px at 390 px).
