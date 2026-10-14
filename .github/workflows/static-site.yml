@@ -51,6 +51,11 @@ jobs:
       - run: uv run python -m app.cli ingest --backfill
       - run: psql postgresql://riesgo:riesgo@127.0.0.1:5432/riesgo -c analyze
       - run: uv run python ../tools/static-site/build.py --out ../site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
       - name: Publish to synterra.cl/maule
         working-directory: .
         env:
@@ -62,10 +67,11 @@ jobs:
           install -m 700 -d ~/.ssh
           echo "$HOSTINGER_SSH_KEY" > ~/.ssh/deploy
           chmod 600 ~/.ssh/deploy
-          ssh-keyscan -p "$PORT" "$HOST" >> ~/.ssh/known_hosts
+          for attempt in 1 2 3; do
+            ssh-keyscan -T 15 -p "$PORT" "$HOST" > ~/.ssh/host_keys || true
+            [ -s ~/.ssh/host_keys ] && break
+            sleep 20
+          done
+          [ -s ~/.ssh/host_keys ]
+          cat ~/.ssh/host_keys >> ~/.ssh/known_hosts
           rsync -az --delete -e "ssh -i ~/.ssh/deploy -p $PORT" site/ "$REMOTE_USER@$HOST:domains/synterra.cl/public_html/maule/"
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
-      - id: deploy
-        uses: actions/deploy-pages@v4
