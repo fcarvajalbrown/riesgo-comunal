@@ -245,7 +245,7 @@ ul{list-style:none;margin:0;padding:0}
 .thumb{border:1px solid var(--border);border-radius:.5rem;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .thumb img{display:block;max-width:100%;height:auto}
 .thumb-logo{background:var(--senator);padding:.6rem}
-@media (max-width:34rem){.assets li{grid-template-columns:1fr}.thumb{max-width:14rem}}
+@media (max-width:34rem){.assets li{grid-template-columns:1fr}.thumb{max-width:14rem}.hz summary{grid-template-columns:minmax(0,1fr)}.hz summary .line,.hz summary .agree,.hz summary .more{grid-column:1}.hz summary>:first-child{justify-self:start}}
 .legend{display:flex;flex-wrap:wrap;gap:.3rem 1rem;padding:.6rem 1rem;border-top:1px solid var(--border);font-size:.85rem}
 .intro{font-size:.9rem;color:var(--muted);margin-bottom:.75rem}
 .comunas-line{font-size:.85rem;margin-top:.2rem}
